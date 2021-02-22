@@ -3,5 +3,8 @@ uuid = "91c5bd54-65f5-4719-ae3b-9579edfc4a0b"
 authors = ["Luiz M. Faria <maltezfaria@gmail.com> and contributors"]
 version = "0.1.0"
 
+[deps]
+StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
+
 [compat]
 julia = "1.3"
