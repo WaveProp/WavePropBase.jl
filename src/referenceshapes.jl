@@ -1,12 +1,11 @@
 """
     abstract type AbstractReferenceShape{N}
 
-A reference domain/shape in `ℜᴺ`.
+Singleton types defining a referene domain/shape in `ℜᴺ`. Typically used to define
+more complex shapes as transformations mapping an `AbstractReferenceShape` into
+some region of `ℜᴹ` through a given map.
 
-Used mostly for defining more complex shapes as transformations mapping an
-`AbstractReferenceShape` into some region of `ℜᴹ`.
-
-See e.g. [`ReferenceLine`](@ref) or [`ReferenceTriangle`](@ref) for some
+See e.g. [`ReferenceLine`](@ref) or [`ReferenceTriangle`](@ref) for
 examples of concrete subtypes.
 """
 abstract type AbstractReferenceShape{N} end

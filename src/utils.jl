@@ -172,7 +172,7 @@ ComplexPoint2D = SVector{2, ComplexF64}.
 const ComplexPoint2D = SVector{2, ComplexF64}
 
 """
-    const SType{T}
+    const SType{T} = Union{T,Type{T}}
 
 Union type of `T` and its data type `Type{T}`. Used to simplify methods defined
 on singleton types where both `foo(::T)` and `foo(::Type{T})` are required.
