@@ -1,6 +1,4 @@
 using WavePropBase
-using Test
+using SafeTestsets
 
-@testset "WavePropBase.jl" begin
-
-end
+@safetestset "Reference shapes" begin include("referenceshapes_test.jl") end
