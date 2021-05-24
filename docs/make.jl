@@ -6,11 +6,11 @@ DocMeta.setdocmeta!(WavePropBase, :DocTestSetup, :(using WavePropBase); recursiv
 makedocs(;
     modules=[WavePropBase],
     authors="Luiz M. Faria <maltezfaria@gmail.com> and contributors",
-    repo="https://github.com/maltezfaria/WavePropBase.jl/blob/{commit}{path}#{line}",
+    repo="https://github.com/WaveProp/WavePropBase.jl/blob/{commit}{path}#{line}",
     sitename="WavePropBase.jl",
     format=Documenter.HTML(;
         prettyurls=get(ENV, "CI", "false") == "true",
-        canonical="https://maltezfaria.github.io/WavePropBase.jl",
+        canonical="https://WaveProp.github.io/WavePropBase.jl",
         assets=String[],
     ),
     pages=[
@@ -19,6 +19,6 @@ makedocs(;
 )
 
 deploydocs(;
-    repo="github.com/maltezfaria/WavePropBase.jl",
+    repo="github.com/WaveProp/WavePropBase.jl",
     devbranch="main",
 )
