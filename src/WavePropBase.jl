@@ -1,17 +1,9 @@
 module WavePropBase
 
+using LinearAlgebra
 using StaticArrays
 
-include("referencedomain.jl")
-
-export
-    # types
-    ReferenceLine,
-    ReferenceTriangle,
-    ReferenceSquare,
-    ReferenceTetrahedron,
-    # methods
-    ambient_dimension,
-    geometric_dimension
+include("utils.jl")
+include("referenceshapes.jl")
 
 end
