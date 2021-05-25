@@ -7,5 +7,6 @@ include("utils.jl")
 include("referenceshapes.jl")
 include("hyperrectangle.jl")
 include("entities.jl")
+include("domain.jl")
 
 end

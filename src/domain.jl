@@ -169,7 +169,7 @@ boundary(Ω::Domain) = external_boundary(Ω::Domain)
 """
 Return all tags of the elementary entities in the domain `Ω` corresponding to the dimension `d`.
 """
-function keys(Ω::Domain, d::Integer)
+function Base.keys(Ω::Domain, d::Integer)
     if isempty(Ω)
         return Tuple{Int64,Int64}[]
     elseif d == geometric_dimension(Ω)
@@ -180,14 +180,14 @@ function keys(Ω::Domain, d::Integer)
         error("Asking for tags with dimension > dimension of domain")
     end
 end
-function keys(Ω::Domain)
+function Base.keys(Ω::Domain)
     isempty(Ω) ? Tuple{Int64, Int64}[] : keys(Ω, geometric_dimension(Ω))
 end
 
 """
 Return all tags of the elementary entities in the domain `Ω` corresponding to the dimensions contained in `dims`.
 """
-function keys(Ω::Domain, dims::Vector{T}) where T <: Integer
+function Base.keys(Ω::Domain, dims::Vector{T}) where T <: Integer
     tgs = Vector{Tuple{Int64, Int64}}(undef, 0)
     for d in dims push!(tgs, keys(Ω, d)...) end
     return tgs
