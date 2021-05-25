@@ -178,3 +178,27 @@ Union type of `T` and its data type `Type{T}`. Used to simplify methods defined
 on singleton types where both `foo(::T)` and `foo(::Type{T})` are required.
 """
 const SType{T} = Union{T,Type{T}}
+
+"""
+    sort_by_type(v::Vector{Any})
+
+Sort the elements of `v` into vectors `vi` according to their type. Return a
+`Dict{DataType,Vector}` mapping each type to a vector of that type.
+
+# Examples
+```julia
+v = [1,"a",3,"b"]
+dict = sort_by_type(v)
+```
+"""
+function sort_by_type(v::Vector{Any})
+    dict = Dict{DataType,Vector}()
+    for el in v
+        T = typeof(el)
+        vi = get!(dict,T) do
+            T[]
+        end
+        push!(vi,el)
+    end
+    return dict
+end
