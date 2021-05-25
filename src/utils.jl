@@ -132,14 +132,13 @@ function print_threads_info()
 end
 
 """
-    const Point3D
-    const Point3D(x1, x2, x3)
-    const Point3D(x::NTuple{3, Float64})
+    const Point1D
+    const Point1D(x1)
 
-A point in 3D space, stored in a StaticArray.
-Point3D = SVector{3, Float64}.
+A point in 1D space, stored in a StaticArray.
+Point1D = SVector{1, Float64}.
 """
-const Point3D = SVector{3, Float64}
+const Point1D = SVector{1, Float64}
 
 """
     const Point2D
@@ -150,6 +149,16 @@ A point in 2D space, stored in a StaticArray.
 Point2D = SVector{2, Float64}.
 """
 const Point2D = SVector{2, Float64}
+
+"""
+    const Point3D
+    const Point3D(x1, x2, x3)
+    const Point3D(x::NTuple{3, Float64})
+
+A point in 3D space, stored in a StaticArray.
+Point3D = SVector{3, Float64}.
+"""
+const Point3D = SVector{3, Float64}
 
 """
     const ComplexPoint3D
@@ -180,7 +189,7 @@ on singleton types where both `foo(::T)` and `foo(::Type{T})` are required.
 const SType{T} = Union{T,Type{T}}
 
 """
-    sort_by_type(v::Vector{Any})
+    sort_by_type(v)
 
 Sort the elements of `v` into vectors `vi` according to their type. Return a
 `Dict{DataType,Vector}` mapping each type to a vector of that type.
@@ -191,7 +200,7 @@ v = [1,"a",3,"b"]
 dict = sort_by_type(v)
 ```
 """
-function sort_by_type(v::Vector{Any})
+function sort_by_type(v)
     dict = Dict{DataType,Vector}()
     for el in v
         T = typeof(el)
