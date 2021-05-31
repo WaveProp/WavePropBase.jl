@@ -211,3 +211,10 @@ function sort_by_type(v)
     end
     return dict
 end
+
+"""
+    const INTERFACE_LIST
+
+Functions from `WavePropBase` intended to be extended by other packages.
+"""
+const INTERFACE_LIST = Set()
