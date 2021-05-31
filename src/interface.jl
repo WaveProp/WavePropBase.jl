@@ -16,10 +16,14 @@ push!(INTERFACE_LIST,:ambient_dimension)
 
 """
     geometric_dimension(x)
+    geometric_dimension(Ω::Domain)
 
 Number of degrees of freedom necessary to locally represent the geometrical
 object. For example, lines have geometric dimension of 1 (whether in `ℝ²` or in
 `ℝ³`), while surfaces have geometric dimension of 2.
+
+When the argument is a `Domain`, return the largest geometric dimension
+encoutered.
 """
 function geometric_dimension end
 push!(INTERFACE_LIST,:geometric_dimension)
@@ -33,3 +37,50 @@ elements composing its boundary, while for an entity gives the corresponding
 """
 function boundary end
 push!(INTERFACE_LIST,:boundary)
+
+"""
+    diameter(Ω)
+
+Largest distance between `x` and `y` for `x,y ∈ Ω`.
+"""
+function diameter end
+push!(INTERFACE_LIST,:diameter)
+
+"""
+    radius(Ω)
+
+Half the [`diameter`](@ref).
+"""
+function radius end
+push!(INTERFACE_LIST,:radius)
+
+"""
+    center(Ω)
+"""
+function center end
+push!(INTERFACE_LIST,:center)
+
+"""
+    return_type(f)
+
+The type returned by the function-like object `f`.
+"""
+function return_type end
+push!(INTERFACE_LIST,:return_type)
+
+"""
+    jacobian(F,x)
+
+The Jacobian matrix `Aᵢⱼ = ∂Fᵢ/∂xⱼ`.
+"""
+function jacobian end
+push!(INTERFACE_LIST,:jacobian)
+
+"""
+    domain(f)
+
+The domain of `f`. For elements of geometrical nature return the
+`ReferenceShape` used to represent it.
+"""
+function domain end
+push!(INTERFACE_LIST,:domain)

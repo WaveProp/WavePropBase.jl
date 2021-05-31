@@ -2,6 +2,8 @@
     struct Domain
 
 Represent a physical domain as a union of entities.
+
+# See also: [`AbstractEntity`](@ref), [`ElementaryEntity`](@ref).
 """
 struct Domain
     entities::Vector{AbstractEntity}
@@ -16,24 +18,15 @@ Return a vector of all elementary entities making up a domain.
 """
 entities(Ω::Domain) = Ω.entities
 
-"""
-    geometric_dimension(Ω::Domain)
-
-If all entities forming the domain have the same `geometric_dimension`, return
-that value; otherwise throw an assertion error.
-"""
 function geometric_dimension(Ω::Domain)
-    dims = [geometric_dimension(ent) for ent in entities(Ω)] |> unique!
-    msg = "currently not able to handle a `Domain` with entities of different
-           geometrical dimension. Got entities of dimensions ($dims)"
-    @assert length(dims) == 1 msg
-    return first(dims)
+    maximum(geometric_dimension(ent) for ent in entities(Ω))
 end
 
 """
     length(Ω:::Domain)
 
-The length of a domain corresponds to the number of elementary entities that make it.
+The length of a domain corresponds to the number of elementary entities that
+make it.
 """
 Base.length(Ω::Domain) = length(entities(Ω))
 
@@ -56,20 +49,26 @@ end
 """
     in(ω::ElementaryEntity,Ω::Domain)
 
-Check whether an `ElementaryEntity` belongs to a `Domain`. Note that this only
-does a *shallow* comparisson, meaning it only checks that `ω` is not one of the
-entities in `entities(Ω)`; thus `ω` could still equal one of the
-boundaries of an entity in `entities(Ω)`.
+Check whether an `ElementaryEntity` belongs to a `Domain` by recursively
+checking whether it belongs to its boundary.
 """
-Base.in(ω::ElementaryEntity, Ω::Domain) = in(ω, entities(Ω))
+function Base.in(ω::ElementaryEntity, Ω::Domain)
+    isempty(boundary(Ω)) && return false # base case
+    in(ω, entities(Ω)) && return true
+    for bnd in boundary(Ω)
+        in(bnd,Ω) && (return true)
+    end
+    return false
+end
 
 Base.getindex(Ω::Domain, i) = entities(Ω)[i]
+
 Base.lastindex(Ω::Domain) = length(Ω)
 
 """
     iterate(Ω::Domain)
 
-Iterating over domain means iterating over its entities.
+Iterating over a domain means iterating over its entities.
 """
 function Base.iterate(Ω::Domain, state=1)
     # Check if we are done iterating
@@ -156,15 +155,6 @@ end
 function external_boundary(Ω::Domain)
     return remove(internal_boundary(Ω), skeleton(Ω))
 end
-
-"""
-    boundary(Ω)
-
-Return a domain comprising the external boundary of Ω.
-
-See also: [`external_boundary`](@ref)
-"""
-boundary(Ω::Domain) = external_boundary(Ω::Domain)
 
 """
 Return all tags of the elementary entities in the domain `Ω` corresponding to the dimension `d`.
