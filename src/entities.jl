@@ -47,33 +47,24 @@ ElementaryEntity(dim) = ElementaryEntity(dim,_new_tag(dim))
 
 geometric_dimension(ω::ElementaryEntity) = ω.dim
 
-"""
-    key(ω::ElementaryEntity)
-
-Return the unique `(dim,tag)` key for the elementary entity.
-"""
-key(ω::ElementaryEntity) = (geometric_dimension(ω), ω.tag)
-
-"""
-    boundary(ω::ElementaryEntity)
-
-Return the vector of elementary entities making the boundary.
-"""
 boundary(ω::ElementaryEntity) = ω.boundary
 
 """
     ==(Ω1::AbstractEntity,Ω2::AbstractEntity)
 
-Two elementary entities are considered equal if their `dim` and `tag` fields
-match.
+Two elementary entities are considered equal
+`geometric_dimension(Ω1)==geometric_dimension(Ω2)` and
+`abs(tag(Ω1))=abs(tag(Ω2))`. The sign of `tag(Ω)` is used to determine its
+orientation.
 
 Notice that this implies `dim` and `tag` of an elementary entity should uniquely
-define it, and therefore global variables like [`TAGS`](@ref) are needed to make
-sure newly created `AbstractEntities` have a new `(dim,tag)` identifier.
+define it (up to the sign of `tag`), and therefore global variables like
+[`TAGS`](@ref) are needed to make sure newly created `AbstractEntities` have a
+new `(dim,tag)` identifier.
 """
 function Base.:(==)(Ω1::AbstractEntity, Ω2::AbstractEntity)
-    d1,t1 = key(Ω1)
-    d2,t2 = key(Ω2)
+    d1,t1 = dim(Ω1),tag(Ω1)
+    d2,t2 = dim(Ω1),tag(Ω1)
     d1 == d2  || return false
     abs(t1) == abs(t2) || return false
     # boundary(Ω1) == boundary(Ω2) || return false # this should not be needed
@@ -157,10 +148,8 @@ function is_new_tag(dim,tag)
     return true
 end
 
-clear_tags!() = empty!(TAGS)
-clear_entities!() = empty!(ENTITIES)
-function clear!()
-    clear_tags!()
-    clear_entities!()
+function clear_entities!()
+    empty!(TAGS)
+    empty!(ENTITIES)
     nothing
 end
