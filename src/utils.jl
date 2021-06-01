@@ -68,7 +68,6 @@ size of `B` along each dimension.
 function vector_to_blockvector(A::Vector,B::Type{<:SVector})
     @assert eltype(A) == eltype(B)
     @assert sum(size(A) .% size(B)) == 0 "block size $(size(B)) not compatible with size of A=$(size(A))"
-    T = eltype(B)
     reinterpret(B,A) |> collect
 end
 

@@ -53,7 +53,6 @@ Check whether an `ElementaryEntity` belongs to a `Domain` by recursively
 checking whether it belongs to its boundary.
 """
 function Base.in(ω::ElementaryEntity, Ω::Domain)
-    isempty(boundary(Ω)) && return false # base case
     in(ω, entities(Ω)) && return true
     for bnd in boundary(Ω)
         in(bnd,Ω) && (return true)
@@ -127,15 +126,6 @@ function Base.issubset(Ω1::Domain, Ω2::Domain)
     return issubset(entities(Ω1), entities(Ω2))
 end
 
-"""
-    remove(Ω1::Domain,Ω2::Domain)
-
-Remove domain Ω1 from domain Ω2.
-"""
-function remove(Ω1::Domain, Ω2::Domain)
-    assertequaldim(Ω1, Ω2)
-    return Domain(setdiff(entities(Ω2), intersect(entities(Ω1), entities(Ω2))))
-end
 
 """Return the internal boundaries inside a domain."""
 function internal_boundary(Ω::Domain)
@@ -153,7 +143,7 @@ end
 
 """Return the external boundaries inside a domain."""
 function external_boundary(Ω::Domain)
-    return remove(internal_boundary(Ω), skeleton(Ω))
+    return setdiff(skeleton(Ω),internal_boundary(Ω))
 end
 
 """

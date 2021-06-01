@@ -39,6 +39,8 @@ function LagrangeInterp(nodes::SVector{N,Vector{Td}},vals::Array{T,N}) where {N,
     weights = map(barycentric_lagrange_weights,nodes)
     LagrangeInterp{N,Td,T}(vals,nodes,weights)
 end
+LagrangeInterp(nodes::Vector,vals::Vector) = LagrangeInterp((nodes,),vals)
+LagrangeInterp(nodes::NTuple,vals::Array)  = LagrangeInterp(SVector(nodes),vals)
 
 function (p::LagrangeInterp{N,Td,T})(x::SVector) where {N,Td,T}
     num = zero(T)
@@ -57,7 +59,8 @@ function (p::LagrangeInterp{N,Td,T})(x::SVector) where {N,Td,T}
     end
     num/den
 end
-(p::LagrangeInterp{1})(x::Number) = p(SVector(x))
+(p::LagrangeInterp)(x::NTuple) = p(SVector(x))
+(p::LagrangeInterp{1})(x::Number) = p((x,))
 
 # multidimensional version of algorithm on page 504 of
 # https://people.maths.ox.ac.uk/trefethen/barycentric.pdf

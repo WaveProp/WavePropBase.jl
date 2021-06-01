@@ -72,28 +72,9 @@ function LagrangeElement{R}(vals) where {R}
 end
 
 # a convenience constructor to allow things like LagrangeLine(a,b) instead of LagrangeLine((a,b))
-LagrangeElement{R}(nodes...) where {R} = LagrangeElement{R}(nodes)
-
-# define some aliases
-"""
-    const LagrangeLine = LagrangeElement{ReferenceLine}
-"""
-const LagrangeLine        = LagrangeElement{ReferenceLine}
-
-"""
-    const LagrangeTriangle = LagrangeElement{ReferenceTriangle}
-"""
-const LagrangeTriangle    = LagrangeElement{ReferenceTriangle}
-
-"""
-    const LagrangeTetrahedron = LagrangeElement{ReferenceTetrahedron}
-"""
-const LagrangeTetrahedron = LagrangeElement{ReferenceTetrahedron}
-
-"""
-    const LagrangeRectangle = LagrangeElement{ReferenceSquare}
-"""
-const LagrangeRectangle   = LagrangeElement{ReferenceSquare}
+function LagrangeElement{R}(nodes...) where {R}
+    LagrangeElement{R}(nodes)
+end
 
 degree(el::LagrangeElement) = degree(typeof(el))
 
@@ -106,27 +87,27 @@ degree(el::Type{LagrangeElement{ReferenceLine,Np,T}}) where {Np,T} = Np - 1
 
 function degree(::Type{LagrangeElement{ReferenceTriangle,Np,T}}) where {Np,T}
    p   = (-3 + sqrt(1 + 8 * Np)) / 2
-   msg = "unable to determine degree for LagrangeTriangle containing Np=$(Np) interpolation points.
-          Need `Np = (p+1)*(p+2)/2` for some integer `p`."
+   msg =
+   "unable to determine degree for `LagrangeElement` over `ReferenceTriangle` containing Np=$(Np)  interpolation points. Need `Np = (p+1)*(p+2)/2` with `p` an integer."
    @assert isinteger(p) msg
    return Int(p)
 end
 
-function (el::LagrangeLine{2})(u)
+function (el::LagrangeElement{ReferenceLine,2})(u)
     @assert length(u) == 1
     @assert u ∈ ReferenceLine()
     v = vals(el)
     v[1] + (v[2] - v[1]) * u[1]
 end
 
-function (el::LagrangeLine{3})(u)
+function (el::LagrangeElement{ReferenceLine,3})(u)
     @assert length(u) == 1
     @assert u ∈ ReferenceLine()
     v = vals(el)
     v[1] + (4 * v[3] - 3 * v[1] - v[2]) * u[1]  + 2 * (v[2] + v[1] - 2 * v[3]) * u[1]^2
 end
 
-function jacobian(el::LagrangeLine{3}, u)
+function jacobian(el::LagrangeElement{ReferenceLine,3}, u)
     @assert length(u) == 1
     @assert u ∈ ReferenceLine()
     v = vals(el)

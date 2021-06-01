@@ -75,3 +75,12 @@ function Base.iterate(m::CartesianMesh, state=1)
     state > length(m) && (return nothing)
     m[state], state + 1
 end
+
+# ElementIterator interface. For CartesianMesh simply defer these to the parent
+# method, which is itself iterable.
+
+Base.iterate(iter::ElementIterator{<:CartesianMesh,<:HyperRectangle}, state=1) = iterate(parent(iter),state)
+
+Base.size(iter::ElementIterator{<:CartesianMesh,<:HyperRectangle})   = size(parent(iter))
+
+Base.length(iter::ElementIterator{<:CartesianMesh,<:HyperRectangle}) = length(parent(iter))

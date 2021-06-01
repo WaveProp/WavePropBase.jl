@@ -15,7 +15,7 @@ ambient_dimension(M::AbstractMesh{N}) where {N} = N
 
 # we define the geometric dimension of the parent to be the largest of the geometric
 # dimension of its entities.
-geometric_dimension(M::AbstractMesh) = maximum(x -> geometric_dimension(x), etypes(M))
+geometric_dimension(M::AbstractMesh) = maximum(x -> geometric_dimension(x), entities(M))
 
 Base.eltype(M::AbstractMesh{N,T}) where {N,T} = T
 
@@ -39,8 +39,4 @@ ElementIterator{E}(parent::M) where {E,M <: AbstractMesh} = ElementIterator{E,M}
 
 ElementIterator(parent,E) = ElementIterator{E}(parent)
 
-Base.iterate(iter::ElementIterator, state=1) = iterate(parent(iter),state)
-
-Base.size(iter::ElementIterator)   = size(parent(iter))
-
-Base.length(iter::ElementIterator) = length(parent(iter))
+Base.getindex(m::AbstractMesh,E::AbstractElement) = ElementIterator(m,E)

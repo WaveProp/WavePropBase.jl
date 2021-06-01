@@ -5,10 +5,8 @@ Data structure representing a generic mesh in an ambient space of dimension `N`,
 """
 Base.@kwdef struct GenericMesh{N,T} <: AbstractMesh{N,T}
     nodes::Vector{SVector{N,T}} = Vector{SVector{N,T}}()
-    # element types
-    etypes::Vector{DataType}    = Vector{DataType}()
-    # for each element type (key), get the data required to reconstruct the
-    # elements (value)
+    # for each element type (key), store the data required to reconstruct the
+    # elements (value).
     elements::Dict{DataType,Any} = Dict{DataType,Any}()
     # mapping from entity to (etype,tags)
     ent2tags::Dict{AbstractEntity,Dict{DataType,Vector{Int}}} = Dict{AbstractEntity,Dict{DataType,Vector{Int}}}()
@@ -18,12 +16,8 @@ nodes(m::GenericMesh)    = m.nodes
 elements(m::GenericMesh) = m.elements
 ent2tags(m::GenericMesh) = m.ent2tags
 
-"""
-    etypes(M::GenericMesh)
-
-Return the element types contained in the mesh.
-"""
-etypes(mesh::GenericMesh) = mesh.etypes
+Base.keys(m::GenericMesh) = keys(elements(m))
+entities(m::GenericMesh) = keys(ent2tags(m))
 
 """
     dom2elt(m::GenericMesh,Ω,E)
@@ -43,12 +37,12 @@ end
 """
     dom2elt(m::GenericMesh,Ω)
 
-Return a `Dict` with keys being the `etypes` of `m`, and values being the
-indices of the elements in `Ω` of type `E`.
+Return a `Dict` with keys being the element types of `m`, and values being the
+indices of the elements in `Ω` of that type.
 """
 function dom2elt(m::GenericMesh, Ω)
     dict = Dict{DataType,Vector{Int}}()
-    for E in etypes(m)
+    for E in keys(m)
         tags = dom2elt(m, Ω, E)
         if !isempty(tags)
             dict[E] = tags
@@ -62,7 +56,7 @@ end
 # convert a mesh to 2d by ignoring third component. Note that this also requires
 # converting various element types to their 2d counterpart.
 function convert_to_2d(mesh::GenericMesh{3})
-    @assert all(x -> geometric_dimension(x) < 3, etypes(mesh))
+    @assert all(x -> geometric_dimension(x) < 3, keys(mesh))
     T = eltype(mesh)
     # create new dictionaries for elements and ent2tags with 2d elements as keys
     elements  = empty(mesh.elements)
@@ -82,7 +76,7 @@ function convert_to_2d(mesh::GenericMesh{3})
     # construct new 2d mesh
     GenericMesh{2,T}(;
         nodes=[x[1:2] for x in nodes(mesh)],
-        etypes=convert_to_2d.(etypes(mesh)),
+        etypes=convert_to_2d.(keys(mesh)),
         elements=elements,
         ent2tags=ent2tags
     )

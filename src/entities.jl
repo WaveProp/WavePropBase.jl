@@ -6,6 +6,13 @@ Entity of geometrical nature. Identifiable throught its `(dim,tag)` key.
 abstract type AbstractEntity end
 
 """
+    key(e::AbstractEntity)
+
+The `(dim,tag)` pair used as a key to identify various abstract entities.
+"""
+key(e::AbstractEntity) = geometric_dimension(e),tag(e)
+
+"""
     struct ElementaryEntity <: AbstractEntity
 
 The most basic representation of an [`AbstractEntity`](@ref).
@@ -35,6 +42,10 @@ struct ElementaryEntity <: AbstractEntity
     end
 end
 
+geometric_dimension(ω::ElementaryEntity) = ω.dim
+tag(ω::ElementaryEntity) = ω.tag
+boundary(ω::ElementaryEntity) = ω.boundary
+
 """
     ElementaryEntity(dim,tag)
 
@@ -43,11 +54,8 @@ Construct an [`ElementaryEntity`](@ref) with an empty boundary .
 function ElementaryEntity(dim,tag)
     ElementaryEntity(dim,tag,ElementaryEntity[])
 end
+
 ElementaryEntity(dim) = ElementaryEntity(dim,_new_tag(dim))
-
-geometric_dimension(ω::ElementaryEntity) = ω.dim
-
-boundary(ω::ElementaryEntity) = ω.boundary
 
 """
     ==(Ω1::AbstractEntity,Ω2::AbstractEntity)
@@ -63,8 +71,8 @@ define it (up to the sign of `tag`), and therefore global variables like
 new `(dim,tag)` identifier.
 """
 function Base.:(==)(Ω1::AbstractEntity, Ω2::AbstractEntity)
-    d1,t1 = dim(Ω1),tag(Ω1)
-    d2,t2 = dim(Ω1),tag(Ω1)
+    d1,t1 = geometric_dimension(Ω1),tag(Ω1)
+    d2,t2 = geometric_dimension(Ω1),tag(Ω1)
     d1 == d2  || return false
     abs(t1) == abs(t2) || return false
     # boundary(Ω1) == boundary(Ω2) || return false # this should not be needed
@@ -94,7 +102,7 @@ Global dictionary storing the used entity tags (the value) for a given dimension
 const ENTITIES = Dict{Tuple{Int,Int},AbstractEntity}()
 
 function _global_add_entity!(ent::AbstractEntity)
-    d,t = key(ent)
+    d,t = geometric_dimension(ent), tag(ent)
     _add_tag!(d,t) # add this tag to global list to make sure it is not used again
     msg = "overwriting ENTITIES: value in key ($d,$t) will be replaced"
     haskey(ENTITIES,(d,t)) && (@warn msg)

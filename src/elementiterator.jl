@@ -22,7 +22,7 @@ function Base.size(iter::ElementIterator{<:LagrangeElement,<:GenericMesh})
     msh               = mesh(iter)
     E                 = eltype(iter)
     tags::Matrix{Int} = msh.elements[E]
-    Np, Nel           = size(tags)
+    _, Nel           = size(tags)
     return (Nel,)
 end
 
@@ -38,8 +38,6 @@ end
 
 function Base.size(iter::ElementIterator{<:ParametricElement,<:GenericMesh})
     E               = eltype(iter)
-    mesh            = iter.mesh
-    tags::Vector{E} = mesh.elements[E]
     return (length(iter.mesh.elements[E]),)
 end
 
@@ -74,8 +72,6 @@ ElementIterator(m::CartesianMesh) = ElementIterator(m,etype(m))
 # AbstractMatrix and not AbstractVector since these are more naturally indexed
 # as matrices. Also this should be made generic on the dimension
 function Base.size(iter::ElementIterator{<:Any,<:CartesianMesh})
-    E       = eltype(iter)
-    grids   = grid1d(iter.mesh)
     sz      = size(iter.mesh) .- 1
     return (prod(sz),)
 end
