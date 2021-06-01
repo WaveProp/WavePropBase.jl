@@ -11,6 +11,7 @@ examples of concrete subtypes.
 abstract type ReferenceShape{N} end
 
 ambient_dimension(::SType{<:ReferenceShape{N}}) where {N}    = N
+
 geometric_dimension(::SType{<:ReferenceShape{N}}) where {N}  = N
 
 """
@@ -21,9 +22,6 @@ Singleton type representing the `[0,1]` segment.
 struct ReferenceLine <: ReferenceShape{1}
 end
 Base.in(x,::ReferenceLine)    = 0 ≤ x[1] ≤ 1
-getcenter(::SType{ReferenceLine}) = Point1D(0.5)
-
-getvertices(::SType{ReferenceLine}) = Point1D(0), Point1D(1)
 
 """
     struct ReferenceTriangle
@@ -34,8 +32,6 @@ struct ReferenceTriangle <: ReferenceShape{2}
 end
 Base.in(x,::ReferenceTriangle) = 0 ≤ x[1] ≤ 1 && 0 ≤ x[2] ≤ 1 - x[1]
 
-getvertices(::SType{ReferenceTriangle}) = Point2D(0,0), Point2D(1,0), Point2D(0,1)
-
 """
     struct ReferenceSquare
 
@@ -44,9 +40,6 @@ Singleton type representing the square with vertices `(0,0),(0,1),(1,1),(1,0)`
 struct ReferenceSquare <: ReferenceShape{2}
 end
 Base.in(x,::ReferenceSquare)        = 0 ≤ x[1] ≤ 1 && 0 ≤ x[2] ≤ 1
-getcenter(::SType{ReferenceSquare}) = Point2D(0.5,0.5)
-
-getvertices(::SType{ReferenceSquare}) = Point2D(0,0), Point2D(1,0), Point2D(1,1), Point2D(0,1)
 
 """
     struct ReferenceTetrahedron
