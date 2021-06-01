@@ -18,36 +18,6 @@ function Base.getindex(iter::ElementIterator,I)
     map(i->iter[i],I)
 end
 
-function Base.size(iter::ElementIterator{<:LagrangeElement,<:GenericMesh})
-    msh               = mesh(iter)
-    E                 = eltype(iter)
-    tags::Matrix{Int} = msh.elements[E]
-    _, Nel           = size(tags)
-    return (Nel,)
-end
-
-function Base.getindex(iter::ElementIterator{<:LagrangeElement,<:GenericMesh},i::Int)
-    E                   = eltype(iter)
-    mesh                = iter.mesh
-    tags::Matrix{Int}   = mesh.elements[E]
-    node_tags           = view(tags,:,i)
-    vtx                 = view(mesh.nodes,node_tags)
-    el                  = E(vtx)
-    return el
-end
-
-function Base.size(iter::ElementIterator{<:ParametricElement,<:GenericMesh})
-    E               = eltype(iter)
-    return (length(iter.mesh.elements[E]),)
-end
-
-function Base.getindex(iter::ElementIterator{<:ParametricElement,<:GenericMesh},i::Int)
-    E               = eltype(iter)
-    mesh            = iter.mesh
-    els::Vector{E} = mesh.elements[E]
-    return els[i]
-end
-
 # iterator for submesh
 function Base.size(iter::ElementIterator{<:AbstractElement,<:SubMesh})
     E          = eltype(iter)

@@ -22,6 +22,7 @@ export
     # Abstract types
     AbstractMesh,
     AbstractEntity,
+    AbstractElement,
     ReferenceShape,
     # Concrete types
     HyperRectangle,
@@ -38,6 +39,7 @@ export
     LagrangeLine,
     LagrangeTriangle,
     LagrangeTetrahedron,
+    LagrangeRectangle,
     LagrangeInterp,
     # Type aliases
     Point1D,

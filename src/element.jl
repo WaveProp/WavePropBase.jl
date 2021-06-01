@@ -173,3 +173,24 @@ function jacobian(el::LagrangeElement{ReferenceTetrahedron,4}, u)
         (v[4] - v[1])
     )
 end
+
+# define some aliases used for representing elements of geometric nature.
+"""
+    const LagrangeLine = LagrangeElement{ReferenceLine}
+"""
+const LagrangeLine        = LagrangeElement{ReferenceLine}
+
+"""
+    const LagrangeTriangle = LagrangeElement{ReferenceTriangle}
+"""
+const LagrangeTriangle    = LagrangeElement{ReferenceTriangle}
+
+"""
+    const LagrangeTetrahedron = LagrangeElement{ReferenceTetrahedron}
+"""
+const LagrangeTetrahedron = LagrangeElement{ReferenceTetrahedron}
+
+"""
+    const LagrangeRectangle = LagrangeElement{ReferenceSquare}
+"""
+const LagrangeRectangle   = LagrangeElement{ReferenceSquare}

@@ -68,3 +68,50 @@ end
         end
     end
 end
+
+@recipe function f(el::LagrangeTriangle)
+    label --> ""
+    linecolor --> :black
+    seriestype := :line
+    vtx = vals(el)
+    for n in 1:3
+        is = n
+        ie = 1 + (n%3)
+        @series begin
+            [vtx[is],vtx[ie]]
+        end
+    end
+end
+
+@recipe function f(el::LagrangeRectangle)
+    label --> ""
+    vtx = vals(el)
+    for n in 1:4
+        is = n
+        ie = 1 + (n%4)
+        @series begin
+            [vtx[is],vtx[ie]]
+        end
+    end
+end
+
+@recipe function f(el::LagrangeLine)
+    vtx = vals(el)
+    [vtx[1],vtx[2]]
+end
+
+# plot a vector of points
+@recipe function f(pts::AbstractVector{<:SVector{N}}) where {N}
+    if N == 2
+        xx = [pt[1] for pt in pts]
+        yy = [pt[2] for pt in pts]
+        return xx,yy
+    elseif N == 3
+        xx = [pt[1] for pt in pts]
+        yy = [pt[2] for pt in pts]
+        zz = [pt[3] for pt in pts]
+        return xx,yy,zz
+    else
+        notimplemented()
+    end
+end
