@@ -65,5 +65,12 @@ export
     radius,
     diameter,
     center,
-    bounding_box
+    low_corner,
+    high_corner,
+    bounding_box,
+    new_tag,
+    global_add_entity!,
+    mesh,
+    assert_concrete_type,
+    svector
 end
