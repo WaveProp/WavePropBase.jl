@@ -212,8 +212,52 @@ function sort_by_type(v)
 end
 
 """
-    const INTERFACE_LIST
+    @interface f [n=1]
 
-Functions from `WavePropBase` intended to be extended by other packages.
+Declare that the function `f` is an interface function. The call
+`f(args...)` resolves to `M.f(args...)` where `M` is parent module of the
+`args[n]` object.
+
+The somewhat contrived example below illustrates how this can be used to have a
+generic method defined in module `A` applied to a type defined on module `B`
+which is independent of `A` but which implements the interface
+function `f`:
+```jldoctest
+module A
+    using WavePropBase
+    WavePropBase.@interface foo
+    # a method which works on any type `x` implementing the `foo` function
+    do_work(x) = 2*foo(x)
+end
+
+module B
+    struct Foo end
+    foo(x::Foo) = 1
+end
+
+using .A
+using .B
+foo = B.Foo()
+A.do_work(foo)
+
+# output
+
+2
+```
+
+Note that if in the example above module `A` implements a generic version of
+`foo`, the call `A.do_work(foo)` would use that method instead based on the
+dispatch rules.
 """
-const INTERFACE_LIST = Set()
+macro interface(f,n=1)
+    ex = quote
+        @generated function $f(args...)
+            M = parentmodule(args[$n])
+            hasmethod(M.$f,args) || error("function `$(M.$f)` must be implemented in module `$M`")
+            return quote
+                $(M.$f)(args...)
+            end
+        end
+    end
+    return esc(ex)
+end

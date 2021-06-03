@@ -21,8 +21,6 @@ geometric_dimension(M::AbstractMesh) = maximum(x -> geometric_dimension(x), enti
 
 Base.eltype(M::AbstractMesh{N,T}) where {N,T} = T
 
-Base.length(parent::AbstractMesh) = length(nodes(parent))
-
 """
     struct ElementIterator{E,M}
 
@@ -48,3 +46,7 @@ ElementIterator(parent,E) = ElementIterator{E}(parent)
 # indexing a mesh with an element type return an interator over that element
 # (like a dict)
 Base.getindex(m::AbstractMesh,E::DataType) = ElementIterator(m, E)
+
+function Base.length(iter::ElementIterator)
+    prod(size(iter))
+end

@@ -19,6 +19,8 @@ include("submesh.jl")
 include("plotrecipes.jl")
 
 export
+    # macros
+    @interface,
     # Abstract types
     AbstractMesh,
     AbstractEntity,
@@ -51,6 +53,8 @@ export
     ambient_dimension,
     geometric_dimension,
     domain,
+    jacobian,
+    normal,
     entities,
     external_boundary,
     internal_boundary,

@@ -23,6 +23,28 @@ function jacobian(el::AbstractElement, x)
     abstractmethod(typeof(el))
 end
 
+function normal(el, u)
+    dim = geometric_dimension(el)
+    @assert length(u) == dim
+    N    = ambient_dimension(el)
+    M    = geometric_dimension(el)
+    msg  = "computing the normal vector requires the entity to be of co-dimension one."
+    @assert N - M == 1 msg
+    if M == 1 # a line in 2d
+        t = jacobian(el, u)
+        ν = SVector(t[2], -t[1])
+        return ν / norm(ν)
+    elseif M == 2 # a surface in 3d
+        j  = jacobian(el, u)
+        t₁ = j[:,1]
+        t₂ = j[:,2]
+        ν  = cross(t₁, t₂)
+        return ν / norm(ν)
+    else
+        notimplemented()
+    end
+end
+
 domain(::SType{<:AbstractElement{D}}) where {D <: ReferenceShape} = D()
 
 return_type(el::AbstractElement{D,T}) where {D,T} = T

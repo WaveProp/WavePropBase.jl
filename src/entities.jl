@@ -156,6 +156,14 @@ function is_new_tag(dim,tag)
     return true
 end
 
+"""
+    clear_entities!()
+
+Empty the global variables used to keep track of the various entities
+created.
+
+# See also: [`ENTITIES`](@ref), [`TAGS`](@ref)
+"""
 function clear_entities!()
     empty!(TAGS)
     empty!(ENTITIES)

@@ -21,7 +21,7 @@ Base.keys(m::CartesianMesh{N,T}) where {N,T} = (HyperRectangle{N,T},)
 
 Construct a uniform `CartesianMesh` with `sz[d]` elements along dimension `d`.
 """
-function CartesianMesh(;domain::HyperRectangle{N,T},sz::NTuple{N}) where {N,T}
+function CartesianMesh(domain::HyperRectangle{N,T},sz::NTuple{N}) where {N,T}
     lc = low_corner(domain)
     uc = high_corner(domain)
     grids1d = ntuple(N) do n
@@ -31,6 +31,7 @@ function CartesianMesh(;domain::HyperRectangle{N,T},sz::NTuple{N}) where {N,T}
     end
     CartesianMesh(grids1d)
 end
+CartesianMesh(;domain,sz) = CartesianMesh(domain,sz)
 
 ambient_dimension(g::CartesianMesh{N}) where {N} = N
 
@@ -80,4 +81,11 @@ end
 function Base.iterate(iter::ElementIterator{<:HyperRectangle,<:CartesianMesh},state=1)
     state > length(iter) && (return nothing)
     iter[state], state + 1
+end
+
+# since CartesianMesh has only one elment type, calling ElementIterator without
+# specifying the has clear sense
+function ElementIterator(m::CartesianMesh)
+    E = keys(m) |> first
+    ElementIterator(m,E)
 end

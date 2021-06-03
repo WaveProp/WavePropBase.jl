@@ -38,6 +38,11 @@ end
     end
 end
 
+# plot all entities of the mesh
+@recipe function f(mesh::GenericMesh)
+    Ω = entities(mesh)|> Domain
+    view(mesh,Ω)
+end
 # plot the mesh of a domain
 @recipe function f(mesh::GenericMesh,Ω::Domain)
     view(mesh,Ω)
@@ -47,10 +52,14 @@ end
     grid   --> false
     aspect_ratio --> :equal
     for E in keys(mesh)
-        for el in ElementIterator(mesh,E)
-            @series begin
-                el
-            end
+        @series ElementIterator(mesh,E)
+    end
+end
+
+@recipe function f(iter::ElementIterator)
+    for el in iter
+        @series begin
+            el
         end
     end
 end
