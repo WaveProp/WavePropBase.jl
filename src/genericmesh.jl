@@ -1,7 +1,8 @@
 """
     struct GenericMesh{N,T} <: AbstractMesh{N,T}
 
-Data structure representing a generic mesh in an ambient space of dimension `N`, with data of type `T`.
+Data structure representing a generic mesh in an ambient space of dimension `N`,
+with data of type `T`.
 """
 Base.@kwdef struct GenericMesh{N,T} <: AbstractMesh{N,T}
     nodes::Vector{SVector{N,T}} = Vector{SVector{N,T}}()
@@ -17,7 +18,31 @@ elements(m::GenericMesh) = m.elements
 ent2tags(m::GenericMesh) = m.ent2tags
 
 Base.keys(m::GenericMesh) = keys(elements(m))
-entities(m::GenericMesh) = keys(ent2tags(m))
+entities(m::GenericMesh) = keys(ent2tags(m)) |> collect
+
+# implement the interface for ElementIterator of lagrange elements on a generic mesh
+function Base.size(iter::ElementIterator{<:LagrangeElement,<:GenericMesh})
+    msh               = mesh(iter)
+    E                 = eltype(iter)
+    tags::Matrix{Int} = msh.elements[E]
+    _, Nel           = size(tags)
+    return (Nel,)
+end
+
+function Base.getindex(iter::ElementIterator{<:LagrangeElement,<:GenericMesh},i::Int)
+    E                   = eltype(iter)
+    M                   = mesh(iter)
+    tags::Matrix{Int}   = M.elements[E]
+    node_tags           = view(tags,:,i)
+    vtx                 = view(M.nodes,node_tags)
+    el                  = E(vtx)
+    return el
+end
+
+function Base.iterate(iter::ElementIterator{<:LagrangeElement,<:GenericMesh}, state=1)
+    state > length(iter) && (return nothing)
+    iter[state], state + 1
+end
 
 """
     dom2elt(m::GenericMesh,Ω,E)

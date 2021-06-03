@@ -14,10 +14,6 @@ end
 grids(g::CartesianMesh)     = g.grids
 grids(g::CartesianMesh,dim) = g.grids[dim]
 
-Base.size(g::CartesianMesh)   = length.(g.grids) .- 1
-
-Base.length(g::CartesianMesh) = prod(size(g))
-
 Base.keys(m::CartesianMesh{N,T}) where {N,T} = (HyperRectangle{N,T},)
 
 """
@@ -25,7 +21,7 @@ Base.keys(m::CartesianMesh{N,T}) where {N,T} = (HyperRectangle{N,T},)
 
 Construct a uniform `CartesianMesh` with `sz[d]` elements along dimension `d`.
 """
-function CartesianMesh(;domain::HyperRectangle{N,T},sz::NTuple{N}) where {N,T}
+function CartesianMesh(domain::HyperRectangle{N,T},sz::NTuple{N}) where {N,T}
     lc = low_corner(domain)
     uc = high_corner(domain)
     grids1d = ntuple(N) do n
@@ -35,6 +31,7 @@ function CartesianMesh(;domain::HyperRectangle{N,T},sz::NTuple{N}) where {N,T}
     end
     CartesianMesh(grids1d)
 end
+CartesianMesh(;domain,sz) = CartesianMesh(domain,sz)
 
 ambient_dimension(g::CartesianMesh{N}) where {N} = N
 
@@ -45,42 +42,50 @@ ygrid(g::CartesianMesh) = g.grids[2]
 zgrid(g::CartesianMesh) = g.grids[3]
 
 # the cartesian structure of `CartesianMesh` makes it particularly easy to
-# iterate over. Below we define `getindex` for a `CartesianIndex`, which
-# instantiates a `HyperRectangle`, and use that as the base implementation for
-# the other `getindex` and iterate
+# iterate over using CartesianIndices. Iterating over linear indices then simply
+# convert to a CartesianIndex.
 
-Base.CartesianIndices(g::CartesianMesh) = CartesianIndices(size(g))
+function Base.size(iter::ElementIterator{<:HyperRectangle,<:CartesianMesh})
+    g = mesh(iter)
+    length.(g.grids) .- 1
+end
 
-function Base.getindex(g::CartesianMesh, I::CartesianIndex)
-    N = ambient_dimension(g)
+Base.length(iter::ElementIterator{<:HyperRectangle,<:CartesianMesh}) = prod(size(iter))
+
+function Base.CartesianIndices(iter::ElementIterator{<:HyperRectangle,<:CartesianMesh})
+    CartesianIndices(size(iter))
+end
+
+function Base.getindex(iter::ElementIterator{<:HyperRectangle,<:CartesianMesh}, I::CartesianIndex)
+    m = mesh(iter)
+    N = ambient_dimension(m)
     @assert N == length(I)
     lc = ntuple(N) do dim
         i = I[dim]
-        g.grids[dim][i]
+        m.grids[dim][i]
     end
     hc = ntuple(N) do dim
         i = I[dim] + 1
-        g.grids[dim][i]
+        m.grids[dim][i]
     end
     HyperRectangle(lc, hc)
 end
-
-Base.getindex(g::CartesianMesh,I...) = g[CartesianIndex(I)]
-function Base.getindex(g::CartesianMesh, i::Int)
-    I = CartesianIndices(g)
-    g[I[i]]
+function Base.getindex(iter::ElementIterator{<:HyperRectangle,<:CartesianMesh},I...)
+    iter[CartesianIndex(I)]
+end
+function Base.getindex(iter::ElementIterator{<:HyperRectangle,<:CartesianMesh}, i::Int)
+    I = CartesianIndices(iter)
+    iter[I[i]]
 end
 
-function Base.iterate(m::CartesianMesh, state=1)
-    state > length(m) && (return nothing)
-    m[state], state + 1
+function Base.iterate(iter::ElementIterator{<:HyperRectangle,<:CartesianMesh},state=1)
+    state > length(iter) && (return nothing)
+    iter[state], state + 1
 end
 
-# ElementIterator interface. For CartesianMesh simply defer these to the parent
-# method, which is itself iterable.
-
-Base.iterate(iter::ElementIterator{<:CartesianMesh,<:HyperRectangle}, state=1) = iterate(parent(iter),state)
-
-Base.size(iter::ElementIterator{<:CartesianMesh,<:HyperRectangle})   = size(parent(iter))
-
-Base.length(iter::ElementIterator{<:CartesianMesh,<:HyperRectangle}) = length(parent(iter))
+# since CartesianMesh has only one elment type, calling ElementIterator without
+# specifying the has clear sense
+function ElementIterator(m::CartesianMesh)
+    E = keys(m) |> first
+    ElementIterator(m,E)
+end

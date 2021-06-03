@@ -1,8 +1,3 @@
-# a place to document methods which are inteded to be extended. These are pushed
-# into the global constant INTERFACE_LIST to facilitate processing such as e.g.
-# importing all interface methods by other packages or generating a
-# documentation page for this methods programatically
-
 """
     ambient_dimension(x)
 
@@ -12,7 +7,7 @@ ambient dimension `3` but geometric dimension `2`, while a curve in `ℝ³` has
 ambient dimension 3 but geometric dimension 1.
 """
 function ambient_dimension end
-push!(INTERFACE_LIST,:ambient_dimension)
+@interface ambient_dimension
 
 """
     geometric_dimension(x)
@@ -26,7 +21,15 @@ When the argument is a `Domain`, return the largest geometric dimension
 encoutered.
 """
 function geometric_dimension end
-push!(INTERFACE_LIST,:geometric_dimension)
+@interface geometric_dimension
+
+"""
+    tag(::AbstractEntity)
+
+Integer tag used to idetify geometrical entities.
+"""
+function tag end
+@interface tag
 
 """
     boundary(ω)
@@ -36,7 +39,7 @@ elements composing its boundary, while for an entity gives the corresponding
 `d-1` dimensional entities.
 """
 function boundary end
-push!(INTERFACE_LIST,:boundary)
+@interface boundary
 
 """
     diameter(Ω)
@@ -44,7 +47,7 @@ push!(INTERFACE_LIST,:boundary)
 Largest distance between `x` and `y` for `x,y ∈ Ω`.
 """
 function diameter end
-push!(INTERFACE_LIST,:diameter)
+@interface diameter
 
 """
     radius(Ω)
@@ -52,13 +55,13 @@ push!(INTERFACE_LIST,:diameter)
 Half the [`diameter`](@ref).
 """
 function radius end
-push!(INTERFACE_LIST,:radius)
+@interface radius
 
 """
     center(Ω)
 """
 function center end
-push!(INTERFACE_LIST,:center)
+@interface center
 
 """
     return_type(f)
@@ -66,15 +69,23 @@ push!(INTERFACE_LIST,:center)
 The type returned by the function-like object `f`.
 """
 function return_type end
-push!(INTERFACE_LIST,:return_type)
+@interface return_type
 
 """
-    jacobian(F,x)
+    jacobian(F,x̂)
 
-The Jacobian matrix `Aᵢⱼ = ∂Fᵢ/∂xⱼ`.
+The Jacobian matrix `Aᵢⱼ = ∂Fᵢ/∂x̂ⱼ` at the parametric coordinate `x̂`.
 """
 function jacobian end
-push!(INTERFACE_LIST,:jacobian)
+@interface jacobian
+
+"""
+    normal(el,x̂)
+
+The unit normal vector of `el` at the parametric coordinate `x̂`.
+"""
+function normal end
+@interface normal
 
 """
     domain(f)
@@ -83,4 +94,16 @@ The domain of `f`. For elements of geometrical nature return the
 `ReferenceShape` used to represent it.
 """
 function domain end
-push!(INTERFACE_LIST,:domain)
+@interface domain
+
+# for f in INTERFACE_LIST
+#     @eval begin
+#         @generated function $f(Y,args...)
+#             mY = parentmodule(Y)
+#             hasmethod(mY.$f,(Y,args...)) || error("function `$(mY.$f)` must be implemented in module `$mY`")
+#             return quote
+#                 $(mY.$f)(Y,args...)
+#             end
+#         end
+#     end
+# end

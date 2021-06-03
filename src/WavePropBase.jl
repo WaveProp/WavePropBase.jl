@@ -19,9 +19,12 @@ include("submesh.jl")
 include("plotrecipes.jl")
 
 export
+    # macros
+    @interface,
     # Abstract types
     AbstractMesh,
     AbstractEntity,
+    AbstractElement,
     ReferenceShape,
     # Concrete types
     HyperRectangle,
@@ -38,6 +41,7 @@ export
     LagrangeLine,
     LagrangeTriangle,
     LagrangeTetrahedron,
+    LagrangeRectangle,
     LagrangeInterp,
     # Type aliases
     Point1D,
@@ -49,6 +53,8 @@ export
     ambient_dimension,
     geometric_dimension,
     domain,
+    jacobian,
+    normal,
     entities,
     external_boundary,
     internal_boundary,
@@ -59,5 +65,12 @@ export
     radius,
     diameter,
     center,
-    bounding_box
+    low_corner,
+    high_corner,
+    bounding_box,
+    new_tag,
+    global_add_entity!,
+    mesh,
+    assert_concrete_type,
+    svector
 end

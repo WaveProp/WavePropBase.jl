@@ -38,6 +38,11 @@ end
     end
 end
 
+# plot all entities of the mesh
+@recipe function f(mesh::GenericMesh)
+    Ω = entities(mesh)|> Domain
+    view(mesh,Ω)
+end
 # plot the mesh of a domain
 @recipe function f(mesh::GenericMesh,Ω::Domain)
     view(mesh,Ω)
@@ -47,10 +52,14 @@ end
     grid   --> false
     aspect_ratio --> :equal
     for E in keys(mesh)
-        for el in ElementIterator(mesh,E)
-            @series begin
-                el
-            end
+        @series ElementIterator(mesh,E)
+    end
+end
+
+@recipe function f(iter::ElementIterator)
+    for el in iter
+        @series begin
+            el
         end
     end
 end
@@ -66,5 +75,52 @@ end
                 el
             end
         end
+    end
+end
+
+@recipe function f(el::LagrangeTriangle)
+    label --> ""
+    linecolor --> :black
+    seriestype := :line
+    vtx = vals(el)
+    for n in 1:3
+        is = n
+        ie = 1 + (n%3)
+        @series begin
+            [vtx[is],vtx[ie]]
+        end
+    end
+end
+
+@recipe function f(el::LagrangeRectangle)
+    label --> ""
+    vtx = vals(el)
+    for n in 1:4
+        is = n
+        ie = 1 + (n%4)
+        @series begin
+            [vtx[is],vtx[ie]]
+        end
+    end
+end
+
+@recipe function f(el::LagrangeLine)
+    vtx = vals(el)
+    [vtx[1],vtx[2]]
+end
+
+# plot a vector of points
+@recipe function f(pts::AbstractVector{<:SVector{N}}) where {N}
+    if N == 2
+        xx = [pt[1] for pt in pts]
+        yy = [pt[2] for pt in pts]
+        return xx,yy
+    elseif N == 3
+        xx = [pt[1] for pt in pts]
+        yy = [pt[2] for pt in pts]
+        zz = [pt[3] for pt in pts]
+        return xx,yy,zz
+    else
+        notimplemented()
     end
 end

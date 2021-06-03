@@ -37,7 +37,7 @@ struct ElementaryEntity <: AbstractEntity
         # every entity gets added to a global variable ENTITIES so that we can
         # ensure the (d,t) pair is a UUID for an entity, and to easily retrieve
         # different entities.
-        _global_add_entity!(ent)
+        global_add_entity!(ent)
         return ent
     end
 end
@@ -55,7 +55,7 @@ function ElementaryEntity(dim,tag)
     ElementaryEntity(dim,tag,ElementaryEntity[])
 end
 
-ElementaryEntity(dim) = ElementaryEntity(dim,_new_tag(dim))
+ElementaryEntity(dim) = ElementaryEntity(dim,new_tag(dim))
 
 """
     ==(Ω1::AbstractEntity,Ω2::AbstractEntity)
@@ -78,6 +78,7 @@ function Base.:(==)(Ω1::AbstractEntity, Ω2::AbstractEntity)
     # boundary(Ω1) == boundary(Ω2) || return false # this should not be needed
     return true
 end
+Base.hash(ent::AbstractEntity,h::UInt)= hash((geometric_dimension(ent),abs(tag(ent))),h)
 
 #####################################################################
 
@@ -101,7 +102,7 @@ Global dictionary storing the used entity tags (the value) for a given dimension
 """
 const ENTITIES = Dict{Tuple{Int,Int},AbstractEntity}()
 
-function _global_add_entity!(ent::AbstractEntity)
+function global_add_entity!(ent::AbstractEntity)
     d,t = geometric_dimension(ent), tag(ent)
     _add_tag!(d,t) # add this tag to global list to make sure it is not used again
     msg = "overwriting ENTITIES: value in key ($d,$t) will be replaced"
@@ -111,7 +112,7 @@ function _global_add_entity!(ent::AbstractEntity)
 end
 
 """
-    _new_tag(dim)
+    new_tag(dim)
 
 Generate a unique tag for an `AbstractEntity` of dimension `dim`.
 
@@ -120,7 +121,7 @@ The implementation consists of adding one to the maximum value of `TAGS[dim]`
 # See also: [`TAGS`](@ref).
 
 """
-function _new_tag(dim)
+function new_tag(dim)
     if !haskey(TAGS,dim)
         return 1
     else
@@ -156,6 +157,14 @@ function is_new_tag(dim,tag)
     return true
 end
 
+"""
+    clear_entities!()
+
+Empty the global variables used to keep track of the various entities
+created.
+
+# See also: [`ENTITIES`](@ref), [`TAGS`](@ref)
+"""
 function clear_entities!()
     empty!(TAGS)
     empty!(ENTITIES)

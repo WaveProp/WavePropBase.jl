@@ -4,10 +4,12 @@
 An abstract parent structure in dimension `N` with primite data of type `T` (e.g.
 `Float64` for double precision representation).
 
-The `AbstractMesh` interface expects the parent object to overload `Base.keys(m)`
-to return all the element types composing the parent. Use a key to index the parent
-is expected to return an iterator over all elements of that type. Finally,
-calling `parent[E][i]` should return the *i-the* element of type `E`.
+The `AbstractMesh` interface expects the following methods to be implemented:
+
+- `keys(msh)` : return a list of the element types composing the mesh.
+- `msh[E]`    : return an [`ElementIterator`](@ref) for the mesh elements of type `E`
+
+# See also: [`ElementIterator`](@ref)
 """
 abstract type AbstractMesh{N,T} end
 
@@ -19,19 +21,21 @@ geometric_dimension(M::AbstractMesh) = maximum(x -> geometric_dimension(x), enti
 
 Base.eltype(M::AbstractMesh{N,T}) where {N,T} = T
 
-Base.length(parent::AbstractMesh) = length(nodes(parent))
-
 """
     struct ElementIterator{E,M}
 
-Return an iterator for iterating over all elements of type `E` on a `parent`
-mesh of type `M`.
+Return an iterator for all elements of type `E` on a mesh of type `M`.
+
+Besides the methods listed in the [iterator
+iterface](https://docs.julialang.org/en/v1/manual/interfaces/) of `Julia`, some
+functions also require the `getindex(iter,i::Int)` method for accessing the
+`i`-th element directly.
 """
 struct ElementIterator{E,M}
-    parent::M
+    mesh::M
 end
 
-parent(iter::ElementIterator) = iter.parent
+mesh(iter::ElementIterator) = iter.mesh
 
 Base.eltype(::SType{ElementIterator{E}}) where {E} = E
 
@@ -39,4 +43,10 @@ ElementIterator{E}(parent::M) where {E,M <: AbstractMesh} = ElementIterator{E,M}
 
 ElementIterator(parent,E) = ElementIterator{E}(parent)
 
-Base.getindex(m::AbstractMesh,E::AbstractElement) = ElementIterator(m,E)
+# indexing a mesh with an element type return an interator over that element
+# (like a dict)
+Base.getindex(m::AbstractMesh,E::DataType) = ElementIterator(m, E)
+
+function Base.length(iter::ElementIterator)
+    prod(size(iter))
+end

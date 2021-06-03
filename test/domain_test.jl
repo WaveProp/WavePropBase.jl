@@ -37,7 +37,7 @@ end
     @test length(Ω) == 2
     @test !isempty(Ω)
     @test Ω2 == setdiff(Ω, Ω1)
-    @test Ω == union(Ω1, Ω2)
+    @test Ω  == union(Ω1, Ω2)
     @test s1 in Ω
     @test l1 in Ω
     @test Ω[1] == s1
