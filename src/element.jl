@@ -136,11 +136,22 @@ function jacobian(el::LagrangeElement{ReferenceLine,3}, u)
     hcat((4 * v[3] - 3 * v[1] - v[2] + 4 * (v[2] + v[1] - 2 * v[3]) * u[1]))
 end
 
+# Flat triangle
 function (el::LagrangeElement{ReferenceTriangle,3})(u)
     @assert length(u) == 2
     @assert u ∈ ReferenceTriangle()
     v = vals(el)
     v[1] + (v[2] - v[1]) * u[1] + (v[3] - v[1]) * u[2]
+end
+
+# Quadratic triangle
+function (el::LagrangeElement{ReferenceTriangle,6})(u)
+    @assert length(u) == 2
+    @assert u ∈ ReferenceTriangle()
+    v = vals(el)
+    return (1+u[2]*(-3+2u[2])+u[1]*(-3+2u[1]+4u[2]))*v[1] + 
+           u[1]*(-v[2]+u[1]*(2v[2]-4v[4])+4v[4]+u[2]*(-4v[4]+4v[5]-4v[6])) + 
+           u[2]*(-v[3]+u[2]*(2v[3]-4v[6])+4v[6])
 end
 
 function (el::LagrangeElement{ReferenceSquare,4})(u)
@@ -165,6 +176,7 @@ function jacobian(el::LagrangeElement{ReferenceLine,2}, u)
     return SMatrix{N,1}(v[2] - v[1])
 end
 
+# Flat triangle
 function jacobian(el::LagrangeElement{ReferenceTriangle,3}, u)
     @assert length(u) == 2
     @assert u ∈ ReferenceTriangle()
@@ -172,6 +184,17 @@ function jacobian(el::LagrangeElement{ReferenceTriangle,3}, u)
     hcat(
         (v[2] - v[1]),
         (v[3] - v[1])
+    )
+end
+
+# Quadratic triangle
+function jacobian(el::LagrangeElement{ReferenceTriangle,6}, u)
+    @assert length(u) == 2
+    @assert u ∈ ReferenceTriangle()
+    v = vals(el)
+    hcat(
+        (-3+4u[1]+4u[2])*v[1] - v[2] + u[1]*(4v[2]-8v[4]) + 4v[4] + u[2]*(-4v[4]+4v[5]-4v[6]),
+        (-3+4u[1]+4u[2])*v[1] - v[3] + u[2]*(4v[3]-8v[6]) + u[1]*(-4v[4]+4v[5]-4v[6]) + 4v[6]
     )
 end
 
