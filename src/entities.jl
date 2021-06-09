@@ -21,14 +21,14 @@ The most basic representation of an [`AbstractEntity`](@ref).
 - `dim::UInt8`: the geometrical dimension of the entity (e.g. line has `dim=1`,
   surface has `dim=2`, etc)
 - `tag::Int64`: an integer tag associated to the entity
-- `boundary::Vector{ElementaryEntity}`: the entities of dimension `dim-1`
+- `boundary::Vector{AbstractEntity}`: the entities of dimension `dim-1`
   forming the entity's boundary
 """
 struct ElementaryEntity <: AbstractEntity
     dim::UInt8
     tag::Int64
-    boundary::Vector{ElementaryEntity}
-    function ElementaryEntity(d::Integer, t::Integer, boundary::Vector{ElementaryEntity})
+    boundary::Vector{<:AbstractEntity}
+    function ElementaryEntity(d::Integer, t::Integer, boundary::Vector{<:AbstractEntity})
         msg = "an elementary entities in the boundary has the wrong dimension"
         for b in boundary
             @assert geometric_dimension(b) == d-1 msg
@@ -56,6 +56,8 @@ function ElementaryEntity(dim,tag)
 end
 
 ElementaryEntity(dim) = ElementaryEntity(dim,new_tag(dim))
+
+ElementaryEntity(;dim::Int,boundary) = ElementaryEntity(UInt8(dim),new_tag(dim),boundary)
 
 """
     ==(Ω1::AbstractEntity,Ω2::AbstractEntity)
