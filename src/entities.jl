@@ -12,6 +12,15 @@ The `(dim,tag)` pair used as a key to identify various abstract entities.
 """
 key(e::AbstractEntity) = geometric_dimension(e),tag(e)
 
+function Base.show(io::IO,ent::AbstractEntity)
+    T = typeof(ent)
+    d = geometric_dimension(ent)
+    t = tag(ent)
+    print(io,"$T with (dim,tag)=($d,$t)")
+end
+
+
+
 """
     struct ElementaryEntity <: AbstractEntity
 
@@ -57,7 +66,10 @@ end
 
 ElementaryEntity(dim) = ElementaryEntity(dim,new_tag(dim))
 
-ElementaryEntity(;dim::Int,boundary) = ElementaryEntity(UInt8(dim),new_tag(dim),boundary)
+function ElementaryEntity(;dim::Int,boundary)
+    t = new_tag(dim)
+    ElementaryEntity(UInt8(dim),t,boundary)
+end
 
 """
     ==(Ω1::AbstractEntity,Ω2::AbstractEntity)
@@ -74,9 +86,9 @@ new `(dim,tag)` identifier.
 """
 function Base.:(==)(Ω1::AbstractEntity, Ω2::AbstractEntity)
     d1,t1 = geometric_dimension(Ω1),tag(Ω1)
-    d2,t2 = geometric_dimension(Ω1),tag(Ω1)
-    d1 == d2  || return false
-    abs(t1) == abs(t2) || return false
+    d2,t2 = geometric_dimension(Ω2),tag(Ω2)
+    d1 == d2  || (return false)
+    abs(t1) == abs(t2) || (return false)
     # boundary(Ω1) == boundary(Ω2) || return false # this should not be needed
     return true
 end

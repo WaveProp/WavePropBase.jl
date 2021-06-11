@@ -5,6 +5,8 @@ using WavePropBase
 clear_entities!()
 p1 = ElementaryEntity(0, 1, ElementaryEntity[])
 p2 = ElementaryEntity(0, 2, ElementaryEntity[])
+@test p1 == p1
+@test p1 != p2
 points = [p1, p2]
 # Three lines
 l1 = ElementaryEntity(1, 1, ElementaryEntity[p1, p2])
