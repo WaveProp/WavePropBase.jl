@@ -11,6 +11,16 @@ end
 Domain(ω::AbstractEntity) = Domain([ω,])
 Domain() = Domain(AbstractEntity[])
 
+function Base.show(io::IO,d::Domain)
+    ents = entities(d)
+    n = length(entities(d))
+    n == 1 ? print(io,"Domain with $n entity:\n") : print(io,"Domain with $n entities:\n")
+    for i in 1:n-1
+        print(io,"\t $(ents[i]) \n")
+    end
+    print(io,"\t $(ents[end])")
+end
+
 """
     entities(Ω::Domain)
 
@@ -35,7 +45,13 @@ Base.length(Ω::Domain) = length(entities(Ω))
 
 Return all the boundaries of the domain, i.e. the domain's skeleton.
 """
-skeleton(Ω::Domain) = union(Domain.(boundary.(entities(Ω)))...)
+function skeleton(Ω::Domain)
+    ents = AbstractEntity[]
+    for ent in entities(Ω)
+        append!(ents,boundary(ent))
+    end
+    Domain(unique!(ents))
+end
 
 """
     ===(Ω1::Domain,Ω2::Domain)
@@ -53,9 +69,12 @@ Check whether an `ElementaryEntity` belongs to a `Domain` by recursively
 checking whether it belongs to its boundary.
 """
 function Base.in(ω::ElementaryEntity, Ω::Domain)
-    in(ω, entities(Ω)) && return true
-    for bnd in boundary(Ω)
-        in(bnd,Ω) && (return true)
+    ents = entities(Ω)
+    in(ω, ents) && return true
+    # TODO: should we really recurse on the boundary of the entities composing
+    # the domain for determining if an entity is in a domain.
+    for ent in ents
+        in(ω,Domain(boundary(ent))) && (return true)
     end
     return false
 end
@@ -85,7 +104,8 @@ function Base.setdiff(Ω1::Domain, Ω2::Domain)
 end
 
 function Base.union(Ω1::Domain,Ωs::Domain...)
-    Domain(Vector{AbstractEntity}(unique(vcat(entities(Ω1),entities.(Ωs)...))))
+    ents = vcat(entities(Ω1),entities.(Ωs)...)
+    Domain(unique!(ents))
 end
 Base.union(Ω::Domain) = Domain(unique(entities(Ω)))
 
@@ -125,6 +145,15 @@ function Base.issubset(Ω1::Domain, Ω2::Domain)
     assertequaldim(Ω1, Ω2)
     return issubset(entities(Ω1), entities(Ω2))
 end
+
+"""
+    boundary(Ω)
+
+Return a domain comprising the external boundary of Ω.
+
+See also: [`external_boundary`](@ref)
+"""
+boundary(Ω::Domain) = external_boundary(Ω::Domain)
 
 
 """Return the internal boundaries inside a domain."""
