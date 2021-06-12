@@ -19,6 +19,8 @@ ambient_dimension(M::AbstractMesh{N}) where {N} = N
 # dimension of its entities.
 geometric_dimension(M::AbstractMesh) = maximum(x -> geometric_dimension(x), entities(M))
 
+# TODO: rename this to something like primitive_type(M::AbstractMesh) to avoid
+# confusion, make sure tests pass
 Base.eltype(M::AbstractMesh{N,T}) where {N,T} = T
 
 """
@@ -50,3 +52,17 @@ Base.getindex(m::AbstractMesh,E::DataType) = ElementIterator(m, E)
 function Base.length(iter::ElementIterator)
     prod(size(iter))
 end
+
+"""
+    struct NodeIterator{M}
+
+Iterator for all the nodes in a mesh of type `M`.
+"""
+struct NodeIterator{M}
+    mesh::M
+end
+
+mesh(iter::NodeIterator) = iter.mesh
+
+# nodes of `AbstractMesh{N,T}` should be points of type `SVector{N,T}`
+Base.eltype(::SType{NodeIterator{<:AbstractMesh{N,T}}}) where {N,T} = SVector{N,T}

@@ -10,6 +10,7 @@ i.e. the `HyperRectangle` cells.
 struct CartesianMesh{N,T} <: AbstractMesh{N,T}
     grids::NTuple{N,Vector{T}}
 end
+CartesianMesh(args...) = CartesianMesh(args)
 
 grids(g::CartesianMesh)     = g.grids
 grids(g::CartesianMesh,dim) = g.grids[dim]
@@ -31,6 +32,7 @@ function CartesianMesh(domain::HyperRectangle{N,T},sz::NTuple{N}) where {N,T}
     end
     CartesianMesh(grids1d)
 end
+CartesianMesh(domain::HyperRectangle{N,T},sz::Int) where {N,T} = CartesianMesh(domain,ntuple(i->sz,N))
 CartesianMesh(;domain,sz) = CartesianMesh(domain,sz)
 
 ambient_dimension(g::CartesianMesh{N}) where {N} = N
@@ -41,9 +43,7 @@ ygrid(g::CartesianMesh) = g.grids[2]
 
 zgrid(g::CartesianMesh) = g.grids[3]
 
-# the cartesian structure of `CartesianMesh` makes it particularly easy to
-# iterate over using CartesianIndices. Iterating over linear indices then simply
-# convert to a CartesianIndex.
+# implement ElementIterator interface to CartesianMesh
 
 function Base.size(iter::ElementIterator{<:HyperRectangle,<:CartesianMesh})
     g = mesh(iter)
@@ -88,4 +88,43 @@ end
 function ElementIterator(m::CartesianMesh)
     E = keys(m) |> first
     ElementIterator(m,E)
+end
+
+# NodeIterator over CartesianMesh
+
+function Base.IteratorSize(iter::Type{NodeIterator{CartesianMesh{N,T}}}) where {N,T}
+    Base.HasShape{N}()
+end
+
+function Base.size(iter::NodeIterator{<:CartesianMesh})
+    g = mesh(iter)
+    length.(g.grids)
+end
+
+Base.length(iter::NodeIterator{<:CartesianMesh}) = prod(size(iter))
+
+function Base.CartesianIndices(iter::NodeIterator{<:CartesianMesh})
+    CartesianIndices(size(iter))
+end
+
+function Base.getindex(iter::NodeIterator{<:CartesianMesh}, I::CartesianIndex)
+    m = mesh(iter)
+    N = ambient_dimension(m)
+    @assert N == length(I)
+    svector(N) do dim
+        i = I[dim]
+        m.grids[dim][i]
+    end
+end
+function Base.getindex(iter::NodeIterator{<:CartesianMesh},I...)
+    iter[CartesianIndex(I)]
+end
+function Base.getindex(iter::NodeIterator{<:CartesianMesh}, i::Int)
+    I = CartesianIndices(iter)
+    iter[I[i]]
+end
+
+function Base.iterate(iter::NodeIterator{<:CartesianMesh},state=1)
+    state > length(iter) && (return nothing)
+    iter[state], state + 1
 end

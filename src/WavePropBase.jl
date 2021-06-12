@@ -35,7 +35,9 @@ export
     Domain,
     CartesianMesh,
     GenericMesh,
+    SubMesh,
     ElementIterator,
+    NodeIterator,
     ElementaryEntity,
     LagrangeElement,
     LagrangeLine,
@@ -71,6 +73,7 @@ export
     new_tag,
     global_add_entity!,
     mesh,
+    grids,
     assert_concrete_type,
     svector
 end
