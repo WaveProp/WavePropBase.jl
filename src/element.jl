@@ -19,27 +19,24 @@ function (el::AbstractElement)(x)
     abstractmethod(typeof(el))
 end
 
-function jacobian(el::AbstractElement, x)
-    abstractmethod(typeof(el))
-end
-
 function normal(el, u)
     dim = geometric_dimension(el)
     @assert length(u) == dim
-    N    = ambient_dimension(el)
-    M    = geometric_dimension(el)
-    msg  = "computing the normal vector requires the entity to be of co-dimension one."
-    @assert N - M == 1 msg
+    jac = jacobian(el, u)
+    normal(jac)
+end
+function normal(jac::SMatrix{N,M}) where {N,M}
+    msg = "computing the normal vector requires the element to be of co-dimension one."
+    @assert (N - M == 1) msg
     if M == 1 # a line in 2d
-        t = jacobian(el, u)
-        ν = SVector(t[2], -t[1])
-        return ν / norm(ν)
+        t = jac[:,1] # tangent vector
+        n = Point2D(t[2], -t[1])
+        return n / norm(n)
     elseif M == 2 # a surface in 3d
-        j  = jacobian(el, u)
-        t₁ = j[:,1]
-        t₂ = j[:,2]
-        ν  = cross(t₁, t₂)
-        return ν / norm(ν)
+        t₁ = jac[:,1]
+        t₂ = jac[:,2]
+        n  = cross(t₁, t₂)
+        return n / norm(n)
     else
         notimplemented()
     end
@@ -149,8 +146,8 @@ function (el::LagrangeElement{ReferenceTriangle,6})(u)
     @assert length(u) == 2
     @assert u ∈ ReferenceTriangle()
     v = vals(el)
-    return (1+u[2]*(-3+2u[2])+u[1]*(-3+2u[1]+4u[2]))*v[1] + 
-           u[1]*(-v[2]+u[1]*(2v[2]-4v[4])+4v[4]+u[2]*(-4v[4]+4v[5]-4v[6])) + 
+    return (1+u[2]*(-3+2u[2])+u[1]*(-3+2u[1]+4u[2]))*v[1] +
+           u[1]*(-v[2]+u[1]*(2v[2]-4v[4])+4v[4]+u[2]*(-4v[4]+4v[5]-4v[6])) +
            u[2]*(-v[3]+u[2]*(2v[3]-4v[6])+4v[6])
 end
 

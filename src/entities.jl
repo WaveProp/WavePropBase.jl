@@ -19,8 +19,6 @@ function Base.show(io::IO,ent::AbstractEntity)
     print(io,"$T with (dim,tag)=($d,$t)")
 end
 
-
-
 """
     struct ElementaryEntity <: AbstractEntity
 
@@ -67,6 +65,14 @@ end
 ElementaryEntity(dim) = ElementaryEntity(dim,new_tag(dim))
 
 function ElementaryEntity(;dim::Int,boundary)
+    t = new_tag(dim)
+    ElementaryEntity(UInt8(dim),t,boundary)
+end
+
+function ElementaryEntity(;boundary)
+    dmin,dmax = extrema(geometric_dimension,boundary)
+    @assert dmin == dmax "all entities in `boundary` must have the same dimension"
+    dim = dmin+1
     t = new_tag(dim)
     ElementaryEntity(UInt8(dim),t,boundary)
 end
