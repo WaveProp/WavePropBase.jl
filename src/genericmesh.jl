@@ -76,39 +76,3 @@ function dom2elt(m::GenericMesh, Ω)
     end
     return dict
 end
-
-# UTILITIES
-
-# convert a mesh to 2d by ignoring third component. Note that this also requires
-# converting various element types to their 2d counterpart.
-function convert_to_2d(mesh::GenericMesh{3})
-    @assert all(x -> geometric_dimension(x) < 3, keys(mesh))
-    T = eltype(mesh)
-    # create new dictionaries for elements and ent2tags with 2d elements as keys
-    elements  = empty(mesh.elements)
-    ent2tags  = empty(mesh.ent2tags)
-    for (E, tags) in mesh.elements
-        E2d = convert_to_2d(E)
-        elements[E2d] = tags
-    end
-    for (ent, dict) in mesh.ent2tags
-        new_dict = empty(dict)
-        for (E, tags) in dict
-            E2d = convert_to_2d(E)
-            new_dict[E2d] = tags
-        end
-        ent2tags[ent] = new_dict
-    end
-    # construct new 2d mesh
-    GenericMesh{2,T}(;
-        nodes=[x[1:2] for x in nodes(mesh)],
-        etypes=convert_to_2d.(keys(mesh)),
-        elements=elements,
-        ent2tags=ent2tags
-    )
-end
-
-function convert_to_2d(::Type{LagrangeElement{R,N,SVector{3,T}}}) where {R,N,T}
-    LagrangeElement{R,N,SVector{2,T}}
-end
-convert_to_2d(::Type{SVector{3,T}}) where {T} = SVector{2,T}

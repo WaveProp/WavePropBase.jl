@@ -95,15 +95,3 @@ The domain of `f`. For elements of geometrical nature return the
 """
 function domain end
 @interface domain
-
-# for f in INTERFACE_LIST
-#     @eval begin
-#         @generated function $f(Y,args...)
-#             mY = parentmodule(Y)
-#             hasmethod(mY.$f,(Y,args...)) || error("function `$(mY.$f)` must be implemented in module `$mY`")
-#             return quote
-#                 $(mY.$f)(Y,args...)
-#             end
-#         end
-#     end
-# end

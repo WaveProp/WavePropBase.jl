@@ -19,27 +19,11 @@ function (el::AbstractElement)(x)
     abstractmethod(typeof(el))
 end
 
-function normal(el, u)
+function normal(el::AbstractElement, u)
     dim = geometric_dimension(el)
     @assert length(u) == dim
     jac = jacobian(el, u)
     normal(jac)
-end
-function normal(jac::SMatrix{N,M}) where {N,M}
-    msg = "computing the normal vector requires the element to be of co-dimension one."
-    @assert (N - M == 1) msg
-    if M == 1 # a line in 2d
-        t = jac[:,1] # tangent vector
-        n = Point2D(t[2], -t[1])
-        return n / norm(n)
-    elseif M == 2 # a surface in 3d
-        t₁ = jac[:,1]
-        t₂ = jac[:,2]
-        n  = cross(t₁, t₂)
-        return n / norm(n)
-    else
-        notimplemented()
-    end
 end
 
 domain(::SType{<:AbstractElement{D}}) where {D <: ReferenceShape} = D()
