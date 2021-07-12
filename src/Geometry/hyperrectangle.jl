@@ -32,12 +32,7 @@ geometric_dimension(h::HyperRectangle{N}) where {N} = N
 
 diameter(cub::HyperRectangle) = norm(high_corner(cub) .- low_corner(cub),2)
 
-"""
-    bounding_box(data)
-
-Create a [`HyperRectangle`](@ref) to bound the points in `data`.
-"""
-function bounding_box(data::Vector{<:SVector})
+function bounding_box(data)
     isempty(data)  && (error("data cannot be empty") )
     low_corner  = first(data)
     high_corner = first(data)
@@ -47,6 +42,7 @@ function bounding_box(data::Vector{<:SVector})
     end
     return HyperRectangle(low_corner,high_corner)
 end
+HyperRectangle(data) = bounding_box(data)
 
 center(rec::HyperRectangle) = (rec.low_corner + rec.high_corner) / 2
 

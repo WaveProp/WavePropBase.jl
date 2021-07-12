@@ -1,15 +1,14 @@
 """
     abstract type AbstractMesh{N,T}
 
-An abstract parent structure in dimension `N` with primite data of type `T` (e.g.
+An abstract mesh structure in dimension `N` with primite data of type `T` (e.g.
 `Float64` for double precision representation).
 
-The `AbstractMesh` interface expects the following methods to be implemented:
+Concrete subtypes of `AbstractMesh` should implement [`ElementIterator`](@ref)
+for accessing the mesh elements, and/or [`NodeIterator`](@ref) for accesing the
+mesh nodes.
 
-- `keys(msh)` : return a list of the element types composing the mesh.
-- `msh[E]`    : return an [`ElementIterator`](@ref) for the mesh elements of type `E`
-
-# See also: [`ElementIterator`](@ref)
+# See also: [`GenericMesh`](@ref), [`UniformCartesianMesh`](@ref)
 """
 abstract type AbstractMesh{N,T} end
 
@@ -19,9 +18,16 @@ ambient_dimension(M::AbstractMesh{N}) where {N} = N
 # dimension of its entities.
 geometric_dimension(M::AbstractMesh) = maximum(x -> geometric_dimension(x), entities(M))
 
-# TODO: rename this to something like primitive_type(M::AbstractMesh) to avoid
-# confusion, make sure tests pass
-Base.eltype(M::AbstractMesh{N,T}) where {N,T} = T
+primitive_type(M::AbstractMesh{N,T}) where {N,T} = T
+
+function Base.show(io::IO,msh::AbstractMesh)
+    print(io,"$(typeof(msh)) containg:")
+    for E in keys(msh)
+        iter = ElementIterator(msh,E)
+        print(io,"\n\t $(length(iter)) elements of type ",E,)
+    end
+    return io
+end
 
 """
     struct ElementIterator{E,M}

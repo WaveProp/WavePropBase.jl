@@ -8,28 +8,31 @@ Represent a physical domain as a union of entities.
 struct Domain
     entities::Vector{AbstractEntity}
 end
-Domain(ω::AbstractEntity) = Domain([ω,])
-Domain() = Domain(AbstractEntity[])
-
-function Base.show(io::IO,d::Domain)
-    ents = entities(d)
-    n = length(entities(d))
-    n == 1 ? print(io,"Domain with $n entity:\n") : print(io,"Domain with $n entities:\n")
-    for i in 1:n-1
-        print(io,"\t $(ents[i]) \n")
-    end
-    print(io,"\t $(ents[end])")
-end
 
 """
     entities(Ω::Domain)
 
 Return a vector of all elementary entities making up a domain.
 """
+
 entities(Ω::Domain) = Ω.entities
+Domain(ω::AbstractEntity) = Domain([ω,])
+Domain() = Domain(AbstractEntity[])
+
+function Base.show(io::IO,d::Domain)
+    ents = entities(d)
+    n = length(entities(d))
+    n == 1 ? print(io,"Domain with $n entity:\n") : print(io,"Domain with $n entities:")
+    for ent in ents
+        print(io,"\n\t $(ent)")
+    end
+    return io
+end
 
 function geometric_dimension(Ω::Domain)
-    maximum(geometric_dimension(ent) for ent in entities(Ω))
+    l,u = extrema(geometric_dimension(ent) for ent in entities(Ω))
+    @assert l == u "geometric dimension of entities in a domain not equal"
+    return u
 end
 
 """

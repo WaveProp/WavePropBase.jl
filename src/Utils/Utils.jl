@@ -1,4 +1,39 @@
 """
+    Utils
+
+Module containing various utility functions for `WaveProp`.
+"""
+module Utils
+
+using StaticArrays
+using WavePropBase
+
+# import all methods in WavePropBase.INTERFACE_METHODS
+WavePropBase.@import_interface
+
+export
+    # Type alises
+    SType,
+    # methods
+    svector,
+    matrix_to_blockmatrix,
+    blockmatrix_to_matrix,
+    diagonalblockmatrix_to_matrix,
+    blockvector_to_vector,
+    vector_to_blockvector,
+    notimplemented,
+    abstractmethod,
+    assert_extension,
+    assert_concrete_type,
+    cross_product_matrix,
+    fill_zero_diagonal!,
+    Point3D,
+    fill_zero_diagonal!,
+    cart2sph,
+    cart2pol,
+    sph2cart
+
+"""
     svector(f,n)
 
 Just like [`Base.ntuple`](https://docs.julialang.org/en/v1/base/base/#Base.ntuple), but convert output to an `SVector`.
@@ -21,6 +56,36 @@ function blockmatrix_to_matrix(A::Matrix{B})  where B <: SMatrix
         Afull[i,j] = A[bi,bj][ind_i,ind_j]
     end
     return Afull
+end
+
+"""
+    diagonalblockmatrix_to_matrix(A::Matrix{B}) where {B<:SMatrix}
+
+Convert a diagonal block matrix `A::AbstractVector{B}`, where `A` is the list of diagonal blocks
+and `B<:SMatrix`, to the equivalent `SparseMatrixCSC{T}`, where `T = eltype(B)`.
+"""
+function diagonalblockmatrix_to_matrix(A::AbstractVector{B}) where B<:SMatrix
+    T = eltype(B)
+    sblock = size(B)
+    ss = size(A) .* sblock  # matrix size when viewed as matrix over T
+    I = Int64[]
+    J = Int64[]
+    V = T[]
+    i_full, j_full = (1, 1)
+    for subA in A
+        i_tmp = i_full
+        for j in 1:sblock[2]
+            i_full = i_tmp
+            for i in 1:sblock[1]
+                push!(I, i_full)
+                push!(J, j_full)
+                push!(V, subA[i, j])
+                i_full += 1
+            end
+            j_full += 1
+        end
+    end
+    return sparse(I, J, V, ss[1], ss[2])
 end
 
 """
@@ -108,11 +173,10 @@ end
 """
     enable_debug(mname)
 
-Activate debugging messages by setting the environment variable `JULIA_DEBUG` to
-`mname`.
+Activate debugging messages.
 """
-function enable_debug(mname)
-    ENV["JULIA_DEBUG"] = mname
+function enable_debug()
+    ENV["JULIA_DEBUG"] = WavePropBase
 end
 
 struct ConcreteInferenceError <: Exception
@@ -187,23 +251,6 @@ on singleton types where both `foo(::T)` and `foo(::Type{T})` are required.
 """
 const SType{T} = Union{T,Type{T}}
 
-function normal(jac::SMatrix{N,M}) where {N,M}
-    msg = "computing the normal vector requires the element to be of co-dimension one."
-    @assert (N - M == 1) msg
-    if M == 1 # a line in 2d
-        t = jac[:,1] # tangent vector
-        n = Point2D(t[2], -t[1])
-        return n / norm(n)
-    elseif M == 2 # a surface in 3d
-        t₁ = jac[:,1]
-        t₂ = jac[:,2]
-        n  = cross(t₁, t₂)
-        return n / norm(n)
-    else
-        notimplemented()
-    end
-end
-
 """
     sort_by_type(v)
 
@@ -229,6 +276,68 @@ function sort_by_type(v)
 end
 
 """
+    cart2sph(x,y,z)
+
+Map cartesian coordinates `x,y,z` to spherical ones `r, θ, φ` representing the
+radius, elevation, and azimuthal angle respectively. The convention followed is
+that `0 ≤ θ ≤ π` and ` -π < φ ≤ π`.
+"""
+function cart2sph(x,y,z)
+    azimuth = atan(y,x)
+    elevation = atan(z,sqrt(x^2 + y^2))
+    r = sqrt(x^2 + y^2 + z^2)
+    return r, elevation, azimuth
+end
+
+"""
+    sph2cart(x,y,z)
+
+Map spherical coordinates `r,θ,φ` representing the radius, elevation, and
+azimuthal angle respectively, to cartesian ones `x, y, z` .
+"""
+function sph2cart(x,y,z)
+    x = r*cos(φ)*sin(θ)
+    y = r*sin(φ)*sin(θ)
+    z = r*cos(θ)
+    return x,y,z
+end
+
+"""
+    cart2pol(x,y)
+
+Map cartesian coordinates `x,y` to polar coordinates `r,θ`. The convention
+followed is that `-π ≤ θ ≤ π`.
+"""
+function cart2pol(x,y)
+    r = sqrt(x^2 + y^2)
+    θ = atan(y,x)
+    return r,θ
+end
+
+"""
+    cross_product_matrix(v)
+
+Returns the matrix `Aᵥ` associated with the
+cross product `v × ϕ` so that `v × ϕ = Aᵥϕ`.
+"""
+function cross_product_matrix(v)
+    return transpose(SMatrix{3,3,Float64,9}(      0, -v[3],  v[2],
+                                             v[3],       0, -v[1],
+                                            -v[2],    v[1],     0))
+end
+
+function fill_zero_diagonal!(A::AbstractMatrix)
+    # CHECK: is this function necessary?
+    # it seems that, by default, the operators'
+    # diagonals are always zero
+    n, m = size(A)
+    @assert n == m
+    for i in 1:n
+        A[i, i] = zero(eltype(A))
+    end
+end
+
+"""
     @interface f [n=1]
 
 Declare that the function `f` is an interface function. The call
@@ -241,8 +350,8 @@ which is independent of `A` but which implements the interface
 function `f`:
 ```jldoctest
 module A
-    using WavePropBase
-    WavePropBase.@interface foo
+    using WavePropBase.Utils
+    Utils.@interface foo
     # a method which works on any type `x` implementing the `foo` function
     do_work(x) = 2*foo(x)
 end
@@ -278,3 +387,5 @@ macro interface(f,n=1)
     end
     return esc(ex)
 end
+
+end # module

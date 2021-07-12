@@ -12,6 +12,13 @@ The `(dim,tag)` pair used as a key to identify various abstract entities.
 """
 key(e::AbstractEntity) = geometric_dimension(e),tag(e)
 
+# reasonable defaults which assume the filds `tag` and `dim` and `boundary`
+# fields exist. Some
+# `AbstractEntities` need to override this method.
+tag(e::AbstractEntity) = e.tag
+geometric_dimension(e::AbstractEntity) = e.dim
+boundary(e::AbstractEntity) = e.boundary
+
 function Base.show(io::IO,ent::AbstractEntity)
     T = typeof(ent)
     d = geometric_dimension(ent)
@@ -19,10 +26,49 @@ function Base.show(io::IO,ent::AbstractEntity)
     print(io,"$T with (dim,tag)=($d,$t)")
 end
 
+"""
+    ==(Ω1::AbstractEntity,Ω2::AbstractEntity)
+
+Two entities are considered equal
+`geometric_dimension(Ω1)==geometric_dimension(Ω2)` and
+`abs(tag(Ω1))=abs(tag(Ω2))`. For entities of co-dimension one, the sign of
+`tag(Ω)` is used to determine the orientation of the normal vector.
+
+Notice that this implies `dim` and `tag` of an elementary entity should uniquely
+define it (up to the sign of `tag`), and therefore global variables like
+[`TAGS`](@ref) are needed to make sure newly created [`AbstractEntities`](@ref)
+have a new `(dim,tag)` identifier.
+"""
+function Base.:(==)(Ω1::AbstractEntity, Ω2::AbstractEntity)
+    d1,t1 = geometric_dimension(Ω1),tag(Ω1)
+    d2,t2 = geometric_dimension(Ω2),tag(Ω2)
+    d1 == d2  || (return false)
+    abs(t1) == abs(t2) || (return false)
+    # boundary(Ω1) == boundary(Ω2) || return false # this should not be needed
+    return true
+end
+Base.hash(ent::AbstractEntity,h::UInt)= hash((geometric_dimension(ent),abs(tag(ent))),h)
+
 function normal(ent::AbstractEntity, u)
     s = tag(ent) |> sign
-    jac = jacobian(ent, u)
+    jac::SMatrix = jacobian(ent, u)
     s*normal(jac)
+end
+function normal(jac::SMatrix{N,M}) where {N,M}
+    msg = "computing the normal vector requires the element to be of co-dimension one."
+    @assert (N - M == 1) msg
+    if M == 1 # a line in 2d
+        t = jac[:,1] # tangent vector
+        n = SVector(t[2], -t[1])
+        return n / norm(n)
+    elseif M == 2 # a surface in 3d
+        t₁ = jac[:,1]
+        t₂ = jac[:,2]
+        n  = cross(t₁, t₂)
+        return n / norm(n)
+    else
+        notimplemented()
+    end
 end
 
 """
@@ -82,27 +128,23 @@ function _compute_dim_from_boundary(boundary)
 end
 
 """
-    ==(Ω1::AbstractEntity,Ω2::AbstractEntity)
+    PointEntity{N,T} <: AbstractEntity
 
-Two elementary entities are considered equal
-`geometric_dimension(Ω1)==geometric_dimension(Ω2)` and
-`abs(tag(Ω1))=abs(tag(Ω2))`. The sign of `tag(Ω)` is used to determine its
-orientation.
-
-Notice that this implies `dim` and `tag` of an elementary entity should uniquely
-define it (up to the sign of `tag`), and therefore global variables like
-[`TAGS`](@ref) are needed to make sure newly created `AbstractEntities` have a
-new `(dim,tag)` identifier.
+Zero-dimension geometrical entity. As a subtype of [`AbstractEntity`],(@ref) the
+`(dim,tag)` of all created point entities get added to the global `ENTITIES`.
+Intended usage is to build higher dimensionional entities, and *not* to
+represent regular points such as grid points.
 """
-function Base.:(==)(Ω1::AbstractEntity, Ω2::AbstractEntity)
-    d1,t1 = geometric_dimension(Ω1),tag(Ω1)
-    d2,t2 = geometric_dimension(Ω2),tag(Ω2)
-    d1 == d2  || (return false)
-    abs(t1) == abs(t2) || (return false)
-    # boundary(Ω1) == boundary(Ω2) || return false # this should not be needed
-    return true
+struct PointEntity <: AbstractEntity
+    tag::Int
+    coords::SVector
 end
-Base.hash(ent::AbstractEntity,h::UInt)= hash((geometric_dimension(ent),abs(tag(ent))),h)
+
+coords(p::PointEntity) = p.coords
+tag(p::PointEntity)    = p.tag
+
+geometric_dimension(::PointEntity) = 0
+ambient_dimension(p::PointEntity)   = length(coords(p))
 
 #####################################################################
 

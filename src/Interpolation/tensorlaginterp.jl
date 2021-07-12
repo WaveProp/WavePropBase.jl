@@ -1,5 +1,5 @@
 """
-    struct LagrangeInterp{N,Td,T}
+    struct TensorLagInterp{N,Td,T}
 
 Generic Lagrange interpolation over an `N`-dimensional tensor grid. The
 implementation uses a multidimensional generalization of the barycentric
@@ -17,32 +17,32 @@ x   = [0.5+0.5cos((2k-1)*π/2nx) for k in 1:nx] # Chebyshev nodes
 y   = [0.5+0.5cos((2k-1)*π/2ny) for k in 1:ny] # Chebyshev nodes
 f   = (x) -> cos(x[1]*x[2])
 vals = [f((x,y)) for x in x, y in y]
-p   = LagrangeInterp(SVector(x,y),vals)
+p   = TensorLagInterp(SVector(x,y),vals)
 p((0.1,0.2)) ≈ f((0.1,0.2))
 ```
 """
-struct LagrangeInterp{N,Td,T}
+struct TensorLagInterp{N,Td,T}
     vals::Array{T,N}
     nodes::SVector{N,Vector{Td}}
     weights::SVector{N,Vector{Td}}
 end
 
-nodes(p::LagrangeInterp) = p.nodes
-weights(p::LagrangeInterp) = p.weights
-vals(p::LagrangeInterp) = p.vals
+nodes(p::TensorLagInterp)   = p.nodes
+weights(p::TensorLagInterp) = p.weights
+vals(p::TensorLagInterp)    = p.vals
 
-return_type(p::LagrangeInterp{_,__,T}) where {_,__,T} = T
+return_type(::TensorLagInterp{_,__,T}) where {_,__,T} = T
 
-ambient_dimension(p::LagrangeInterp{N}) where {N} = N
+ambient_dimension(::TensorLagInterp{N}) where {N} = N
 
-function LagrangeInterp(nodes::SVector{N,Vector{Td}},vals::Array{T,N}) where {N,Td,T}
+function TensorLagInterp(nodes::SVector{N,Vector{Td}},vals::Array{T,N}) where {N,Td,T}
     weights = map(barycentric_lagrange_weights,nodes)
-    LagrangeInterp{N,Td,T}(vals,nodes,weights)
+    TensorLagInterp{N,Td,T}(vals,nodes,weights)
 end
-LagrangeInterp(nodes::Vector,vals::Vector) = LagrangeInterp((nodes,),vals)
-LagrangeInterp(nodes::NTuple,vals::Array)  = LagrangeInterp(SVector(nodes),vals)
+TensorLagInterp(nodes::Vector,vals::Vector) = TensorLagInterp((nodes,),vals)
+TensorLagInterp(nodes::NTuple,vals::Array)  = TensorLagInterp(SVector(nodes),vals)
 
-function (p::LagrangeInterp{N,Td,T})(x::SVector) where {N,Td,T}
+function (p::TensorLagInterp{N,Td,T})(x::SVector) where {N,Td,T}
     num = zero(T)
     den = zero(Td)
     for I in CartesianIndices(p.vals)
@@ -59,8 +59,8 @@ function (p::LagrangeInterp{N,Td,T})(x::SVector) where {N,Td,T}
     end
     num/den
 end
-(p::LagrangeInterp)(x::NTuple) = p(SVector(x))
-(p::LagrangeInterp{1})(x::Number) = p((x,))
+(p::TensorLagInterp)(x::NTuple) = p(SVector(x))
+(p::TensorLagInterp{1})(x::Number) = p((x,))
 
 # multidimensional version of algorithm on page 504 of
 # https://people.maths.ox.ac.uk/trefethen/barycentric.pdf
