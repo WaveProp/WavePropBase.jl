@@ -18,4 +18,6 @@ include("Mesh/Mesh.jl")
 
 include("IO/IO.jl")
 
+@export_interface
+
 end

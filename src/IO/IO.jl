@@ -4,6 +4,7 @@ using StaticArrays
 using Printf
 using RecipesBase
 using OrderedCollections
+using Requires # for conditional loading
 
 using WavePropBase
 using WavePropBase.Utils
@@ -17,22 +18,10 @@ WavePropBase.@import_interface
 include("plotsIO.jl")
 
 function __init__()
-    # if GmshSDK is available, load gmshIO
-    try
-        @eval using GmshSDK
-        include("scr/IO/gmshIO.jl")
-        @info "GmshSDK found in current environment. Loading `IO/gmshIO.jl`"
-    catch
-        @info "GmshSDK not found in current environemnt. Related funtionality will be unavailable."
-    end
+    # # if GmshSDK is available, load gmshIO
+    # @require GmshSDK include("scr/IO/gmshIO.jl")
     # if WriteVTK is available, load vtkIO
-    try
-        @eval using WriteVTK
-        include("src/IO/vtkIO.jl")
-        @info "WriteVTK found in current environment. Loading `IO/vtkIO.jl`"
-    catch
-        @info "WriteVTK not found in current environemnt. Related funtionality will be unavailable."
-    end
+    @require WriteVTK="64499a7a-5c06-52f2-abe2-ccb03c286192" include("vtkIO.jl")
 end
 
 end # module
