@@ -1,7 +1,7 @@
 """
     module Geometry
 
-Module defines basic geometrical concepts.
+Module defining basic geometrical concepts.
 """
 module Geometry
 
@@ -11,6 +11,9 @@ import Base: union, setdiff, intersect, issubset
 using StaticArrays
 using LinearAlgebra
 using OrderedCollections
+using AbstractTrees
+using Printf
+using Statistics: median
 
 using WavePropBase
 using WavePropBase.Utils
@@ -18,6 +21,7 @@ using WavePropBase.Utils
 WavePropBase.@import_interface
 
 include("hyperrectangle.jl")
+include("clustertree.jl")
 include("referenceshapes.jl")
 include("entities.jl")
 include("domain.jl")
@@ -38,6 +42,12 @@ export
     ReferenceTetrahedron,
     ReferenceSquare,
     HyperRectangle,
+    ClusterTree,
+    GeometricSplitter,
+    GeometricMinimalSplitter,
+    PrincipalComponentSplitter,
+    DyadicSplitter,
+    CardinalitySplitter,
     # functions
     clear_entities!,
     tag,

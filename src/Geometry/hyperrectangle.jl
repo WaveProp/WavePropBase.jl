@@ -1,8 +1,8 @@
 """
-    HyperRectangle{N,T}
+    struct HyperRectangle{N,T}
 
-Hyperrectangle in `N` dimensions described by a `low_corner::SVector{N,T}` and a
-`high_corner::SVector{N,T}`
+Axis-aligned hyperrectangle in `N` dimensions given by `low_corner::SVector{N,T}` and
+`high_corner::SVector{N,T}`.
 """
 struct HyperRectangle{N,T}
     low_corner::SVector{N,T}
@@ -47,3 +47,44 @@ HyperRectangle(data) = bounding_box(data)
 center(rec::HyperRectangle) = (rec.low_corner + rec.high_corner) / 2
 
 radius(rec::HyperRectangle) = diameter(rec) / 2
+
+"""
+    split(rec::HyperRectangle,[axis]::Int,[place])
+
+Split a hyperrectangle in two along the `axis` direction at the  position
+`place`. Returns a tuple with the two resulting hyperrectangles.
+
+When no `place` is given, defaults to splitting in the middle of the axis.
+
+When no axis and no place is given, defaults to splitting along the largest axis.
+"""
+function Base.split(rec::HyperRectangle,axis,place)
+    N            = ambient_dimension(rec)
+    high_corner1 = svector(n-> n==axis ? place : rec.high_corner[n], N)
+    low_corner2  = svector(n-> n==axis ? place : rec.low_corner[n], N)
+    rec1         = HyperRectangle(rec.low_corner, high_corner1)
+    rec2         = HyperRectangle(low_corner2,rec.high_corner)
+    return (rec1, rec2)
+end
+function Base.split(rec::HyperRectangle,axis)
+    place        = (rec.high_corner[axis] + rec.low_corner[axis])/2
+    split(rec,axis,place)
+end
+function Base.split(rec::HyperRectangle)
+    axis = argmax(rec.high_corner .- rec.low_corner)
+    split(rec,axis)
+end
+
+"""
+    distance(r1::HyperRectangle,r2)
+
+The (minimal) Euclidean distance between a point `x ∈ r1` and `y ∈ r2`.
+"""
+function distance(rec1::HyperRectangle{N},rec2::HyperRectangle{N}) where {N}
+    d2 = 0
+    for i=1:N
+        d2 += max(0,rec1.low_corner[i] - rec2.high_corner[i])^2 +
+              max(0,rec2.low_corner[i] - rec1.high_corner[i])^2
+    end
+    return sqrt(d2)
+end

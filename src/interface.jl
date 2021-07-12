@@ -171,28 +171,20 @@ documentation).
 function reference_nodes end
 push!(INTERFACE,:reference_nodes)
 
-function parent end
-push!(INTERFACE,:parent)
-
-# TODO: document
-function qnodes end
-push!(INTERFACE,:qnodes)
-
-# TODO: document
-function qweights end
-push!(INTERFACE,:qweights)
-
-function qcoords end
-push!(INTERFACE,:qcoords)
-
-function dofs end
-push!(INTERFACE,:dofs)
-
 function mesh end
 push!(INTERFACE,:mesh)
 
-function refine end
-push!(INTERFACE,:refine)
+function depth end
+push!(INTERFACE,:depth)
 
-function flip_normal end
-push!(INTERFACE,:flip_normal)
+function children end
+push!(INTERFACE,:children)
+
+function parent end
+push!(INTERFACE,:parent)
+
+function isroot end
+push!(INTERFACE,:isroot)
+
+function isleaf end
+push!(INTERFACE,:isleaf)

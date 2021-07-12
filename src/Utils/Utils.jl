@@ -388,4 +388,20 @@ macro interface(f,n=1)
     return esc(ex)
 end
 
+"""
+    depth(node,acc=0)
+
+Recursive function to compute the depth of `node` in a a tree-like structure.
+Require the method `getparent(node)` to be implemented. Overload this function
+if your structure has a more efficient way to compute `depth` (e.g. if it stores
+it in a field).
+"""
+function depth(node,acc=0)
+    if isroot(node)
+        return acc
+    else
+        depth(node.parent,acc+1)
+    end
+end
+
 end # module

@@ -5,4 +5,6 @@ using SafeTestsets
 
 @safetestset "HyperRectangle tests" begin include("hyperrectangle_test.jl") end
 
+@safetestset "Clustertree tests" begin include("clustertree_test.jl") end
+
 @safetestset "Domain tests" begin include("domain_test.jl") end
