@@ -15,31 +15,30 @@ mutable struct ClusterTree{N,T,D}
     children::Vector{ClusterTree{N,T,D}}
     parent::ClusterTree{N,T,D}
     data::D
-    # possibly incomplete constructors. The convention is that if
-    # parent/children is nothing, the field is left undefined.
+    # inner constructors
     function ClusterTree{D}(points::Vector{SVector{N,T}},loc_idxs,bounding_box,loc2glob,glob2loc,children,parent) where {N,T,D}
         clt = new{N,T,D}(points,loc_idxs,bounding_box,loc2glob,glob2loc)
-        isnothing(children) || (clt.children = children)
-        isnothing(parent)   || (clt.parent = parent)
+        clt.children = isnothing(children) ? Vector{typeof(clt)}() : children
+        clt.parent   = isnothing(parent)   ? clt : parent
         return clt
     end
     # if some data is passed, fill the data field
     function ClusterTree(points::Vector{SVector{N,T}},loc_idxs,bounding_box,loc2glob,glob2loc,children,parent,data::D) where {N,T,D}
         clt = new{N,T,D}(points,loc_idxs,bounding_box,loc2glob,glob2loc)
-        isnothing(children) || (clt.children = children)
-        isnothing(parent)   || (clt.parent = parent)
+        clt.children = isnothing(children) ? Vector{typeof(clt)}() : children
+        clt.parent   = isnothing(parent)   ? clt : parent
         clt.data = data
         return clt
     end
 end
 ClusterTree(args...;kwargs...) = ClusterTree{Nothing}(args...;kwargs...)
 
-# interface to AbstractTrees
-AbstractTrees.children(t::ClusterTree) = t.children
+# interface to AbstractTrees. No children is determined by an empty tuple for AbstractTrees
+AbstractTrees.children(t::ClusterTree) = isleaf(t) ? () : t.children
 AbstractTrees.nodetype(t::ClusterTree) = typeof(t)
 
-isleaf(clt::ClusterTree) = !isdefined(clt,:children)
-isroot(clt::ClusterTree) = !isdefined(clt,:parent)
+isleaf(clt::ClusterTree) = isempty(clt.children)
+isroot(clt::ClusterTree) = clt.parent == clt
 hasdata(clt::ClusterTree) = isdefined(clt,:data)
 
 getchildren(clt::ClusterTree) = clt.children
@@ -198,7 +197,7 @@ function split!(cluster::ClusterTree,splitter::PrincipalComponentSplitter)
     pts       = cluster.points
     loc_idxs  = cluster.loc_idxs
     glob_idxs = view(cluster.loc2glob,loc_idxs)
-    xc   = centroid(cluster)
+    xc   = center(cluster)
     cov  = sum(glob_idxs) do i
         (pts[i] - xc)*transpose(pts[i] - xc)
     end
@@ -208,7 +207,7 @@ function split!(cluster::ClusterTree,splitter::PrincipalComponentSplitter)
     return [left_node, right_node]
 end
 
-function centroid(clt::ClusterTree)
+function center(clt::ClusterTree)
     pts       = clt.points
     loc_idxs  = clt.loc_idxs
     glob_idxs = view(clt.loc2glob,loc_idxs)

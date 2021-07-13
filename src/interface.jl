@@ -73,6 +73,9 @@ Largest distance between `x` and `y` for `x,y ∈ Ω`.
 function diameter end
 push!(INTERFACE,:diameter)
 
+function distance end
+push!(INTERFACE,:distance)
+
 """
     radius(Ω)
 

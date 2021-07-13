@@ -31,7 +31,8 @@ export
     fill_zero_diagonal!,
     cart2sph,
     cart2pol,
-    sph2cart
+    sph2cart,
+    getnodes
 
 """
     svector(f,n)
@@ -402,6 +403,35 @@ function depth(node,acc=0)
     else
         depth(node.parent,acc+1)
     end
+end
+
+"""
+    getnodes(filter,tree,[isterminal=true])
+
+Return all the nodes of `tree` satisfying `filter(node)::Bool`. If
+`isterminal`, do not consider childrens of a node for which
+`filter(block)==true`.
+"""
+function getnodes(f,tree,isterminal=true)
+    blocks = Vector{typeof(tree)}()
+    getnodes!(f,blocks,tree,isterminal)
+end
+
+"""
+    getnodes!(filter,nodes,tree,[isterminal=true])
+
+Like [`getnodes`](@ref), but append valid nodes to `nodes`.
+"""
+function getnodes!(f,blocks,tree,isterminal)
+    if f(tree)
+        push!(blocks,tree)
+        # terminate the search along this path if terminal=true
+        isterminal || map(x->getnodes!(f,blocks,x,isterminal),getchildren(tree))
+    else
+        # continue on on children
+        map(x->getnodes!(f,blocks,x,isterminal),tree.children)
+    end
+    return blocks
 end
 
 end # module

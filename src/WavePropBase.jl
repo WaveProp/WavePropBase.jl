@@ -1,9 +1,5 @@
 module WavePropBase
 
-using LinearAlgebra
-using StaticArrays
-using RecipesBase
-
 include("interface.jl")
 
 include("Utils/Utils.jl")

@@ -32,17 +32,23 @@ geometric_dimension(h::HyperRectangle{N}) where {N} = N
 
 diameter(cub::HyperRectangle) = norm(high_corner(cub) .- low_corner(cub),2)
 
-function bounding_box(data)
-    isempty(data)  && (error("data cannot be empty") )
-    low_corner  = first(data)
-    high_corner = first(data)
-    for pt in data
-        low_corner  = min.(low_corner,pt)
-        high_corner = max.(high_corner,pt)
+function bounding_box(pts,cube=false)
+    isempty(pts)  && (error("data cannot be empty") )
+    lb  = first(pts)
+    ub = first(pts)
+    for pt in pts
+        lb  = min.(lb,pt)
+        ub  = max.(ub,pt)
     end
-    return HyperRectangle(low_corner,high_corner)
+    if cube # fit a square/cube instead
+        w  = maximum(ub-lb)
+        xc = (ub + lb) / 2
+        lb = xc .- w/2
+        ub = xc .+ w/2
+    end
+    return HyperRectangle(lb,ub)
 end
-HyperRectangle(data) = bounding_box(data)
+HyperRectangle(data,cube=false) = bounding_box(data,cube)
 
 center(rec::HyperRectangle) = (rec.low_corner + rec.high_corner) / 2
 

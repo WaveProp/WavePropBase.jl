@@ -12,6 +12,7 @@ using StaticArrays
 using LinearAlgebra
 using OrderedCollections
 using AbstractTrees
+using RecipesBase
 using Printf
 using Statistics: median
 

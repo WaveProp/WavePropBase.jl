@@ -124,3 +124,45 @@ end
     vtx = nodes(el)
     [vtx[1],vtx[2]]
 end
+
+"""
+    plot(tree::ClusterTree,args...)
+
+Plot the point could and the bounding boxes at the leaves of the tree
+"""
+plot(tree::ClusterTree,args...) = ()
+
+@recipe function f(tree::ClusterTree;filter=(x)->isleaf(x))
+    legend := false
+    grid   --> false
+    aspect_ratio --> :equal
+    # plot points
+    N = dimension(tree)
+    if N == 2
+        @series begin
+            seriestype := :scatter
+            markersize := 2
+            xx = [pt[1] for pt in tree.points]
+            yy = [pt[2] for pt in tree.points]
+            xx,yy
+        end
+    elseif N == 3
+        @series begin
+            seriestype := :scatter
+            markersize := 2
+            xx = [pt[1] for pt in tree.points]
+            yy = [pt[2] for pt in tree.points]
+            zz = [pt[3] for pt in tree.points]
+            xx,yy,zz
+        end
+    end
+    # plot bounding boxes
+    blocks = getblocks(filter,tree)
+    for block in blocks
+        @series begin
+            linestyle --> :solid
+            seriescolor  --> :black
+            block.bounding_box
+        end
+    end
+end
