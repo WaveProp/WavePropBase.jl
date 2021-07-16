@@ -1,3 +1,18 @@
+const INTERFACE = Vector{Symbol}()
+
+# Maybe just write the text into a file instead of using a macro here?
+macro import_interface()
+    ex = Expr(:block)
+    ex.args = [:(import WavePropBase: $f) for f in INTERFACE]
+    return ex
+end
+
+macro export_interface()
+    ex = Expr(:block)
+    ex.args = [:(export $f) for f in INTERFACE]
+    return ex
+end
+
 """
     ambient_dimension(x)
 
@@ -7,7 +22,7 @@ ambient dimension `3` but geometric dimension `2`, while a curve in `ℝ³` has
 ambient dimension 3 but geometric dimension 1.
 """
 function ambient_dimension end
-@interface ambient_dimension
+push!(INTERFACE,:ambient_dimension)
 
 """
     geometric_dimension(x)
@@ -21,15 +36,24 @@ When the argument is a `Domain`, return the largest geometric dimension
 encoutered.
 """
 function geometric_dimension end
-@interface geometric_dimension
+push!(INTERFACE,:geometric_dimension)
+
+"""
+    dimension(space)
+
+The length of a basis for `space`; i.e. the number of linearly independent elements
+required to span `space`.
+"""
+function dimension end
+push!(INTERFACE,:dimension)
 
 """
     tag(::AbstractEntity)
 
-Integer tag used to idetify geometrical entities.
+Integer tag commonly used to idetify geometrical entities.
 """
 function tag end
-@interface tag
+push!(INTERFACE,:tag)
 
 """
     boundary(ω)
@@ -39,7 +63,7 @@ elements composing its boundary, while for an entity gives the corresponding
 `d-1` dimensional entities.
 """
 function boundary end
-@interface boundary
+push!(INTERFACE,:boundary)
 
 """
     diameter(Ω)
@@ -47,7 +71,10 @@ function boundary end
 Largest distance between `x` and `y` for `x,y ∈ Ω`.
 """
 function diameter end
-@interface diameter
+push!(INTERFACE,:diameter)
+
+function distance end
+push!(INTERFACE,:distance)
 
 """
     radius(Ω)
@@ -55,13 +82,13 @@ function diameter end
 Half the [`diameter`](@ref).
 """
 function radius end
-@interface radius
+push!(INTERFACE,:radius)
 
 """
     center(Ω)
 """
 function center end
-@interface center
+push!(INTERFACE,:center)
 
 """
     return_type(f)
@@ -69,41 +96,104 @@ function center end
 The type returned by the function-like object `f`.
 """
 function return_type end
-@interface return_type
+push!(INTERFACE,:return_type)
 
 """
-    jacobian(F,x̂)
+    jacobian(f,x)
 
-The Jacobian matrix `Aᵢⱼ = ∂Fᵢ/∂x̂ⱼ` at the parametric coordinate `x̂`.
+Given a (possibly vector-valued) function `f : 𝐑ᵐ → 𝐅ᵐ`, return the `m × n`
+matrix `Aᵢⱼ = ∂fᵢ/∂x̂ⱼ`.
 """
 function jacobian end
-@interface jacobian
+push!(INTERFACE,:jacobian)
 
 """
     normal(el,x̂)
+    normal(jac::SMatrix)
 
-The unit normal vector of `el` at the parametric coordinate `x̂`.
+The unit normal vector at coordinate `x̂`, guaranteed to be orthogonal to all
+columns of `jacobian(el,x)`.
 """
 function normal end
-@interface normal
+push!(INTERFACE,:normal)
 
 """
     domain(f)
 
-The domain of `f`. For elements of geometrical nature return the
-`ReferenceShape` used to represent it.
+The domain of the function `f`.
 """
 function domain end
-@interface domain
+push!(INTERFACE,:domain)
 
-# for f in INTERFACE_LIST
-#     @eval begin
-#         @generated function $f(Y,args...)
-#             mY = parentmodule(Y)
-#             hasmethod(mY.$f,(Y,args...)) || error("function `$(mY.$f)` must be implemented in module `$mY`")
-#             return quote
-#                 $(mY.$f)(Y,args...)
-#             end
-#         end
-#     end
-# end
+"""
+    image(f)
+
+The image of the function `f`.
+"""
+function image end
+push!(INTERFACE,:image)
+
+"""
+    parametrization(el)
+
+Return the underlying parametrization of `el`.
+"""
+function parametrization end
+push!(INTERFACE,:parametrization)
+
+"""
+    entities(Ω::Domain)
+    entities(M::AbstractMesh)
+
+Return the geometrical entities composing `Ω`.
+"""
+function entities end
+push!(INTERFACE,:entities)
+
+"""
+    bounding_box(data)
+
+Create an axis-aligned bounding box containing all of `data`.
+"""
+function bounding_box end
+push!(INTERFACE,:bounding_box)
+
+
+"""
+    reference_nodes(::LagrangeElement{D,Np,T})
+
+Return the reference nodes on `D` used for the polynomial interpolation. The
+function values on these nodes completely determines the interpolating
+polynomial.
+
+We use the same convention as `gmsh` for defining the reference nodes and their
+order (see [node
+ordering](https://gmsh.info/doc/texinfo/gmsh.html#Node-ordering) on `gmsh`
+documentation).
+"""
+function reference_nodes end
+push!(INTERFACE,:reference_nodes)
+
+function mesh end
+push!(INTERFACE,:mesh)
+
+function depth end
+push!(INTERFACE,:depth)
+
+function children end
+push!(INTERFACE,:children)
+
+function parent end
+push!(INTERFACE,:parent)
+
+function isroot end
+push!(INTERFACE,:isroot)
+
+function isleaf end
+push!(INTERFACE,:isleaf)
+
+function hasdata end
+push!(INTERFACE,:hasdata)
+
+function getnodes end
+push!(INTERFACE,:getnodes)
