@@ -127,12 +127,20 @@ function _compute_dim_from_boundary(boundary)
     dim = dmin+1
 end
 
+function flip_normal(e::ElementaryEntity)
+    @assert ambient_dimension(ent) == geometric_dimension(ent) + 1
+    d = geometric_dimension(e)
+    t = tag(e)
+    bnd = boundary(e)
+    ElementaryEntity(d,-t,bnd)
+end
+
 """
     PointEntity{N,T} <: AbstractEntity
 
 Zero-dimension geometrical entity. As a subtype of [`AbstractEntity`],(@ref) the
 `(dim,tag)` of all created point entities get added to the global `ENTITIES`.
-Intended usage is to build higher dimensionional entities, and *not* to
+Intended usage is to build higher dimensionsional entities, and *not* to
 represent regular points such as grid points.
 """
 struct PointEntity <: AbstractEntity

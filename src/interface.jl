@@ -158,7 +158,6 @@ Create an axis-aligned bounding box containing all of `data`.
 function bounding_box end
 push!(INTERFACE,:bounding_box)
 
-
 """
     reference_nodes(::LagrangeElement{D,Np,T})
 
@@ -197,3 +196,11 @@ push!(INTERFACE,:hasdata)
 
 function getnodes end
 push!(INTERFACE,:getnodes)
+
+"""
+    flip_normal(e::AbstractEntity)
+
+Flip the orientation of the normal vector.
+"""
+function flip_normal end
+push!(INTERFACE,:flip_normal)
