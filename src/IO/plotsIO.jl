@@ -126,43 +126,39 @@ end
 end
 
 """
-    plot(tree::ClusterTree,args...)
+    struct PlotTree
 
-Plot the point could and the bounding boxes at the leaves of the tree
+Used to plot entire tree associated with a tree node, instead of just the node.
 """
-plot(tree::ClusterTree,args...) = ()
+struct PlotTree end
 
-@recipe function f(tree::ClusterTree;filter=(x)->isleaf(x))
+@recipe function f(::PlotTree,tree::ClusterTree;filter=(x)->isleaf(x))
+    legend := false
+    grid   --> false
+    aspect_ratio --> :equal
+    # plot nodes
+    blocks = getnodes(filter,tree)
+    for block in blocks
+        @series begin
+            block
+        end
+    end
+end
+
+@recipe function f(tree::ClusterTree)
     legend := false
     grid   --> false
     aspect_ratio --> :equal
     # plot points
-    N = dimension(tree)
-    if N == 2
-        @series begin
-            seriestype := :scatter
-            markersize := 2
-            xx = [pt[1] for pt in tree.points]
-            yy = [pt[2] for pt in tree.points]
-            xx,yy
-        end
-    elseif N == 3
-        @series begin
-            seriestype := :scatter
-            markersize := 2
-            xx = [pt[1] for pt in tree.points]
-            yy = [pt[2] for pt in tree.points]
-            zz = [pt[3] for pt in tree.points]
-            xx,yy,zz
-        end
+    @series begin
+        seriestype := :scatter
+        markersize --> 2
+        PlotPoints(),tree.points[tree.loc2glob[tree.loc_idxs]]
     end
-    # plot bounding boxes
-    blocks = getblocks(filter,tree)
-    for block in blocks
-        @series begin
-            linestyle --> :solid
-            seriescolor  --> :black
-            block.bounding_box
-        end
+    # plot bounding box
+    @series begin
+        linestyle --> :solid
+        seriescolor  --> :black
+        tree.bounding_box
     end
 end

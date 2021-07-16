@@ -36,6 +36,20 @@ end
 UniformCartesianMesh(domain::HyperRectangle{N,T},sz::Int) where {N,T} = UniformCartesianMesh(domain,ntuple(i->sz,N))
 UniformCartesianMesh(;domain,sz) = UniformCartesianMesh(domain,sz)
 
+# in case you pass arguments like UniformCartesianMesh(xgrid,ygrid), convert
+# them to a Tuple
+UniformCartesianMesh(grids::Vararg{LinRange{T}}) where {T} = UniformCartesianMesh(Tuple(grids))
+
+
+function UniformCartesianMesh(domain::HyperRectangle{N};step::NTuple{N}) where {N}
+    lc = low_corner(domain)
+    hc = high_corner(domain)
+    sz = ntuple(N) do i
+        (hc[i] - lc[i]) ÷ step[i] |> ceil |> Int
+    end
+    UniformCartesianMesh(domain,sz)
+end
+
 ambient_dimension(g::UniformCartesianMesh{N}) where {N} = N
 
 xgrid(g::UniformCartesianMesh) = g.grids[1]

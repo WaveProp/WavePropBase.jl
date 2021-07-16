@@ -36,7 +36,7 @@ Two entities are considered equal
 
 Notice that this implies `dim` and `tag` of an elementary entity should uniquely
 define it (up to the sign of `tag`), and therefore global variables like
-[`TAGS`](@ref) are needed to make sure newly created [`AbstractEntities`](@ref)
+[`TAGS`](@ref) are needed to make sure newly created [`AbstractEntity`](@ref)
 have a new `(dim,tag)` identifier.
 """
 function Base.:(==)(Ω1::AbstractEntity, Ω2::AbstractEntity)

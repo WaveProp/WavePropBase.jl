@@ -18,8 +18,8 @@ elements(m::GenericMesh) = m.elements
 ent2tags(m::GenericMesh) = m.ent2tags
 
 Base.keys(m::GenericMesh) = keys(elements(m))
-entities(m::GenericMesh) = keys(ent2tags(m)) |> collect
-domain(m::GenericMesh) = entities(m) |> Domain
+entities(m::GenericMesh)  = keys(ent2tags(m)) |> collect
+domain(m::GenericMesh)    = entities(m) |> Domain
 
 # implement the interface for ElementIterator of lagrange elements on a generic mesh
 function Base.size(iter::ElementIterator{<:LagrangeElement,<:GenericMesh})

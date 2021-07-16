@@ -125,20 +125,6 @@ const LagrangeTetrahedron = LagrangeElement{ReferenceTetrahedron}
 """
 const LagrangeSquare   = LagrangeElement{ReferenceSquare}
 
-"""
-    reference_nodes(::LagrangeElement{D,Np,T})
-
-Return the reference nodes on `D` used for the polynomial interpolation. The
-function values on these nodes completely determine the interpolating
-polynomial.
-
-We use the same convention as `gmsh` for defining the reference nodes and their
-order (see [node
-ordering](https://gmsh.info/doc/texinfo/gmsh.html#Node-ordering) on `gmsh`
-documentation).
-"""
-function reference_nodes end
-
 #=
 Hardcode some basic elements.
 TODO: Eventually this could/should be automated, at least for the LagrangeElements.

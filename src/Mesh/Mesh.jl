@@ -44,7 +44,8 @@ export
     measure,
     convert_to_2d,
     decompose,
-    mesh
+    mesh,
+    grids
 
 include("abstractmesh.jl")
 include("genericmesh.jl")

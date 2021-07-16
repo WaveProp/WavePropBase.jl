@@ -82,7 +82,7 @@ function Base.split(rec::HyperRectangle)
 end
 
 """
-    distance(r1::HyperRectangle,r2)
+    distance(r1::HyperRectangle,r2::HyperRectangle)
 
 The (minimal) Euclidean distance between a point `x ∈ r1` and `y ∈ r2`.
 """
@@ -93,4 +93,46 @@ function distance(rec1::HyperRectangle{N},rec2::HyperRectangle{N}) where {N}
               max(0,rec2.low_corner[i] - rec1.high_corner[i])^2
     end
     return sqrt(d2)
+end
+
+"""
+    distance(x::SVector,r::HyperRectangle)
+
+The (minimal) Euclidean distance between the point `x` and any point `y ∈ r`.
+"""
+function distance(pt::SVector{N},rec::HyperRectangle{N}) where {N}
+    d2 = 0
+    for i=1:N
+        d2 += max(0,pt[i] - rec.high_corner[i])^2 +
+              max(0,rec.low_corner[i] - pt[i])^2
+    end
+    return sqrt(d2)
+end
+distance(rec::HyperRectangle{N},pt::SVector{N}) where {N} = distance(pt,rec)
+
+function vertices(rec::HyperRectangle{2})
+    lc = low_corner(rec)
+    hc = high_corner(rec)
+    SVector(
+        SVector(lc[1],lc[2]),
+        SVector(hc[1],lc[2]),
+        SVector(hc[1],hc[2]),
+        SVector(lc[1],hc[2])
+    )
+end
+function vertices(rec::HyperRectangle{3})
+    lc = low_corner(rec)
+    hc = high_corner(rec)
+    SVector(
+        # lower face
+        SVector(lc[1],lc[2],lc[3]),
+        SVector(hc[1],lc[2],lc[3]),
+        SVector(hc[1],hc[2],lc[3]),
+        SVector(lc[1],hc[2],lc[3]),
+        # upper face
+        SVector(lc[1],lc[2],hc[3]),
+        SVector(hc[1],lc[2],hc[3]),
+        SVector(hc[1],hc[2],hc[3]),
+        SVector(lc[1],hc[2],hc[3])
+    )
 end

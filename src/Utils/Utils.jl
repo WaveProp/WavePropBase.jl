@@ -32,6 +32,7 @@ export
     cart2sph,
     cart2pol,
     sph2cart,
+    pol2cart,
     getnodes
 
 """
@@ -313,6 +314,17 @@ function cart2pol(x,y)
     r = sqrt(x^2 + y^2)
     θ = atan(y,x)
     return r,θ
+end
+
+"""
+    pol2cart(r,θ)
+
+Map polar coordinates `r,θ` to cartesian coordinates `x,y`.
+"""
+function pol2cart(r,θ)
+    x = r*cos(θ)
+    y = r*sin(θ)
+    return x,y
 end
 
 """

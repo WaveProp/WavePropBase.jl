@@ -41,7 +41,7 @@ isleaf(clt::ClusterTree) = isempty(clt.children)
 isroot(clt::ClusterTree) = clt.parent == clt
 hasdata(clt::ClusterTree) = isdefined(clt,:data)
 
-getchildren(clt::ClusterTree) = clt.children
+children(clt::ClusterTree) = clt.children
 
 diameter(node::ClusterTree)                      = diameter(node.bounding_box)
 radius(node::ClusterTree)                        = diameter(node)/2
@@ -53,12 +53,13 @@ Base.length(node::ClusterTree) = length(node.loc_idxs)
 Base.range(node::ClusterTree)  = node.loc_idxs
 
 """
+    ClusterTree(points,splitter)
     ClusterTree{D}(points,splitter)
 
 Construct a `ClusterTree` from the  given `points` using the splitting strategy
 encoded in `splitter`.
 """
-function ClusterTree{D}(points::Vector{SVector{N,T}},splitter) where {N,T,D}
+function ClusterTree{N,T,D}(points::Vector{SVector{N,T}},splitter) where {N,T,D}
     bbox         = HyperRectangle(points)
     n            = length(points)
     loc_idxs     = 1:n
@@ -72,6 +73,7 @@ function ClusterTree{D}(points::Vector{SVector{N,T}},splitter) where {N,T,D}
     root.glob2loc = invperm(root.loc2glob)
     return root
 end
+ClusterTree{D}(points::Vector{SVector{N,T}},spl) where {N,T,D} =  ClusterTree{N,T,D}(points,spl)
 
 function _build_cluster_tree!(current_node,splitter)
     if should_split(current_node,splitter)
@@ -197,7 +199,7 @@ function split!(cluster::ClusterTree,splitter::PrincipalComponentSplitter)
     pts       = cluster.points
     loc_idxs  = cluster.loc_idxs
     glob_idxs = view(cluster.loc2glob,loc_idxs)
-    xc   = center(cluster)
+    xc   = center_of_mass(cluster)
     cov  = sum(glob_idxs) do i
         (pts[i] - xc)*transpose(pts[i] - xc)
     end
@@ -207,7 +209,7 @@ function split!(cluster::ClusterTree,splitter::PrincipalComponentSplitter)
     return [left_node, right_node]
 end
 
-function center(clt::ClusterTree)
+function center_of_mass(clt::ClusterTree)
     pts       = clt.points
     loc_idxs  = clt.loc_idxs
     glob_idxs = view(clt.loc2glob,loc_idxs)
@@ -335,8 +337,8 @@ function _binary_split!(f::Function,cluster::ClusterTree{N,T,D}) where {N,T,D}
     return clt1, clt2
 end
 
-function Base.show(io::IO,tree::ClusterTree{N,T}) where {N,T}
-    print(io,"ClusterTree with $(length(tree)) elements of type Point{$N,$T}")
+function Base.show(io::IO,tree::ClusterTree{N,T,D}) where {N,T,D}
+    print(io,"ClusterTree{$N,$T,$D} with $(length(tree)) points")
 end
 
 function Base.summary(clt::ClusterTree)

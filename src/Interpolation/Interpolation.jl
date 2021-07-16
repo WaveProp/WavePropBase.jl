@@ -24,6 +24,7 @@ export
     LagrangeTetrahedron,
     Pk,
     TensorLagInterp,
+    ChebInterp,
     # methods
     reference_nodes,
     monomial_basis,

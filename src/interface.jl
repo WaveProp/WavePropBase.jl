@@ -191,3 +191,9 @@ push!(INTERFACE,:isroot)
 
 function isleaf end
 push!(INTERFACE,:isleaf)
+
+function hasdata end
+push!(INTERFACE,:hasdata)
+
+function getnodes end
+push!(INTERFACE,:getnodes)

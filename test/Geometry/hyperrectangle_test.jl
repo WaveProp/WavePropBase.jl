@@ -40,6 +40,12 @@ using StaticArrays
     rec1 = HyperRectangle(SVector(0,0),SVector(1,1))
     rec2 = HyperRectangle(SVector(2,0),SVector(3,1))
     @test distance(rec1,rec2) ≈ 1
+    x  = SVector(0.5,0.5)
+    @test distance(x,rec1) ≈ distance(rec1,x) ≈ 0
+    x  = SVector(0.0,2.0)
+    @test distance(x,rec1) ≈ distance(rec1,x) ≈ 1
+    x  = SVector(2.0,2.0)
+    @test distance(x,rec1) ≈ distance(rec1,x) ≈ √2
     rec2 = HyperRectangle(SVector(2,2),SVector(3,3))
     distance(rec1,rec2) ≈ sqrt(2)
 end
