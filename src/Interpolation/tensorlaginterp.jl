@@ -27,7 +27,7 @@ struct TensorLagInterp{N,Td,T}
     weights::SVector{N,Vector{Td}}
 end
 
-nodes(p::TensorLagInterp)   = p.nodes
+interpolation_nodes(p::TensorLagInterp)   = p.nodes
 weights(p::TensorLagInterp) = p.weights
 vals(p::TensorLagInterp)    = p.vals
 

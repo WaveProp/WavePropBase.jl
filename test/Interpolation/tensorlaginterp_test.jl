@@ -34,26 +34,3 @@ using StaticArrays
     xtest = (0.1,0.2,-0.1)
     @test p(xtest) ≈ f(xtest)
 end
-
-# @testset "Cheb tensor product" begin
-#     cheb_nodes = (n) -> [-cos(k*π/(n-1)) for k in 0:n-1]
-#     # 1d
-#     nodes = cheb_nodes(10)
-#     f = x->cos(x)
-#     vals = map(f,nodes)
-#     domain = HyperRectangle(-1,1)
-#     p = ChebInterp(vals,domain)
-#     @test nodes(p,1) ≈ nodes
-#     xtest = 0.1
-#     @test f(xtest) ≈ p(xtest)
-#     # shift
-#     nodes = cheb_nodes(10) .+ 1 .+ π
-#     f = x->cos(x)
-#     vals = map(f,nodes)
-#     domain = HyperRectangle(π,π+2)
-#     p = ChebInterp(vals,domain)
-#     @test nodes(p,1) ≈ nodes
-#     xtest = π+0.1
-#     @test f(xtest) ≈ p(xtest)
-#     # 2d
-# end
