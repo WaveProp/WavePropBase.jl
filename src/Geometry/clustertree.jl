@@ -15,11 +15,12 @@ mutable struct ClusterTree{N,T,D}
     children::Vector{ClusterTree{N,T,D}}
     parent::ClusterTree{N,T,D}
     data::D
-    # inner constructors
+    # inner constructors handling missing fields
     function ClusterTree{D}(points::Vector{SVector{N,T}},loc_idxs,bounding_box,loc2glob,glob2loc,children,parent) where {N,T,D}
         clt = new{N,T,D}(points,loc_idxs,bounding_box,loc2glob,glob2loc)
         clt.children = isnothing(children) ? Vector{typeof(clt)}() : children
         clt.parent   = isnothing(parent)   ? clt : parent
+        clt.data     = D()
         return clt
     end
     # if some data is passed, fill the data field
