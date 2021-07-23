@@ -25,26 +25,26 @@ export
     Pk,
     TensorLagInterp,
     ChebInterp,
+    MonomialBasis,
+    PolynomialBasis,
+    LagrangeBasis,
     # methods
     reference_nodes,
     monomial_basis,
     lagrange_basis,
     barycentric_lagrange_matrix,
     barycentric_lagrange_weights,
-    MonomialBasis,
     vandermond,
     lagrange_basis,
-    PolynomialBasis,
-    LagrangeBasis,
     gradLagrangeBasis,
+    interpolation_nodes,
     trace,
+    chebnodes,
+    chebweights,
     grad
 
 include("polynomials.jl")
 include("tensorlaginterp.jl")
-include("chebinterp.jl")
 include("element.jl")
-# include("monomial.jl")
-# include("polynomialbasis.jl")
 
 end # module Interpolation

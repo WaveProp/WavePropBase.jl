@@ -40,7 +40,7 @@ export
 
 Just like [`Base.ntuple`](https://docs.julialang.org/en/v1/base/base/#Base.ntuple), but convert output to an `SVector`.
 """
-svector(f,n) = ntuple(f,n) |> SVector
+@inline svector(f,n) = ntuple(f,n) |> SVector
 
 """
     blockmatrix_to_matrix(A::Matrix{B}) where {B<:SMatrix}
