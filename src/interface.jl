@@ -204,3 +204,11 @@ Flip the orientation of the normal vector.
 """
 function flip_normal end
 push!(INTERFACE,:flip_normal)
+
+"""
+    meshgen(Ω::Domain)
+
+Generate a mesh for `Ω`.
+"""
+function meshgen end
+push!(INTERFACE,:meshgen)
