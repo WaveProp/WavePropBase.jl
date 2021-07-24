@@ -35,7 +35,7 @@ diameter(cub::HyperRectangle) = norm(high_corner(cub) .- low_corner(cub),2)
 function bounding_box(pts,cube=false)
     isempty(pts)  && (error("data cannot be empty") )
     lb  = first(pts)
-    ub = first(pts)
+    ub  = first(pts)
     for pt in pts
         lb  = min.(lb,pt)
         ub  = max.(ub,pt)

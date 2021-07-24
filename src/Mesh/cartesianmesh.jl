@@ -45,7 +45,7 @@ function UniformCartesianMesh(domain::HyperRectangle{N};step::NTuple{N}) where {
     lc = low_corner(domain)
     hc = high_corner(domain)
     sz = ntuple(N) do i
-        (hc[i] - lc[i]) ÷ step[i] |> ceil |> Int
+        (hc[i] - lc[i]) / step[i] |> ceil |> Int
     end
     UniformCartesianMesh(domain,sz)
 end

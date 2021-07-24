@@ -120,10 +120,13 @@ Check that two domains have same dimension.
 If one of the domain (or both) are empty, the assertion is assumed to be true.
 """
 function assertequaldim(Ω1::Domain, Ω2::Domain)
-    isempty(Ω1) || isempty(Ω2) && return true
-    msg = "The dimension of the first domain should be equal to the dimension
-    of the second domain."
-    @assert geometric_dimension(Ω1) == geometric_dimension(Ω2) msg
+    if isempty(Ω1) || isempty(Ω2)
+        return true
+    else
+        msg = "The dimension of the first domain should be equal to the dimension
+        of the second domain."
+        @assert geometric_dimension(Ω1) == geometric_dimension(Ω2) msg
+    end
 end
 
 function Base.intersect(Ω1::Domain, Ω2::Domain)

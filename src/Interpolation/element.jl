@@ -16,6 +16,14 @@ Instances `el` of `AbstractElement` are expected to implement:
 """
 abstract type AbstractElement{D,T} end
 
+function (el::AbstractElement)(x)
+    abstractmethod(el)
+end
+
+function jacobian(el,x)
+    abstractmethod(el)
+end
+
 function normal(el::AbstractElement, u)
     @assert u ∈ domain(el)
     jac = jacobian(el, u)
