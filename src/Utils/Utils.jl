@@ -285,8 +285,8 @@ radius, elevation, and azimuthal angle respectively. The convention followed is
 that `0 ≤ θ ≤ π` and ` -π < φ ≤ π`.
 """
 function cart2sph(x,y,z)
-    azimuth = atan(y,x)
-    elevation = atan(z,sqrt(x^2 + y^2))
+    azimuth   = atan(y,x)
+    elevation = atan(sqrt(x^2 + y^2),z)
     r = sqrt(x^2 + y^2 + z^2)
     return r, elevation, azimuth
 end
@@ -297,7 +297,7 @@ end
 Map spherical coordinates `r,θ,φ` representing the radius, elevation, and
 azimuthal angle respectively, to cartesian ones `x, y, z` .
 """
-function sph2cart(x,y,z)
+function sph2cart(r,θ,φ)
     x = r*cos(φ)*sin(θ)
     y = r*sin(φ)*sin(θ)
     z = r*cos(θ)
