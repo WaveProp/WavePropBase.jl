@@ -78,6 +78,10 @@ end
     end
 end
 
+@recipe function f(msh::GenericMesh)
+    msh,domain(msh)
+end
+
 @recipe function f(mesh::GenericMesh,Ω::Domain)
     view(mesh,Ω)
 end
@@ -98,31 +102,31 @@ end
 # FIXME: write better recipes
 @recipe function f(el::LagrangeTriangle)
     label --> ""
-    vtx = nodes(el)
+    vtx = vals(el)
     for n in 1:3
         is = n
         ie = 1 + (n%3)
         @series begin
-            [vtx[is],vtx[ie]]
+            PlotPoints(), [vtx[is],vtx[ie]]
         end
     end
 end
 
 @recipe function f(el::LagrangeSquare)
     label --> ""
-    vtx = nodes(el)
+    vtx = vals(el)
     for n in 1:4
         is = n
         ie = 1 + (n%4)
         @series begin
-            [vtx[is],vtx[ie]]
+            PlotPoints(), [vtx[is],vtx[ie]]
         end
     end
 end
 
 @recipe function f(el::LagrangeLine)
-    vtx = nodes(el)
-    [vtx[1],vtx[2]]
+    vtx = vals(el)
+    PlotPoints(), [vtx[1],vtx[2]]
 end
 
 """

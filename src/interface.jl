@@ -212,3 +212,6 @@ Generate a mesh for `Ω`.
 """
 function meshgen end
 push!(INTERFACE,:meshgen)
+
+function vals end
+push!(INTERFACE,:vals)

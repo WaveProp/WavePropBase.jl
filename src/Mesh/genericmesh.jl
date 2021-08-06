@@ -13,7 +13,7 @@ Base.@kwdef struct GenericMesh{N,T} <: AbstractMesh{N,T}
     ent2tags::Dict{AbstractEntity,Dict{DataType,Vector{Int}}} = Dict{AbstractEntity,Dict{DataType,Vector{Int}}}()
 end
 
-nodes(m::GenericMesh)    = m.nodes
+vals(m::GenericMesh)    = m.nodes
 elements(m::GenericMesh) = m.elements
 ent2tags(m::GenericMesh) = m.ent2tags
 
@@ -101,7 +101,7 @@ function convert_to_2d(mesh::GenericMesh{3})
     end
     # construct new 2d mesh
     GenericMesh{2,T}(;
-        nodes=[x[1:2] for x in nodes(mesh)],
+        nodes=[x[1:2] for x in vals(mesh)],
         elements=els,
         ent2tags=e2t
     )

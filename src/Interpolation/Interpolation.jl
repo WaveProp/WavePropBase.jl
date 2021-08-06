@@ -39,9 +39,10 @@ export
     gradLagrangeBasis,
     interpolation_nodes,
     trace,
-    chebnodes,
-    chebweights,
-    grad
+    cheb1nodes,
+    cheb1weights,
+    grad,
+    vals
 
 include("polynomials.jl")
 include("tensorlaginterp.jl")
