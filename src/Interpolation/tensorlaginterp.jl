@@ -21,16 +21,16 @@ p   = TensorLagInterp(SVector(x,y),vals)
 p((0.1,0.2)) ≈ f((0.1,0.2))
 ```
 """
-struct TensorLagInterp{N,Td,T}
+mutable struct TensorLagInterp{N,Td,T}
     vals::Array{T,N}
-    nodes::SVector{N,Vector{Td}}
-    weights::SVector{N,Vector{Td}}
+    nodes::NTuple{N,Vector{Td}}
+    weights::NTuple{N,Vector{Td}}
 end
 
 interpolation_nodes(p::TensorLagInterp)   = p.nodes
 interpolation_nodes(p::TensorLagInterp,d::Int,i::Int)   = p.nodes[d][i]
 function interpolation_nodes(p::TensorLagInterp{N},I::CartesianIndex{N}) where {N}
-    svector(N) do d
+    ntuple(N) do d
         interpolation_nodes(p,d,I[d])
     end
 end
@@ -42,10 +42,14 @@ return_type(::TensorLagInterp{_,__,T}) where {_,__,T} = T
 
 ambient_dimension(::TensorLagInterp{N}) where {N} = N
 
-Base.CartesianIndices(p::TensorLagInterp) = CartesianIndices(vals(p))
+Base.eachindex(p::TensorLagInterp)        = eachindex(vals(p))
+function Base.CartesianIndices(p::TensorLagInterp)
+    sz = length.(p.nodes)
+    CartesianIndices(sz)
+end
 
 # if passed the values and nodes, construct weights automatically
-function TensorLagInterp(vals::Array{T,N},nodes::SVector{N,Vector{Td}}) where {N,Td,T}
+function TensorLagInterp(vals::Array{T,N},nodes::NTuple{N,Vector{Td}}) where {N,Td,T}
     weights = map(barycentric_lagrange_weights,nodes)
     TensorLagInterp{N,Td,T}(vals,nodes,weights)
 end
@@ -54,21 +58,20 @@ TensorLagInterp(vals::Array,nodes::NTuple)  = TensorLagInterp(vals,SVector(nodes
 
 # special interpolation schemes may have explicit functions to compute
 # interpolation nodes and weights.
-function TensorLagInterp(vals::Array{T,N},rec::HyperRectangle{N},nodes_func,weights_func) where {T,N}
+function TensorLagInterp(vals::Array{T,N},rec::HyperRectangle{N},nodes_func,weights_func,sz=size(vals)) where {T,N}
     lc,hc = low_corner(rec),high_corner(rec)
-    sz    = size(vals)
-    nodes = svector(N) do d
+    nodes = ntuple(N) do d
         a,b,n = lc[d],hc[d],sz[d]
         nodes_func[d](n,a,b)
     end
-    weights = svector(N) do d
+    weights = ntuple(N) do d
         n = sz[d]
         weights_func[d](n)
     end
     TensorLagInterp(vals,nodes,weights)
 end
-function TensorLagInterp(vals::Array{T,N},rec::HyperRectangle{N},nodes_func::Function,weights_func::Function) where {T,N}
-    TensorLagInterp(vals,rec,ntuple(i->nodes_func,N),ntuple(i->weights_func,N))
+function TensorLagInterp(vals::Array{T,N},rec::HyperRectangle{N},nodes_func::Function,weights_func::Function,p=size(vals)) where {T,N}
+    TensorLagInterp(vals,rec,ntuple(i->nodes_func,N),ntuple(i->weights_func,N),p)
 end
 
 # barycentric lagrange interpolation
@@ -80,7 +83,9 @@ function (p::TensorLagInterp{N,Td,T})(x::SVector) where {N,Td,T}
         x_m_xi = one(Td)
         for d in 1:N
             wi     *= p.weights[d][I[d]]
-            x_m_xi *= p.nodes[d][I[d]] - x[d]
+            dist = p.nodes[d][I[d]] - x[d]
+            dist == 0  && (dist += eps(Td))
+            x_m_xi *= dist
         end
         # FIXME: implicilty assumes that x is not one of the interpolation
         # nodes. Division by zero if that is the case.
@@ -91,6 +96,26 @@ function (p::TensorLagInterp{N,Td,T})(x::SVector) where {N,Td,T}
 end
 (p::TensorLagInterp)(x::NTuple) = p(SVector(x))
 (p::TensorLagInterp{1})(x::Number) = p((x,))
+
+function (p::TensorLagInterp{N,Td,T})(x::SVector,nodes::Array{SVector{N,Td}},weights::Array{N,Td}) where {N,Td,T}
+    num = zero(T)
+    den = zero(Td)
+    for i in eachindex(p)
+        x_m_xi = one(Td)
+        for d in 1:N
+            dist = x[d]-nodes[i][d]
+            dist == 0  && (dist += eps(Td))
+            x_m_xi *= dist
+        end
+        tmp = weights[i]/x_m_xi
+        den += tmp
+        num += tmp*p.vals[i]
+    end
+    num/den
+end
+(p::TensorLagInterp)(x::NTuple,nodes,weights) = p(SVector(x),nodes,weights)
+(p::TensorLagInterp{1})(x::Number,nodes,weights) = p((x,),nodes,weights)
+
 
 # multidimensional version of algorithm on page 504 of
 # https://people.maths.ox.ac.uk/trefethen/barycentric.pdf
@@ -113,35 +138,49 @@ function barycentric_lagrange_weights(x::Vector)
 end
 
 # special nodes distributions and the corresponding weights
+function cheb1nodes(n::NTuple{N},lc,uc) where {N}
+    nodes1d = ntuple(d->cheb1nodes(n[d],lc[d],uc[d]),N)
+    iter = Iterators.product(nodes1d...)
+    map(x->SVector{N,Float64}(x),iter)
+end
+
+cheb1nodes(n::NTuple{N},rec::HyperRectangle{N}) where {N} = cheb1nodes(n,rec.low_corner,rec.high_corner)
+
 """
     chebnodes(n,a,b)
 
-Return the `n` Chebyshev poins of the first kind on the interval `[a,b]`. If `n`
+Return the `n` Chebyshev points of the first kind on the interval `[a,b]`. If `n`
 is known statically, consider passing `Val(n)` instead for speed.
 """
-function chebnodes(n,a,b)
-    xcheb::Vector{Float64} = chebnodes(n)
+function cheb1nodes(n::Integer,a::Number,b::Number)
+    xcheb::Vector{Float64} = cheb1nodes(n)
     c0 = (a+b)/2
     c1 = (b-a)/2
     return @. c0 + c1*xcheb
 end
-function chebnodes(n)
+function cheb1nodes(n)
     [-cos( (2*i-1)*π / (2*n) ) for i in 1:n]
 end
-@generated function chebnodes(::Val{N}) where {N}
+@generated function cheb1nodes(::Val{N}) where {N}
     [-cos( (2*i-1)*π / (2*N) ) for i in 1:N]
 end
 
-function chebweight(i,n)
+function cheb1weights(n::NTuple{N}) where {N}
+    weights1d = ntuple(d->cheb1weights(n[d]),N)
+    iter = Iterators.product(weights1d...)
+    map(x->prod(x),iter)
+end
+
+function cheb1weights(i,n)
     sgn = (-1)^(i)
     val = sin((2*i-1)*π/(2*n))
     return sgn*val
 end
 
-function chebweights(n)
+function cheb1weights(n)
     [(-1)^(i)*sin((2*i-1)*π/(2*n)) for i in 1:n]
 end
 
-function chebweights(::Val{N}) where {N}
+function cheb1weights(::Val{N}) where {N}
     [(-1)^(i)*sin((2*i-1)*π/(2*N)) for i in 1:N]
 end

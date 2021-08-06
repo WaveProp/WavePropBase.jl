@@ -40,7 +40,7 @@ end
     n = 10
     vals = zeros(n)
     domain = HyperRectangle(-1,1)
-    p      = TensorLagInterp(vals,domain,chebnodes,chebweights)
+    p      = TensorLagInterp(vals,domain,cheb1nodes,cheb1weights)
     f      = x->cos(x[1])
     for I in CartesianIndices(p)
         vals[I] = f(interpolation_nodes(p,I))
@@ -52,7 +52,7 @@ end
     ny = 12
     vals = zeros(nx,ny)
     domain = HyperRectangle((-2,-1),(0,1))
-    p   = TensorLagInterp(vals,domain,chebnodes,chebweights)
+    p   = TensorLagInterp(vals,domain,cheb1nodes,cheb1weights)
     f   = (x) -> cos(x[1]*x[2])
     for I in CartesianIndices(p)
         vals[I] = f(interpolation_nodes(p,I))
@@ -63,7 +63,7 @@ end
     nx,ny,nz = 10, 10, 10
     vals = zeros(nx,ny,nz)
     domain = HyperRectangle((-2,-1,2),(0,1,4))
-    p   = TensorLagInterp(vals,domain,chebnodes,chebweights)
+    p   = TensorLagInterp(vals,domain,cheb1nodes,cheb1weights)
     f   = (x) -> cos(x[1]*x[2])*sin(x[3])
     for I in CartesianIndices(p)
         vals[I] = f(interpolation_nodes(p,I))
