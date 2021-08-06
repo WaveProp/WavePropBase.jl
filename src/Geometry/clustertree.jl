@@ -1,10 +1,22 @@
 """
     mutable struct ClusterTree{N,T,D}
 
-Tree structure used to hierarchically sort points in `N` dimensions.
+Tree structure used to sort points in `N` dimensions. A `data` field of type `D`
+can be associated with each node (it defaults to `D=Nothing`).
 
-Each node in the tree contains a `bounding_box` enclosing the `points` with
-indices `loc2glob[loc_idxs]`.
+# Fields:
+- `points::Vector{SVector{N,T}}` : vector containing all points present in the
+  `root` of the tree. The `points` are permuted during the construction of the
+  tree so as to make them contiguous in each node.
+- `loc_idxs::UnitRange{Int}` : indices of points contained in the current node.
+- `bounding_box::HyperRectangle{N,T}` : axis-aligned bounding box containing all
+  points in the node.
+- `loc2glob::Vector{Int}` : permutation from global local indexing system to the
+  original (global) indexing system used before the construction of the tree.
+- `glob2loc::Vector{Int}` : inverse of `loc2glob` permutation.
+- `children::Vector{ClusterTree{N,T,D}}`
+- `parent::ClusterTree{N,T,D}`
+- `data::D` : generic data field parametrically typed on `D`.
 """
 mutable struct ClusterTree{N,T,D}
     points::Vector{SVector{N,T}}
@@ -54,13 +66,16 @@ Base.length(node::ClusterTree) = length(node.loc_idxs)
 Base.range(node::ClusterTree)  = node.loc_idxs
 
 """
-    ClusterTree(points,splitter)
-    ClusterTree{D}(points,splitter)
+    ClusterTree(points,splitter;[copy_points=true])
+    ClusterTree{D}(points,splitter;[copy_points=true])
 
 Construct a `ClusterTree` from the  given `points` using the splitting strategy
-encoded in `splitter`.
+encoded in `splitter`. If `copy_points` is set to false, the `points` argument
+is directly stored in the `ClusterTree`, and is therefore permuted into the
+local indexing.
 """
-function ClusterTree{N,T,D}(points::Vector{SVector{N,T}},splitter) where {N,T,D}
+function ClusterTree{N,T,D}(points::Vector{SVector{N,T}},splitter;copy_points=true) where {N,T,D}
+    copy_points && (points = deepcopy(points))
     bbox         = HyperRectangle(points)
     n            = length(points)
     loc_idxs     = 1:n
@@ -72,6 +87,7 @@ function ClusterTree{N,T,D}(points::Vector{SVector{N,T}},splitter) where {N,T,D}
     root         = ClusterTree{D}(points,loc_idxs,bbox,loc2glob,glob2loc,children,parent)
     _build_cluster_tree!(root,splitter)
     root.glob2loc = invperm(root.loc2glob)
+    permute!(points,glob2loc)
     return root
 end
 ClusterTree{D}(points::Vector{SVector{N,T}},spl) where {N,T,D} =  ClusterTree{N,T,D}(points,spl)

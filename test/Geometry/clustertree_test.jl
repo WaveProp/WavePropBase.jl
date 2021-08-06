@@ -7,8 +7,7 @@ using Test
 function test_cluster_tree(clt)
     bbox = clt.bounding_box
     for iloc in clt.loc_idxs
-        iglob = clt.loc2glob[iloc]
-        x     = clt.points[iglob]
+        x     = clt.points[iloc]
         x ∈ bbox || (return false)
     end
     if !isleaf(clt)
