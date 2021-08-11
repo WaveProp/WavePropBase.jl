@@ -76,7 +76,12 @@ local indexing.
 """
 function ClusterTree{N,T,D}(points::Vector{SVector{N,T}},splitter;copy_points=true) where {N,T,D}
     copy_points && (points = deepcopy(points))
-    bbox         = HyperRectangle(points)
+    if splitter isa DyadicSplitter
+        # make a cube for bounding box for quad/oct trees
+        bbox         = HyperRectangle(points,true)
+    else
+        bbox         = HyperRectangle(points)
+    end
     n            = length(points)
     loc_idxs     = 1:n
     loc2glob     = collect(loc_idxs)
