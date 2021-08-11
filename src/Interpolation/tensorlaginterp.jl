@@ -23,19 +23,26 @@ p((0.1,0.2)) ≈ f((0.1,0.2))
 """
 mutable struct TensorLagInterp{N,Td,T}
     vals::Array{T,N}
-    nodes::NTuple{N,Vector{Td}}
-    weights::NTuple{N,Vector{Td}}
+    nodes1d::NTuple{N,Vector{Td}}
+    weights1d::NTuple{N,Vector{Td}}
+    _nodes::Array{SVector{N,Td},N}
+    _weights::Array{Td,N}
+    function TensorLagInterp{N,Td,T}(vals,nodes1d,weights1d) where {N,Td,T}
+        _nodes   = Array{SVector{N,Td},N}(undef,ntuple(i->0,N))
+        _weights = Array{Td,N}(undef,ntuple(i->0,N))
+        new{N,Td,T}(vals,nodes1d,weights1d,_nodes,_weights)
+    end
 end
 
-interpolation_nodes(p::TensorLagInterp)   = p.nodes
-interpolation_nodes(p::TensorLagInterp,d::Int,i::Int)   = p.nodes[d][i]
+interpolation_nodes(p::TensorLagInterp)   = p.nodes1d
+interpolation_nodes(p::TensorLagInterp,d::Int,i::Int)   = p.nodes1d[d][i]
 function interpolation_nodes(p::TensorLagInterp{N},I::CartesianIndex{N}) where {N}
     ntuple(N) do d
         interpolation_nodes(p,d,I[d])
     end
 end
 
-weights(p::TensorLagInterp) = p.weights
+weights1d(p::TensorLagInterp) = p.weights1d
 vals(p::TensorLagInterp)    = p.vals
 
 return_type(::TensorLagInterp{_,__,T}) where {_,__,T} = T
@@ -44,7 +51,7 @@ ambient_dimension(::TensorLagInterp{N}) where {N} = N
 
 Base.eachindex(p::TensorLagInterp)        = eachindex(vals(p))
 function Base.CartesianIndices(p::TensorLagInterp)
-    sz = length.(p.nodes)
+    sz = length.(p.nodes1d)
     CartesianIndices(sz)
 end
 
@@ -58,7 +65,7 @@ TensorLagInterp(vals::Array,nodes::NTuple)  = TensorLagInterp(vals,SVector(nodes
 
 # special interpolation schemes may have explicit functions to compute
 # interpolation nodes and weights.
-function TensorLagInterp(vals::Array{T,N},rec::HyperRectangle{N},nodes_func,weights_func,sz=size(vals)) where {T,N}
+function TensorLagInterp(vals::Array{T,N},rec::HyperRectangle{N},nodes_func,weights_func,sz=size(vals)) where {N,T}
     lc,hc = low_corner(rec),high_corner(rec)
     nodes = ntuple(N) do d
         a,b,n = lc[d],hc[d],sz[d]
@@ -68,7 +75,8 @@ function TensorLagInterp(vals::Array{T,N},rec::HyperRectangle{N},nodes_func,weig
         n = sz[d]
         weights_func[d](n)
     end
-    TensorLagInterp(vals,nodes,weights)
+    Td = eltype(weights[1])
+    TensorLagInterp{N,Td,T}(vals,nodes,weights)
 end
 function TensorLagInterp(vals::Array{T,N},rec::HyperRectangle{N},nodes_func::Function,weights_func::Function,p=size(vals)) where {T,N}
     TensorLagInterp(vals,rec,ntuple(i->nodes_func,N),ntuple(i->weights_func,N),p)
@@ -82,8 +90,8 @@ function (p::TensorLagInterp{N,Td,T})(x::SVector) where {N,Td,T}
         wi     = one(Td)
         x_m_xi = one(Td)
         for d in 1:N
-            wi     *= p.weights[d][I[d]]
-            dist = p.nodes[d][I[d]] - x[d]
+            wi     *= p.weights1d[d][I[d]]
+            dist = p.nodes1d[d][I[d]] - x[d]
             dist == 0  && (dist += eps(Td))
             x_m_xi *= dist
         end
@@ -97,7 +105,18 @@ end
 (p::TensorLagInterp)(x::NTuple) = p(SVector(x))
 (p::TensorLagInterp{1})(x::Number) = p((x,))
 
-function (p::TensorLagInterp{N,Td,T})(x::SVector,nodes::Array{SVector{N,Td}},weights::Array{N,Td}) where {N,Td,T}
+function precompute_nodes_and_weights!(p::TensorLagInterp{N,Td}) where {N,Td}
+    iter    = Iterators.product(p.nodes1d...)
+    nodes   = map(x->SVector(x),iter)
+    iter    = Iterators.product(p.weights1d...)
+    weights = map(x->prod(x),iter)
+    p._nodes = nodes
+    p._weights = weights
+    return p
+end
+function (p::TensorLagInterp{N,Td,T})(x::SVector,::Val{:fast}) where {N,Td,T}
+    nodes   = p._nodes
+    weights = p._weights
     num = zero(T)
     den = zero(Td)
     for i in eachindex(p)
@@ -113,8 +132,8 @@ function (p::TensorLagInterp{N,Td,T})(x::SVector,nodes::Array{SVector{N,Td}},wei
     end
     num/den
 end
-(p::TensorLagInterp)(x::NTuple,nodes,weights) = p(SVector(x),nodes,weights)
-(p::TensorLagInterp{1})(x::Number,nodes,weights) = p((x,),nodes,weights)
+(p::TensorLagInterp)(x::NTuple,::Val{:fast}) = p(SVector(x),Val(:fast))
+(p::TensorLagInterp{1})(x::Number,::Val{:fast}) = p((x,),Val(:fast))
 
 
 # multidimensional version of algorithm on page 504 of
@@ -138,20 +157,18 @@ function barycentric_lagrange_weights(x::Vector)
 end
 
 # special nodes distributions and the corresponding weights
+
+"""
+    cheb1nodes(n,a,b)
+
+Return the `n` Chebyshev points of the first kind on the interval `[a,b]`.
+"""
+cheb1nodes(n::NTuple{N},rec::HyperRectangle{N}) where {N} = cheb1nodes(n,rec.low_corner,rec.high_corner)
 function cheb1nodes(n::NTuple{N},lc,uc) where {N}
     nodes1d = ntuple(d->cheb1nodes(n[d],lc[d],uc[d]),N)
     iter = Iterators.product(nodes1d...)
     map(x->SVector{N,Float64}(x),iter)
 end
-
-cheb1nodes(n::NTuple{N},rec::HyperRectangle{N}) where {N} = cheb1nodes(n,rec.low_corner,rec.high_corner)
-
-"""
-    chebnodes(n,a,b)
-
-Return the `n` Chebyshev points of the first kind on the interval `[a,b]`. If `n`
-is known statically, consider passing `Val(n)` instead for speed.
-"""
 function cheb1nodes(n::Integer,a::Number,b::Number)
     xcheb::Vector{Float64} = cheb1nodes(n)
     c0 = (a+b)/2
@@ -160,9 +177,6 @@ function cheb1nodes(n::Integer,a::Number,b::Number)
 end
 function cheb1nodes(n)
     [-cos( (2*i-1)*π / (2*n) ) for i in 1:n]
-end
-@generated function cheb1nodes(::Val{N}) where {N}
-    [-cos( (2*i-1)*π / (2*N) ) for i in 1:N]
 end
 
 function cheb1weights(n::NTuple{N}) where {N}
@@ -181,6 +195,45 @@ function cheb1weights(n)
     [(-1)^(i)*sin((2*i-1)*π/(2*n)) for i in 1:n]
 end
 
-function cheb1weights(::Val{N}) where {N}
-    [(-1)^(i)*sin((2*i-1)*π/(2*N)) for i in 1:N]
+"""
+    cheb2nodes(n,a,b)
+
+Return the `n` Chebyshev points of the second kind on the interval `[a,b]`. The
+nodes are nested in the following sense: `cheb2nodes(n,a,b) ==
+cheb2nodes(2n-1,a,b)[1:2:end]`.
+"""
+cheb2nodes(n::NTuple{N},rec::HyperRectangle{N}) where {N} = cheb2nodes(n,rec.low_corner,rec.high_corner)
+function cheb2nodes(n::NTuple{N},lc,uc) where {N}
+    nodes1d = ntuple(d->cheb2nodes(n[d],lc[d],uc[d]),N)
+    iter = Iterators.product(nodes1d...)
+    map(x->SVector{N,Float64}(x),iter)
 end
+function cheb2nodes(n::Integer,a::Number,b::Number)
+    xcheb::Vector{Float64} = cheb2nodes(n)
+    c0 = (a+b)/2
+    c1 = (b-a)/2
+    return @. c0 + c1*xcheb
+end
+function cheb2nodes(n)
+    [-cos((i-1)*π /(n-1)) for i in 1:n]
+end
+
+function cheb2weights(n::NTuple{N}) where {N}
+    weights1d = ntuple(d->cheb2weights(n[d]),N)
+    iter = Iterators.product(weights1d...)
+    map(x->prod(x),iter)
+end
+
+function cheb2weights(i,n)
+    sgn = (-1)^(i)
+    val = i==n || i == 1 ? 0.5 : 1.0
+    return sgn*val
+end
+
+function cheb2weights(n)
+    [cheb2weights(i,n) for i in 1:n]
+end
+
+# function cheb3nodes(i,n)
+#     cos(i*π/)
+# end

@@ -41,8 +41,11 @@ export
     trace,
     cheb1nodes,
     cheb1weights,
+    cheb2nodes,
+    cheb2weights,
     grad,
-    vals
+    vals,
+    precompute_nodes_and_weights!
 
 include("polynomials.jl")
 include("tensorlaginterp.jl")

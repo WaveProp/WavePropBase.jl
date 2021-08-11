@@ -48,7 +48,7 @@ end
     xtest = 0.1
     @test f(xtest) ≈ p(xtest)
     # 2d
-    nx = 10
+    nx = 11
     ny = 12
     vals = zeros(nx,ny)
     domain = HyperRectangle((-2,-1),(0,1))
