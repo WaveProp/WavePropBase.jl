@@ -36,38 +36,33 @@ using StaticArrays
 end
 
 @testset "Cheb nodes" begin
-    # 1d
-    n = 10
-    vals = zeros(n)
-    domain = HyperRectangle(-1,1)
-    p      = TensorLagInterp(vals,domain,cheb1nodes,cheb1weights)
-    f      = x->cos(x[1])
-    for I in CartesianIndices(p)
-        vals[I] = f(interpolation_nodes(p,I))
+    # 1,2,3 dimensions
+    for d in 1:3
+        p = ntuple(i->10+i,d)
+        vals   = zeros(p)
+        nodes1d   = map(p->cheb1nodes(p,-1,1),p)
+        weights1d = map(p->cheb1weights(p),p)
+        poly    = TensorLagInterp(vals,nodes1d,weights1d)
+        f     = x->cos(prod(x))
+        for I in CartesianIndices(poly)
+            vals[I] = f(interpolation_nodes(poly,I))
+        end
+        xtest = ntuple(i->0.1,d)
+        @test f(xtest) ≈ poly(xtest)
     end
-    xtest = 0.1
-    @test f(xtest) ≈ p(xtest)
-    # 2d
-    nx = 11
-    ny = 12
-    vals = zeros(nx,ny)
-    domain = HyperRectangle((-2,-1),(0,1))
-    p   = TensorLagInterp(vals,domain,cheb1nodes,cheb1weights)
-    f   = (x) -> cos(x[1]*x[2])
-    for I in CartesianIndices(p)
-        vals[I] = f(interpolation_nodes(p,I))
+    # 1,2,3 dimensions
+    for d in 1:3
+        p = ntuple(i->10+i,d)
+        vals   = zeros(p)
+        nodes1d   = map(p->cheb2nodes(p,-1.3,1.5),p)
+        weights1d = map(p->cheb2weights(p),p)
+        poly    = TensorLagInterp(vals,nodes1d,weights1d)
+        f     = x->cos(prod(x))
+        for I in CartesianIndices(poly)
+            vals[I] = f(interpolation_nodes(poly,I))
+        end
+        xtest = ntuple(i->0.1,d)
+        @test f(xtest) ≈ poly(xtest)
+        # todo add test when xtest is one of the interpolation points
     end
-    xtest = (-1.,0.2)
-    @test p(xtest) ≈ f(xtest)
-    # 3d
-    nx,ny,nz = 10, 10, 10
-    vals = zeros(nx,ny,nz)
-    domain = HyperRectangle((-2,-1,2),(0,1,4))
-    p   = TensorLagInterp(vals,domain,cheb1nodes,cheb1weights)
-    f   = (x) -> cos(x[1]*x[2])*sin(x[3])
-    for I in CartesianIndices(p)
-        vals[I] = f(interpolation_nodes(p,I))
-    end
-    xtest = (-0.1,0.2,3.1)
-    @test p(xtest) ≈ f(xtest)
 end
