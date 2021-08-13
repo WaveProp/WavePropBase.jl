@@ -215,3 +215,14 @@ push!(INTERFACE,:meshgen)
 
 function vals end
 push!(INTERFACE,:vals)
+
+"""
+    coords(x)
+
+Return an `SVector` giving a cartesian coordinate used to sort `x`. For points,
+this is simply the coordinates of the point, while for elements this may be the
+center of the element. You must overload this function for your own type if you
+want e.g. the clustering algorithms to work for `x`.
+"""
+function coords end
+push!(INTERFACE,:coords)

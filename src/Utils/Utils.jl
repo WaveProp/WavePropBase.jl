@@ -446,4 +446,7 @@ function getnodes!(f,blocks,tree,isterminal)
     return blocks
 end
 
+coords(x::Tuple)     = SVector(x)
+coords(x::SVector)   = x
+
 end # module
