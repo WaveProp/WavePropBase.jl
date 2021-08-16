@@ -24,6 +24,8 @@ Base.isapprox(h1::HyperRectangle,h2::HyperRectangle;kwargs...) = isapprox(h1.low
 
 Base.in(point,h::HyperRectangle) = all(h.low_corner .<= point .<= h.high_corner)
 
+# FIXME: avoid defining things like `eltype` if it is ambiguous what it should
+# return.
 Base.eltype(h::HyperRectangle{N,T}) where {N,T}     = T
 
 ambient_dimension(h::HyperRectangle{N}) where {N}   = N
@@ -32,11 +34,12 @@ geometric_dimension(h::HyperRectangle{N}) where {N} = N
 
 diameter(cub::HyperRectangle) = norm(high_corner(cub) .- low_corner(cub),2)
 
-function bounding_box(pts,cube=false)
-    isempty(pts)  && (error("data cannot be empty") )
-    lb  = first(pts)
-    ub  = first(pts)
-    for pt in pts
+function bounding_box(els,cube=false)
+    isempty(els)  && (error("data cannot be empty") )
+    lb  = first(els) |> coords
+    ub  = first(els) |> coords
+    for el in els
+        pt = coords(el)
         lb  = min.(lb,pt)
         ub  = max.(ub,pt)
     end

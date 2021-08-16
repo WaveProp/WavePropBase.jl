@@ -1,3 +1,4 @@
+##
 using WavePropBase
 using WavePropBase.Geometry
 using StaticArrays
@@ -5,9 +6,9 @@ using Test
 
 # recursively check that all point in a cluster tree are in the bounding box
 function test_cluster_tree(clt)
-    bbox = clt.bounding_box
-    for iloc in clt.loc_idxs
-        x     = clt.points[iloc]
+    bbox = clt.container
+    for iloc in clt.index_range
+        x     = clt._elements[iloc]
         x ∈ bbox || (return false)
     end
     if !isleaf(clt)
@@ -75,5 +76,4 @@ end
         clt = ClusterTree(points,splitter)
         @test test_cluster_tree(clt)
     end
-
 end

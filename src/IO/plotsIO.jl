@@ -157,7 +157,7 @@ end
     @series begin
         seriestype := :scatter
         markersize --> 2
-        PlotPoints(),tree.points[tree.loc2glob[tree.loc_idxs]]
+        PlotPoints(),tree.points[tree.loc2glob[tree.index_range]]
     end
     # plot bounding box
     @series begin
