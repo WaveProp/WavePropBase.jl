@@ -42,6 +42,7 @@ export
     ReferenceTriangle,
     ReferenceTetrahedron,
     ReferenceSquare,
+    HyperCube,
     HyperRectangle,
     ClusterTree,
     GeometricSplitter,
