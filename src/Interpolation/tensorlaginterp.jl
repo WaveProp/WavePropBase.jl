@@ -132,11 +132,11 @@ end
 
 Return the `n` Chebyshev points of the first kind on the interval `[a,b]`.
 """
-cheb1nodes(n::NTuple{N},rec::HyperRectangle{N}) where {N} = cheb1nodes(n,rec.low_corner,rec.high_corner)
 function cheb1nodes(n::NTuple{N},lc,uc) where {N}
     iter = cheb1nodes_iter(n,lc,uc)
-    map(x->SVector{N,Float64}(x),iter)
+    return map(x->SVector{N,Float64}(x),iter)
 end
+cheb1nodes(n::NTuple{N},rec::AbstractHyperRectangle{N}) where {N} = cheb1nodes(n,low_corner(rec),high_corner(rec))
 function cheb1nodes(n::Integer,a::Number,b::Number)
     xcheb::Vector{Float64} = cheb1nodes(n)
     c0 = (a+b)/2
@@ -144,18 +144,19 @@ function cheb1nodes(n::Integer,a::Number,b::Number)
     return @. c0 + c1*xcheb
 end
 function cheb1nodes(n)
-    [-cos( (2*i-1)*π / (2*n) ) for i in 1:n]
+    return [-cos( (2*i-1)*π / (2*n) ) for i in 1:n]
 end
 
 function cheb1nodes_iter(n::NTuple{N},lc,uc) where {N}
     nodes1d = ntuple(d->cheb1nodes(n[d],lc[d],uc[d]),N)
-    iter = Iterators.product(nodes1d...)
+    return iter = Iterators.product(nodes1d...)
 end
+cheb1nodes_iter(n::NTuple{N},rec::AbstractHyperRectangle{N}) where {N} = cheb1nodes_iter(n,low_corner(rec),high_corner(rec))
 
 function cheb1weights(n::NTuple{N}) where {N}
     weights1d = ntuple(d->cheb1weights(n[d]),N)
     iter = Iterators.product(weights1d...)
-    map(x->prod(x),iter)
+    return map(x->prod(x),iter)
 end
 function cheb1weights(i,n)
     sgn = (-1)^(i)
@@ -163,7 +164,7 @@ function cheb1weights(i,n)
     return sgn*val
 end
 function cheb1weights(n)
-    [(-1)^(i)*sin((2*i-1)*π/(2*n)) for i in 1:n]
+    return [(-1)^(i)*sin((2*i-1)*π/(2*n)) for i in 1:n]
 end
 
 """
@@ -173,10 +174,10 @@ Return the `n` Chebyshev points of the second kind on the interval `[a,b]`. The
 nodes are nested in the following sense: `cheb2nodes(n,a,b) ==
 cheb2nodes(2n-1,a,b)[1:2:end]`.
 """
-cheb2nodes(n::NTuple{N},rec::HyperRectangle{N}) where {N} = cheb2nodes(n,rec.low_corner,rec.high_corner)
+cheb2nodes(n::NTuple{N},rec::HyperRectangle{N}) where {N} = cheb2nodes(n,low_corner(rec),high_corner(rec))
 function cheb2nodes(n::NTuple{N},lc,uc) where {N}
     iter = cheb2nodes_iter(n,lc,uc)
-    map(x->SVector{N,Float64}(x),iter)
+    return map(x->SVector{N,Float64}(x),iter)
 end
 function cheb2nodes(n::Integer,a::Number,b::Number)
     xcheb::Vector{Float64} = cheb2nodes(n)
@@ -185,7 +186,7 @@ function cheb2nodes(n::Integer,a::Number,b::Number)
     return @. c0 + c1*xcheb
 end
 function cheb2nodes(n)
-    [cos((i-1)*π /(n-1)) for i in 1:n]
+    return [cos((i-1)*π /(n-1)) for i in 1:n]
 end
 
 function cheb2nodes_iter(n::NTuple{N},lc,uc) where {N}
@@ -197,7 +198,7 @@ end
 function cheb2weights(n::NTuple{N}) where {N}
     weights1d = ntuple(d->cheb2weights(n[d]),N)
     iter = Iterators.product(weights1d...)
-    map(x->prod(x),iter)
+    return map(x->prod(x),iter)
 end
 
 function cheb2weights(i,n)
@@ -207,5 +208,5 @@ function cheb2weights(i,n)
 end
 
 function cheb2weights(n)
-    [cheb2weights(i,n) for i in 1:n]
+    return [cheb2weights(i,n) for i in 1:n]
 end

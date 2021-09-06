@@ -237,12 +237,13 @@ function should_split(node::ClusterTree,splitter::DyadicSplitter)
     length(node) > splitter.nmax
 end
 
-function split!(cluster::ClusterTree,splitter::DyadicSplitter)
+function split!(cluster::ClusterTree,::DyadicSplitter)
     d        = ambient_dimension(cluster)
     clusters = [cluster]
+    rec = cluster.container
+    rec_center = center(rec)
     for i in 1:d
-        rec  = cluster.container
-        pos = (rec.high_corner[i] + rec.low_corner[i])/2
+        pos = rec_center[i]
         nel = length(clusters) #2^(i-1)
         for _ in 1:nel
             clt = popfirst!(clusters)
@@ -265,8 +266,8 @@ should_split(node::ClusterTree,splitter::GeometricSplitter) = length(node) > spl
 
 function split!(cluster::ClusterTree,splitter::GeometricSplitter)
     rec          = cluster.container
-    wmax, imax   = findmax(rec.high_corner - rec.low_corner)
-    left_node, right_node = _binary_split!(cluster, imax, rec.low_corner[imax]+wmax/2)
+    wmax, imax   = findmax(high_corner(rec) - low_corner(rec))
+    left_node, right_node = _binary_split!(cluster, imax, low_corner(rec)[imax]+wmax/2)
     return [left_node, right_node]
 end
 
@@ -283,8 +284,8 @@ should_split(node::ClusterTree,splitter::GeometricMinimalSplitter) = length(node
 
 function split!(cluster::ClusterTree,splitter::GeometricMinimalSplitter)
     rec  = cluster.container
-    wmax, imax  = findmax(rec.high_corner - rec.low_corner)
-    mid = rec.low_corner[imax]+wmax/2
+    wmax, imax  = findmax(high_corner(rec) - low_corner(rec))
+    mid = low_corner(rec)[imax]+wmax/2
     predicate = (x) -> x[imax] < mid
     left_node,right_node =  _binary_split!(predicate,cluster)
     return [left_node, right_node]
@@ -343,7 +344,7 @@ function split!(cluster::ClusterTree,splitter::CardinalitySplitter)
     points     = cluster._elements
     irange     = cluster.index_range
     rec        = container(cluster)
-    _, imax    = findmax(rec.high_corner - rec.low_corner)
+    _, imax    = findmax(high_corner(rec) - low_corner(rec))
     med        = median(coords(points[i])[imax] for i in irange) # the median along largest axis `imax`
     predicate = (x) -> x[imax] < med
     left_node, right_node = _binary_split!(predicate,cluster)
