@@ -136,7 +136,9 @@ function cheb1nodes(n::NTuple{N},lc,uc) where {N}
     iter = cheb1nodes_iter(n,lc,uc)
     return map(x->SVector{N,Float64}(x),iter)
 end
-cheb1nodes(n::NTuple{N},rec::AbstractHyperRectangle{N}) where {N} = cheb1nodes(n,low_corner(rec),high_corner(rec))
+function cheb1nodes(n::NTuple{N},rec::AbstractHyperRectangle{N}) where {N} 
+    cheb1nodes(n,low_corner(rec),high_corner(rec))
+end
 function cheb1nodes(n::Integer,a::Number,b::Number)
     xcheb::Vector{Float64} = cheb1nodes(n)
     c0 = (a+b)/2
@@ -151,7 +153,9 @@ function cheb1nodes_iter(n::NTuple{N},lc,uc) where {N}
     nodes1d = ntuple(d->cheb1nodes(n[d],lc[d],uc[d]),N)
     return iter = Iterators.product(nodes1d...)
 end
-cheb1nodes_iter(n::NTuple{N},rec::AbstractHyperRectangle{N}) where {N} = cheb1nodes_iter(n,low_corner(rec),high_corner(rec))
+function cheb1nodes_iter(n::NTuple{N},rec::AbstractHyperRectangle{N}) where {N}
+    cheb1nodes_iter(n,low_corner(rec),high_corner(rec))
+end
 
 function cheb1weights(n::NTuple{N}) where {N}
     weights1d = ntuple(d->cheb1weights(n[d]),N)
@@ -174,10 +178,12 @@ Return the `n` Chebyshev points of the second kind on the interval `[a,b]`. The
 nodes are nested in the following sense: `cheb2nodes(n,a,b) ==
 cheb2nodes(2n-1,a,b)[1:2:end]`.
 """
-cheb2nodes(n::NTuple{N},rec::HyperRectangle{N}) where {N} = cheb2nodes(n,low_corner(rec),high_corner(rec))
 function cheb2nodes(n::NTuple{N},lc,uc) where {N}
     iter = cheb2nodes_iter(n,lc,uc)
     return map(x->SVector{N,Float64}(x),iter)
+end
+function cheb2nodes(n::NTuple{N},rec::AbstractHyperRectangle{N}) where {N} 
+    cheb2nodes(n,low_corner(rec),high_corner(rec))
 end
 function cheb2nodes(n::Integer,a::Number,b::Number)
     xcheb::Vector{Float64} = cheb2nodes(n)
@@ -193,6 +199,9 @@ function cheb2nodes_iter(n::NTuple{N},lc,uc) where {N}
     nodes1d = ntuple(d->cheb2nodes(n[d],lc[d],uc[d]),N)
     iter = Iterators.product(nodes1d...)
     return iter
+end
+function cheb2nodes_iter(n::NTuple{N},rec::AbstractHyperRectangle{N}) where {N}
+    return cheb2nodes_iter(n,low_corner(rec),high_corner(rec))
 end
 
 function cheb2weights(n::NTuple{N}) where {N}
