@@ -32,6 +32,7 @@ export
     AbstractReferenceShape,
     AbstractEntity,
     AbstractParametricBody,
+    AbstractHyperRectangle,
     # types
     ElementaryEntity,
     ParametricEntity,
