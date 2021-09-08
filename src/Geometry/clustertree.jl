@@ -109,7 +109,7 @@ end
     _binary_split!(cluster::ClusterTree,f;parentcluster=cluster)
 
 Split a `ClusterTree` into two, sorting all elements in the process.
-For each resulting child assign `child.parent=parentnode`.
+For each resulting child assign `child.parent=parentcluster`.
 
 Passing a `dir` and `pos` arguments splits the `bounding_box` box of `node`
 along direction `dir` at position `pos`, then sorts all points into the
@@ -120,15 +120,39 @@ according to whether `f(x)` returns `true` (point sorted on
 the left node) or `false` (point sorted on the right node). At the end a minimal
 `HyperRectangle` containing all left/right points is created.
 """
-function _binary_split!(cluster::ClusterTree{T,S,D},f::Function;parentcluster=cluster,
-                        buff=Vector{Int}(undef,length(cluster))) where {T,S,D}
+function _binary_split!(cluster::ClusterTree,dir,pos;parentcluster=cluster)
+    return _common_binary_split!(cluster,(dir,pos);parentcluster)
+end
+function _binary_split!(cluster::ClusterTree,f::Function;parentcluster=cluster)
+    return _common_binary_split!(cluster,f;parentcluster)
+end
+function _common_binary_split!(cluster::ClusterTree{T,S,D},conditions;
+                        parentcluster) where {T,S,D}
+    els    = root_elements(cluster)
+    l2g    = loc2glob(cluster)
+    irange = index_range(cluster)
+    # get split data
+    npts_left,npts_right,left_rec,right_rec,buff = binary_split_data(cluster,conditions)
+    @assert npts_left + npts_right == length(irange) "elements lost during split"
+    l2g[irange] = l2g[buff]
+    els[irange] = els[buff] # reorders the global index set
+    # new ranges for cluster
+    left_indices  = irange.start:(irange.start)+npts_left-1
+    right_indices = (irange.start+npts_left):irange.stop
+    # create children
+    clt1 = ClusterTree{D}(els,left_rec,left_indices,l2g,nothing,parentcluster)
+    clt2 = ClusterTree{D}(els,right_rec,right_indices,l2g,nothing,parentcluster)
+    return clt1, clt2
+end
+function binary_split_data(cluster::ClusterTree{T,S},conditions::Function) where {T,S}
+    f          = conditions
     rec        = container(cluster)
     els        = root_elements(cluster)
-    l2g        = loc2glob(cluster)
     irange     = index_range(cluster)
+    n          = length(irange)
     npts_left  = 0
     npts_right = 0
-    n          = length(irange)
+    buff = Vector{Int}(undef,length(cluster))
     xl_left = xl_right = high_corner(rec)
     xu_left = xu_right = low_corner(rec)
     #sort the points into left and right rectangle
@@ -146,30 +170,21 @@ function _binary_split!(cluster::ClusterTree{T,S,D},f::Function;parentcluster=cl
             npts_right += 1
         end
     end
-    @assert npts_left + npts_right == n "elements lost during split"
-    l2g[irange] = l2g[buff]
-    els[irange] = els[buff] # reorders the global index set
-    # new ranges for cluster
-    left_indices  = irange.start:(irange.start)+npts_left-1
-    right_indices = (irange.start+npts_left):irange.stop
     # bounding boxes
     left_rec  = S(xl_left,xu_left)
     right_rec = S(xl_right,xu_right)
-    # create children
-    clt1 = ClusterTree{D}(els,left_rec,left_indices,l2g,nothing,parentcluster)
-    clt2 = ClusterTree{D}(els,right_rec,right_indices,l2g,nothing,parentcluster)
-    return clt1, clt2
+    return npts_left,npts_right,left_rec,right_rec,buff
 end
-
-function _binary_split!(cluster::ClusterTree{T,S,D},dir::Int,pos::Number;parentcluster=cluster,
-                        buff= Vector{Int}(undef,length(cluster))) where {T,S,D}
+function binary_split_data(cluster::ClusterTree,conditions::Tuple{Integer,Real})
+    dir,pos    = conditions
     rec        = container(cluster)
     els        = root_elements(cluster)
-    l2g        = loc2glob(cluster)
     irange     = index_range(cluster)
+    n          = length(irange)
     npts_left  = 0
     npts_right = 0
-    n          = length(irange)
+    buff = Vector{Int}(undef,length(cluster))
+    # bounding boxes
     left_rec, right_rec = split(rec,dir,pos)
     #sort the points into left and right rectangle
     for i in irange
@@ -182,16 +197,7 @@ function _binary_split!(cluster::ClusterTree{T,S,D},dir::Int,pos::Number;parentc
             npts_right += 1
         end
     end
-    @assert npts_left + npts_right == n "elements lost during split"
-    l2g[irange] = l2g[buff]
-    els[irange] = els[buff] # reorders the global index set
-    # new ranges for cluster
-    left_indices      = irange.start:(irange.start)+npts_left-1
-    right_indices     = (irange.start+npts_left):irange.stop
-    # create children
-    clt1 = ClusterTree{D}(els,left_rec,left_indices,l2g,nothing,parentcluster)
-    clt2 = ClusterTree{D}(els,right_rec,right_indices,l2g,nothing,parentcluster)
-    return clt1, clt2
+    return npts_left,npts_right,left_rec,right_rec,buff
 end
 
 """
