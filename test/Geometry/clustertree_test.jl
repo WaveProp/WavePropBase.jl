@@ -11,6 +11,9 @@ function test_cluster_tree(clt)
         x     = clt._elements[iloc]
         x ∈ bbox || (return false)
     end
+    if !isroot(clt)
+        clt ∈ clt.parent.children || (return false)
+    end
     if !isleaf(clt)
         for child in clt.children
             test_cluster_tree(child) || (return false)

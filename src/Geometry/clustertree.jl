@@ -95,7 +95,7 @@ ClusterTree(elements,splitter;copy_elements=true) = ClusterTree{Nothing}(element
 
 function _build_cluster_tree!(current_node,splitter)
     if should_split(current_node,splitter)
-        children          = split!(current_node,splitter)
+        children = split!(current_node,splitter)
         current_node.children = children
         for child in children
             _build_cluster_tree!(child,splitter)
@@ -105,10 +105,11 @@ function _build_cluster_tree!(current_node,splitter)
 end
 
 """
-    _binary_split!(node::ClusterTree,dir,pos)
-    _binary_split!(f,node::ClusterTree)
+    _binary_split!(cluster::ClusterTree,dir,pos;parentcluster=cluster)
+    _binary_split!(cluster::ClusterTree,f;parentcluster=cluster)
 
 Split a `ClusterTree` into two, sorting all elements in the process.
+For each resulting child assign `child.parent=parentnode`.
 
 Passing a `dir` and `pos` arguments splits the `bounding_box` box of `node`
 along direction `dir` at position `pos`, then sorts all points into the
@@ -119,17 +120,17 @@ according to whether `f(x)` returns `true` (point sorted on
 the left node) or `false` (point sorted on the right node). At the end a minimal
 `HyperRectangle` containing all left/right points is created.
 """
-function _binary_split!(f::Function,cluster::ClusterTree{T,S,D},
-                        buff= Vector{Int}(undef,length(cluster))) where {T,S,D}
+function _binary_split!(cluster::ClusterTree{T,S,D},f::Function;parentcluster=cluster,
+                        buff=Vector{Int}(undef,length(cluster))) where {T,S,D}
     rec        = container(cluster)
     els        = root_elements(cluster)
     l2g        = loc2glob(cluster)
     irange     = index_range(cluster)
     npts_left  = 0
     npts_right = 0
+    n          = length(irange)
     xl_left = xl_right = high_corner(rec)
     xu_left = xu_right = low_corner(rec)
-    n          = length(irange)
     #sort the points into left and right rectangle
     for i in irange
         pt = els[i] |> coords
@@ -149,18 +150,18 @@ function _binary_split!(f::Function,cluster::ClusterTree{T,S,D},
     l2g[irange] = l2g[buff]
     els[irange] = els[buff] # reorders the global index set
     # new ranges for cluster
-    left_indices      = irange.start:(irange.start)+npts_left-1
-    right_indices     = (irange.start+npts_left):irange.stop
+    left_indices  = irange.start:(irange.start)+npts_left-1
+    right_indices = (irange.start+npts_left):irange.stop
     # bounding boxes
-    left_rec   = S(xl_left,xu_left)
-    right_rec  = S(xl_right,xu_right)
+    left_rec  = S(xl_left,xu_left)
+    right_rec = S(xl_right,xu_right)
     # create children
-    clt1 = ClusterTree{D}(els,left_rec,left_indices,l2g,nothing,cluster)
-    clt2 = ClusterTree{D}(els,right_rec,right_indices,l2g,nothing,cluster)
+    clt1 = ClusterTree{D}(els,left_rec,left_indices,l2g,nothing,parentcluster)
+    clt2 = ClusterTree{D}(els,right_rec,right_indices,l2g,nothing,parentcluster)
     return clt1, clt2
 end
 
-function _binary_split!(cluster::ClusterTree{T,S,D},dir::Int,pos::Number,
+function _binary_split!(cluster::ClusterTree{T,S,D},dir::Int,pos::Number;parentcluster=cluster,
                         buff= Vector{Int}(undef,length(cluster))) where {T,S,D}
     rec        = container(cluster)
     els        = root_elements(cluster)
@@ -188,8 +189,8 @@ function _binary_split!(cluster::ClusterTree{T,S,D},dir::Int,pos::Number,
     left_indices      = irange.start:(irange.start)+npts_left-1
     right_indices     = (irange.start+npts_left):irange.stop
     # create children
-    clt1 = ClusterTree{D}(els,left_rec,left_indices,l2g,nothing,cluster)
-    clt2 = ClusterTree{D}(els,right_rec,right_indices,l2g,nothing,cluster)
+    clt1 = ClusterTree{D}(els,left_rec,left_indices,l2g,nothing,parentcluster)
+    clt2 = ClusterTree{D}(els,right_rec,right_indices,l2g,nothing,parentcluster)
     return clt1, clt2
 end
 
@@ -236,20 +237,20 @@ Base.@kwdef struct DyadicSplitter <: AbstractSplitter
 end
 
 function should_split(node::ClusterTree,splitter::DyadicSplitter)
-    length(node) > splitter.nmax
+    return length(node) > splitter.nmax
 end
 
-function split!(cluster::ClusterTree,::DyadicSplitter)
-    d        = ambient_dimension(cluster)
-    clusters = [cluster]
-    rec = cluster.container
+function split!(parentcluster::ClusterTree,::DyadicSplitter)
+    d        = ambient_dimension(parentcluster)
+    clusters = [parentcluster]
+    rec = container(parentcluster)
     rec_center = center(rec)
     for i in 1:d
         pos = rec_center[i]
         nel = length(clusters) #2^(i-1)
         for _ in 1:nel
             clt = popfirst!(clusters)
-            append!(clusters,_binary_split!(clt,i,pos))
+            append!(clusters,_binary_split!(clt,i,pos;parentcluster))
         end
     end
     return clusters
@@ -266,7 +267,7 @@ end
 
 should_split(node::ClusterTree,splitter::GeometricSplitter) = length(node) > splitter.nmax
 
-function split!(cluster::ClusterTree,splitter::GeometricSplitter)
+function split!(cluster::ClusterTree,::GeometricSplitter)
     rec          = cluster.container
     wmax, imax   = findmax(high_corner(rec) - low_corner(rec))
     left_node, right_node = _binary_split!(cluster, imax, low_corner(rec)[imax]+wmax/2)
@@ -284,12 +285,12 @@ end
 
 should_split(node::ClusterTree,splitter::GeometricMinimalSplitter) = length(node) > splitter.nmax
 
-function split!(cluster::ClusterTree,splitter::GeometricMinimalSplitter)
+function split!(cluster::ClusterTree,::GeometricMinimalSplitter)
     rec  = cluster.container
     wmax, imax  = findmax(high_corner(rec) - low_corner(rec))
     mid = low_corner(rec)[imax]+wmax/2
     predicate = (x) -> x[imax] < mid
-    left_node,right_node =  _binary_split!(predicate,cluster)
+    left_node,right_node =  _binary_split!(cluster,predicate)
     return [left_node, right_node]
 end
 
@@ -302,7 +303,7 @@ end
 
 should_split(node::ClusterTree,splitter::PrincipalComponentSplitter) = length(node) > splitter.nmax
 
-function split!(cluster::ClusterTree,splitter::PrincipalComponentSplitter)
+function split!(cluster::ClusterTree,::PrincipalComponentSplitter)
     pts       = cluster._elements
     irange    = cluster.index_range
     xc        = center_of_mass(cluster)
@@ -313,7 +314,7 @@ function split!(cluster::ClusterTree,splitter::PrincipalComponentSplitter)
     end
     v = eigvecs(cov)[:,end]
     predicate = (x) -> dot(x-xc,v) < 0
-    left_node, right_node = _binary_split!(predicate,cluster)
+    left_node, right_node = _binary_split!(cluster,predicate)
     return [left_node, right_node]
 end
 
@@ -342,14 +343,14 @@ end
 
 should_split(node::ClusterTree,splitter::CardinalitySplitter) = length(node) > splitter.nmax
 
-function split!(cluster::ClusterTree,splitter::CardinalitySplitter)
+function split!(cluster::ClusterTree,::CardinalitySplitter)
     points     = cluster._elements
     irange     = cluster.index_range
     rec        = container(cluster)
     _, imax    = findmax(high_corner(rec) - low_corner(rec))
     med        = median(coords(points[i])[imax] for i in irange) # the median along largest axis `imax`
     predicate = (x) -> x[imax] < med
-    left_node, right_node = _binary_split!(predicate,cluster)
+    left_node, right_node = _binary_split!(cluster,predicate)
     return [left_node, right_node]
 end
 
