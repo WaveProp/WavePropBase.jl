@@ -67,6 +67,14 @@ export
     line,
     new_tag,
     global_add_entity!,
+    root_elements,
+    index_range,
+    children,
+    parent,
+    container,
+    elements,
+    loc2glob,
+    points,
     # global variables
     TAGS,
     ENTITIES

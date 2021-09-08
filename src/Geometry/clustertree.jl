@@ -2,13 +2,14 @@
     mutable struct ClusterTree{T,S,D}
 
 Tree structure used to cluster elements of type `T` into containers of type `S`.
+Instances of `T` must implement the `coords(::T)::SVector` method.
 An additional `data` field of type `D` can be associated with each node (it
-defaults to `D=Nothing`).
+defaults to `D=Nothing`). 
 
 # Fields:
 - `_elements::T` : vector containing the sorted elements.
-- `loc_idxs::UnitRange{Int}` : indices of elements contained in the current node.
 - `container::S` : container for the elements in the current node.
+- `index_range::UnitRange{Int}` : indices of elements contained in the current node.
 - `loc2glob::Vector{Int}` : permutation from global local indexing system to the
   original (global) indexing system used before the construction of the tree.
 - `children::Vector{ClusterTree{N,T,D}}`
@@ -35,15 +36,16 @@ end
 
 # convenience functions and getters
 root_elements(clt::ClusterTree) = clt._elements
-index_range(clt::ClusterTree) = clt.index_range
-children(clt::ClusterTree) = clt.children
-parent(clt::ClusterTree)   = clt.parent
-container(clt::ClusterTree) = clt.container
-elements(clt::ClusterTree) = view(root_elements(clt),clt.index_range)
-loc2glob(clt::ClusterTree) = clt.loc2glob
+index_range(clt::ClusterTree)   = clt.index_range
+children(clt::ClusterTree)      = clt.children
+parent(clt::ClusterTree)        = clt.parent
+container(clt::ClusterTree)     = clt.container
+elements(clt::ClusterTree)      = view(root_elements(clt),index_range(clt))
+loc2glob(clt::ClusterTree)      = clt.loc2glob
+points(clt::ClusterTree)        = (coords(el) for el in elements(clt))
 
-containter_type(clt::ClusterTree{T,S}) where {T,S} = S
-element_type(clt::ClusterTree{T}) where {T} = T
+container_type(::ClusterTree{T,S}) where {T,S} = S
+element_type(::ClusterTree{T}) where {T} = T
 
 # interface to AbstractTrees. No children is determined by an empty tuple for
 # AbstractTrees.
