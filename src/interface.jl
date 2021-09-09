@@ -118,6 +118,14 @@ function normal end
 push!(INTERFACE,:normal)
 
 """
+    weight(q)
+
+For a quadrature node `q`, return its weight.
+"""
+function weight end
+push!(INTERFACE,:weight)
+
+"""
     domain(f)
 
 The domain of the function `f`.

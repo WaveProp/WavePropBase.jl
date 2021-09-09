@@ -32,7 +32,7 @@ jacobian(f::IMT,x) = derivative(f, x) |> SMatrix{1,1}
     struct Kress{P} <: AbstractSingularityHandler{ReferenceLine}
 
 Change of variables mapping `[0,1]` to `[0,1]` with the property that the first
-`P` derivatives of the transformation vanish at `x=0`.
+`P-1` derivatives of the transformation vanish at `x=0`.
 """
 struct Kress{P} <: AbstractSingularityHandler{ReferenceLine}
 end

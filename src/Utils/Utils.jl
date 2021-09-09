@@ -18,6 +18,7 @@ export
     svector,
     matrix_to_blockmatrix,
     blockmatrix_to_matrix,
+    blockmatrix_to_matrix!,
     diagonalblockmatrix_to_matrix,
     blockvector_to_vector,
     vector_to_blockvector,
@@ -52,6 +53,13 @@ function blockmatrix_to_matrix(A::Matrix{B})  where B <: SMatrix
     sblock = size(B)
     ss     = size(A).*sblock # matrix size when viewed as matrix over T
     Afull = Matrix{T}(undef,ss)
+    blockmatrix_to_matrix!(Afull,A)
+    return Afull
+end
+function blockmatrix_to_matrix!(Afull,A::Matrix{B})  where B <: SMatrix
+    sblock = size(B)
+    ss     = size(A).*sblock # matrix size when viewed as matrix over T
+    @assert size(Afull) == ss
     for i=1:ss[1], j=1:ss[2]
         bi, ind_i = divrem(i-1,sblock[1]) .+ (1,1)
         bj, ind_j = divrem(j-1,sblock[2]) .+ (1,1)
@@ -446,7 +454,32 @@ function getnodes!(f,blocks,tree,isterminal)
     return blocks
 end
 
+# some reasonable defaults for coords
 coords(x::Tuple)     = SVector(x)
 coords(x::SVector)   = x
+
+function coords(x::T) where {T}
+    if hasfield(T,:coords)
+        return getfield(x,:coords)
+    else
+        error("type $T has no method nor field named `coords`.")
+    end
+end
+
+function normal(x::T) where {T}
+    if hasfield(T,:normal)
+        return getfield(x,:normal)
+    else
+        error("type $T has no method nor field named `normal`.")
+    end
+end
+
+function weight(x::T) where {T}
+    if hasfield(T,:weight)
+        return getfield(x,:weight)
+    else
+        error("type $T has no method nor field named `weight`.")
+    end
+end
 
 end # module
