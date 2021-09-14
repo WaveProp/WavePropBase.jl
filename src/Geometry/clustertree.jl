@@ -127,7 +127,7 @@ function _binary_split!(cluster::ClusterTree,f::Function;parentcluster=cluster)
     return _common_binary_split!(cluster,f;parentcluster)
 end
 function _common_binary_split!(cluster::ClusterTree{T,S,D},conditions;
-                        parentcluster) where {T,S,D}
+                               parentcluster) where {T,S,D}
     els    = root_elements(cluster)
     l2g    = loc2glob(cluster)
     irange = index_range(cluster)
