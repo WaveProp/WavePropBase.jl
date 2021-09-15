@@ -40,21 +40,21 @@ end
 end
 
 # plot a hyperrectangle
-@recipe function f(rec::HyperRectangle{N}) where {N}
+@recipe function f(rec::AbstractHyperRectangle{N}) where {N}
     seriestype := :path
     linecolor --> :black
     linestyle --> :solid
     label --> ""
     if N == 2
-        pt1 = rec.low_corner
-        pt2 = rec.high_corner
+        pt1 = low_corner(rec)
+        pt2 = high_corner(rec)
         x1, x2 = pt1[1], pt2[1]
         y1, y2 = pt1[2], pt2[2]
         @series SVector(x1,x2,x2,x1,x1), SVector(y1,y1,y2,y2,y1)
     elseif N == 3
         seriestype := :path
-        pt1 = rec.low_corner
-        pt2 = rec.high_corner
+        pt1 = low_corner(rec)
+        pt2 = high_corner(rec)
         x1, x2 = pt1[1], pt2[1]
         y1, y2 = pt1[2], pt2[2]
         z1, z2 = pt1[3], pt2[3]
@@ -157,7 +157,7 @@ end
     @series begin
         seriestype := :scatter
         markersize --> 2
-        PlotPoints(),tree.points[tree.loc2glob[tree.loc_idxs]]
+        PlotPoints(),tree.points[tree.loc2glob[tree.index_range]]
     end
     # plot bounding box
     @series begin
