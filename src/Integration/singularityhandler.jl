@@ -60,6 +60,32 @@ end
 
 jacobian(f::Kress,x) = derivative(f, x) |> SMatrix{1,1}
 
+struct KressR{P} <: AbstractSingularityHandler{ReferenceLine}
+end
+KressR(;order=5) = KressR{order}()
+
+domain(k::KressR) = ReferenceLine()
+image(k::KressR)  = ReferenceLine()
+
+# NOTE: fastmath is needed here to allow for various algebraic simplifications
+# which are not exact in floating arithmetic. Maybe reorder the operations *by
+# hand* to avoid having to use fastmath? In any case, benchmark first.
+function (f::KressR{P})(y) where {P}
+    x = 1-y[1]
+    v = (x) -> (1 / P - 1 / 2) * ((1 - x))^3 + 1 / P * ((x - 1)) + 1 / 2
+    return 1 - 2v(x)^P / (v(x)^P + v(2 - x)^P)
+end
+
+function derivative(f::KressR{P}, y) where {P}
+    x = 1-y[1]
+    v = (x) -> (1 / P - 1 / 2) * ((1 - x))^3 + 1 / P * ((x - 1)) + 1 / 2
+    vp = (x) -> -3 * (1 / P - 1 / 2) * ((1 - x))^2 + 1 / P
+    return 2 * (P * v(x)^(P - 1) * vp(x) * (v(x)^P + v(2 - x)^P) - (P * v(x)^(P - 1) * vp(x) - P * v(2 - x)^(P - 1) * vp(2 - x) ) * v(x)^P ) /
+        (v(x)^P + v(2 - x)^P)^2
+end
+
+jacobian(f::KressR,x) = derivative(f, x) |> SMatrix{1,1}
+
 """
     struct KressP{P} <: AbstractSingularityHandler{ReferenceLine}
 

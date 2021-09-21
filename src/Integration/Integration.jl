@@ -32,6 +32,7 @@ export
     GaussLegendre,
     TensorProductQuadrature,
     Kress,
+    KressR,
     KressP,
     IMT,
     Duffy,
