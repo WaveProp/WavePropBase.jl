@@ -9,6 +9,7 @@ using Requires # for conditional loading of vtkIO
 using WavePropBase
 using WavePropBase.Utils
 using WavePropBase.Geometry
+using WavePropBase.Trees
 using WavePropBase.Integration
 using WavePropBase.Interpolation
 using WavePropBase.Mesh

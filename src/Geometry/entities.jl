@@ -8,15 +8,22 @@ abstract type AbstractEntity end
 """
     key(e::AbstractEntity)
 
-The `(dim,tag)` pair used as a key to identify various abstract entities.
+The `(dim,tag)` pair used as a key to identify geometrical entities.
 """
 key(e::AbstractEntity) = geometric_dimension(e),tag(e)
 
 # reasonable defaults which assume the filds `tag` and `dim` and `boundary`
 # fields exist. Some
 # `AbstractEntities` need to override this method.
+"""
+    tag(::AbstractEntity)
+
+Integer tag used to idetify geometrical entities.
+"""
 tag(e::AbstractEntity) = e.tag
+
 geometric_dimension(e::AbstractEntity) = e.dim
+
 boundary(e::AbstractEntity) = e.boundary
 
 function Base.show(io::IO,ent::AbstractEntity)

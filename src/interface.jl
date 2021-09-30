@@ -48,14 +48,6 @@ function dimension end
 push!(INTERFACE,:dimension)
 
 """
-    tag(::AbstractEntity)
-
-Integer tag commonly used to idetify geometrical entities.
-"""
-function tag end
-push!(INTERFACE,:tag)
-
-"""
     boundary(ω)
 
 Return the boundary of `ω`. For a mesh element gives the `d-1` dimensional
@@ -73,6 +65,11 @@ Largest distance between `x` and `y` for `x,y ∈ Ω`.
 function diameter end
 push!(INTERFACE,:diameter)
 
+"""
+    distance(Ω₁,Ω₂)
+
+Minimal Euclidean distance between `Ω₁` and `Ω₂`.
+"""
 function distance end
 push!(INTERFACE,:distance)
 
@@ -86,6 +83,8 @@ push!(INTERFACE,:radius)
 
 """
     center(Ω)
+
+Center of the smallest possible ball containing `Ω`.
 """
 function center end
 push!(INTERFACE,:center)
@@ -93,7 +92,7 @@ push!(INTERFACE,:center)
 """
     return_type(f)
 
-The type returned by the function-like object `f`.
+The type returned by function-like objects.
 """
 function return_type end
 push!(INTERFACE,:return_type)
@@ -102,7 +101,7 @@ push!(INTERFACE,:return_type)
     jacobian(f,x)
 
 Given a (possibly vector-valued) function `f : 𝐑ᵐ → 𝐅ᵐ`, return the `m × n`
-matrix `Aᵢⱼ = ∂fᵢ/∂x̂ⱼ`.
+matrix `Aᵢⱼ = ∂fᵢ/∂xⱼ`.
 """
 function jacobian end
 push!(INTERFACE,:jacobian)
@@ -118,17 +117,9 @@ function normal end
 push!(INTERFACE,:normal)
 
 """
-    weight(q)
-
-For a quadrature node `q`, return its weight.
-"""
-function weight end
-push!(INTERFACE,:weight)
-
-"""
     domain(f)
 
-The domain of the function `f`.
+The domain of the function `f`; i.e. if `f: Ω → R`, return `Ω`.
 """
 function domain end
 push!(INTERFACE,:domain)
@@ -136,7 +127,7 @@ push!(INTERFACE,:domain)
 """
     image(f)
 
-The image of the function `f`.
+The image of the function `f`; i.e. if `f: Ω → R`, return `R`.
 """
 function image end
 push!(INTERFACE,:image)
@@ -148,81 +139,6 @@ Return the underlying parametrization of `el`.
 """
 function parametrization end
 push!(INTERFACE,:parametrization)
-
-"""
-    entities(Ω::Domain)
-    entities(M::AbstractMesh)
-
-Return the geometrical entities composing `Ω`.
-"""
-function entities end
-push!(INTERFACE,:entities)
-
-"""
-    bounding_box(data)
-
-Create an axis-aligned bounding box containing all of `data`.
-"""
-function bounding_box end
-push!(INTERFACE,:bounding_box)
-
-"""
-    reference_nodes(::LagrangeElement{D,Np,T})
-
-Return the reference nodes on `D` used for the polynomial interpolation. The
-function values on these nodes completely determines the interpolating
-polynomial.
-
-We use the same convention as `gmsh` for defining the reference nodes and their
-order (see [node
-ordering](https://gmsh.info/doc/texinfo/gmsh.html#Node-ordering) on `gmsh`
-documentation).
-"""
-function reference_nodes end
-push!(INTERFACE,:reference_nodes)
-
-function mesh end
-push!(INTERFACE,:mesh)
-
-function depth end
-push!(INTERFACE,:depth)
-
-function children end
-push!(INTERFACE,:children)
-
-function parent end
-push!(INTERFACE,:parent)
-
-function isroot end
-push!(INTERFACE,:isroot)
-
-function isleaf end
-push!(INTERFACE,:isleaf)
-
-function hasdata end
-push!(INTERFACE,:hasdata)
-
-function getnodes end
-push!(INTERFACE,:getnodes)
-
-"""
-    flip_normal(e::AbstractEntity)
-
-Flip the orientation of the normal vector.
-"""
-function flip_normal end
-push!(INTERFACE,:flip_normal)
-
-"""
-    meshgen(Ω::Domain)
-
-Generate a mesh for `Ω`.
-"""
-function meshgen end
-push!(INTERFACE,:meshgen)
-
-function vals end
-push!(INTERFACE,:vals)
 
 """
     coords(x)

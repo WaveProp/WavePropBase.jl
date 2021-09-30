@@ -22,7 +22,6 @@ using WavePropBase.Utils
 WavePropBase.@import_interface
 
 include("hyperrectangle.jl")
-include("clustertree.jl")
 include("referenceshapes.jl")
 include("entities.jl")
 include("domain.jl")
@@ -53,6 +52,7 @@ export
     CardinalitySplitter,
     # functions
     clear_entities!,
+    entities,
     tag,
     key,
     assertequaldim,

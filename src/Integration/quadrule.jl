@@ -93,7 +93,7 @@ end
     struct TrapezoidalP{N} <: AbstractQuadratureRule{ReferenceLine}
 
 Open trapezoidal rule. Useful for periodic functions since it does not duplicate
-the boundary nodes, void duplication.
+the boundary nodes.
 """
 struct TrapezoidalP{N} <: AbstractQuadratureRule{ReferenceLine} end
 
@@ -182,7 +182,6 @@ Generate a similar quadrature rule, but with `k`-times as many quadrature nodes.
 function refine(q::GaussLegendre{N},k=2) where {N}
     GaussLegendre(Int(N*k))
 end
-
 
 """
     struct Gauss{D,N} <: AbstractQuadratureRule{D}
@@ -293,4 +292,34 @@ function qrule_for_reference_shape(ref,order)
     else
         error("no appropriate quadrature rule found.")
     end
+end
+
+abstract type CompositeQuadratureRule{D} <: AbstractQuadratureRule{D} end
+
+struct GaussKronrod{N} <: CompositeQuadratureRule{ReferenceLine}
+end
+
+@generated function (::GaussKronrod{N})() where {N}
+    x,w,wg = kronrod(N)
+    xk   = [x;reverse(-x[1:end-1])]
+    wk   = [w;reverse(w[1:end-1])]
+    wg   = [wg;reverse(wg[1:end-1])]
+    idxs = 2:2:length(xk)
+    xg   = xk[idxs]
+    return SVector{2*N+1}(xk),SVector{2*N+1}(wk),SVector{N}(xg),SVector{N}(wg)
+end
+
+function integrate(f,q::GaussKronrod{N}) where {N}
+    xk,wk,_,wg = q()
+    acc1 = 0.0
+    acc2 = 0.0
+    for n in 1:2N+1
+        v    = f(xk[n])
+        acc1 += v*wk[n]
+        if iseven(n)
+            acc2 += v*wg[n>>1]
+        end
+    end
+    E = abs(acc1 - acc2)
+    return acc1,E
 end

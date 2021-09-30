@@ -6,6 +6,8 @@ include("Utils/Utils.jl")
 
 include("Geometry/Geometry.jl")
 
+include("Trees/Trees.jl")
+
 include("Interpolation/Interpolation.jl")
 
 include("Integration/Integration.jl")

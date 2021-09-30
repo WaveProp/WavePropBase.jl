@@ -53,6 +53,20 @@ end
 
 vals(el::LagrangeElement) = el.vals
 
+"""
+    reference_nodes(el::LagrangeElement)
+
+Return the reference nodes on `domain(el)` used for the polynomial
+interpolation. The function values on these nodes completely determines the
+interpolating polynomial.
+
+We use the same convention as `gmsh` for defining the reference nodes and their
+order (see [node
+ordering](https://gmsh.info/doc/texinfo/gmsh.html#Node-ordering) on `gmsh`
+documentation).
+"""
+function reference_nodes end
+
 # a contructor which infers the extra information from nodes
 function LagrangeElement{R,K}(vals::SVector{Np,T}) where {R,K,T,Np}
     LagrangeElement{R,K,T}(vals)
