@@ -28,7 +28,6 @@ export
     assert_concrete_type,
     cross_product_matrix,
     fill_zero_diagonal!,
-    Point3D,
     fill_zero_diagonal!,
     cart2sph,
     cart2pol,
@@ -205,55 +204,6 @@ function print_threads_info()
 end
 
 """
-    const Point1D
-    const Point1D(x1)
-
-A point in 1D space, stored in a StaticArray.
-Point1D = SVector{1, Float64}.
-"""
-const Point1D = SVector{1, Float64}
-
-"""
-    const Point2D
-    const Point2D(x1, x2)
-    const Point2D(x::NTuple{2, Float64})
-
-A point in 2D space, stored in a StaticArray.
-Point2D = SVector{2, Float64}.
-"""
-const Point2D = SVector{2, Float64}
-
-"""
-    const Point3D
-    const Point3D(x1, x2, x3)
-    const Point3D(x::NTuple{3, Float64})
-
-A point in 3D space, stored in a StaticArray.
-Point3D = SVector{3, Float64}.
-"""
-const Point3D = SVector{3, Float64}
-
-"""
-    const ComplexPoint3D
-    const ComplexPoint3D(x1, x2, x3)
-    const ComplexPoint3D(x::NTuple{3, ComplexF64})
-
-A complex 3D point, stored in a StaticArray.
-ComplexPoint3D = SVector{3, ComplexF64}.
-"""
-const ComplexPoint3D = SVector{3, ComplexF64}
-
-"""
-    const ComplexPoint2D
-    const ComplexPoint2D(x1, x2)
-    const ComplexPoint2D(x::NTuple{2, ComplexF64})
-
-A complex 2D point, stored in a StaticArray.
-ComplexPoint2D = SVector{2, ComplexF64}.
-"""
-const ComplexPoint2D = SVector{2, ComplexF64}
-
-"""
     const SType{T} = Union{T,Type{T}}
 
 Union type of `T` and its data type `Type{T}`. Used to simplify methods defined
@@ -407,22 +357,6 @@ macro interface(f,n=1)
         end
     end
     return esc(ex)
-end
-
-"""
-    depth(node,acc=0)
-
-Recursive function to compute the depth of `node` in a a tree-like structure.
-Require the method `getparent(node)` to be implemented. Overload this function
-if your structure has a more efficient way to compute `depth` (e.g. if it stores
-it in a field).
-"""
-function depth(node,acc=0)
-    if isroot(node)
-        return acc
-    else
-        depth(node.parent,acc+1)
-    end
 end
 
 # some reasonable defaults for coords
