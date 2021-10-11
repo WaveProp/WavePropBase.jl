@@ -8,7 +8,7 @@ using Random
 Random.seed!(1)
 
 @testset "Reference segment" begin
-    qstd = GaussLegendre(20)
+    qstd = Fejer(20)
     d     = domain(qstd)
     # simple test on smooth integrand
     for shand in [IMT(), Kress(), KressP()]
@@ -21,10 +21,10 @@ Random.seed!(1)
     for shand in [IMT(), Kress(),KressP()]
         q     = SingularQuadratureRule(qstd,shand)
         Ia    = integrate(f,q)
-        @test isapprox(Ia,Ie,rtol=1e-5)
+        @test isapprox(Ia,Ie,rtol=1e-4)
         # check that the `naive` integration woudl have failed the test
         Istd    = integrate(f,qstd)
-        @test !isapprox(Istd,Ie,rtol=1e-3)
+        @test !isapprox(Istd,Ie,rtol=1e-4)
     end
     # test that KressP() can handle singularity at both endpoints, and Kress() cannot
     f     = (x) -> log(x) + log(1-x)
@@ -54,12 +54,12 @@ Random.seed!(1)
         @test isapprox(Ia,Ie,rtol=1e-5)
         # check that the `naive` integration woudl have failed the test
         Istd    = integrate(f,qstd)
-        @test !isapprox(Istd,Ie,rtol=1e-3)
+        @test !isapprox(Istd,Ie,rtol=1e-5)
     end
 end
 
 @testset "Duffy" begin
-    q1d   = GaussLegendre(5)
+    q1d   = Fejer(5)
     qstd  = TensorProductQuadrature(q1d,q1d)
     duffy = Duffy()
     qsin  = SingularQuadratureRule(qstd,duffy)
@@ -68,7 +68,7 @@ end
     k    = x -> cos(x[1])*sin(x[2])
     Ie   = 1/2*(sin(1)-cos(1))
     Ia   = integrate(k,qsin)
-    @test isapprox(Ie,Ia,rtol=1e-5)
+    @test isapprox(Ie,Ia,rtol=1e-4)
     # singular kernel at right vertex
     s    = SVector(1,0)
     k    = x -> 1/norm(x-s)
@@ -84,7 +84,7 @@ end
 end
 
 @testset "2d Kress" begin
-    q1d   = GaussLegendre{10}()
+    q1d   = Fejer{10}()
     qstd  = TensorProductQuadrature(q1d,q1d)
     s1d   = Kress(order=2)
     sing_handler = TensorProductSingularityHandler(s1d,s1d)
