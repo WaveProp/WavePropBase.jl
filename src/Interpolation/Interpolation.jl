@@ -1,5 +1,9 @@
-# TODO: open an issue to discuss how this module should be implemented and what
-# functionalities it should provide.
+"""
+    module Interpolation
+
+Module implementing various interpolation schemes commonly used in finite
+element and boundary element methods.
+"""
 module Interpolation
 
 using StaticArrays
@@ -14,10 +18,10 @@ WavePropBase.@import_interface
 export
     # abstract types
     AbstractElement,
+    AbstractHyperRectangle,
     # structs
     ParametricElement,
     LagrangeElement,
-    LagrangePoint,
     LagrangeLine,
     LagrangeTriangle,
     LagrangeSquare,
@@ -28,6 +32,8 @@ export
     MonomialBasis,
     PolynomialBasis,
     LagrangeBasis,
+    HyperRectangle,
+    HyperCube,
     # methods
     reference_nodes,
     monomial_basis,
@@ -47,10 +53,13 @@ export
     cheb2weights,
     grad,
     vals,
+    low_corner,
+    high_corner,
     precompute_nodes_and_weights!
 
 include("polynomials.jl")
-include("tensorlaginterp.jl")
 include("element.jl")
+include("hyperrectangle.jl")
+include("tensorlaginterp.jl")
 
 end # module Interpolation

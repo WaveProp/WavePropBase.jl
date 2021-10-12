@@ -8,15 +8,22 @@ abstract type AbstractEntity end
 """
     key(e::AbstractEntity)
 
-The `(dim,tag)` pair used as a key to identify various abstract entities.
+The `(dim,tag)` pair used as a key to identify geometrical entities.
 """
 key(e::AbstractEntity) = geometric_dimension(e),tag(e)
 
 # reasonable defaults which assume the filds `tag` and `dim` and `boundary`
 # fields exist. Some
 # `AbstractEntities` need to override this method.
+"""
+    tag(::AbstractEntity)
+
+Integer tag used to idetify geometrical entities.
+"""
 tag(e::AbstractEntity) = e.tag
+
 geometric_dimension(e::AbstractEntity) = e.dim
+
 boundary(e::AbstractEntity) = e.boundary
 
 function Base.show(io::IO,ent::AbstractEntity)
@@ -176,6 +183,14 @@ Global dictionary storing the used entity tags (the value) for a given dimension
 """
 const ENTITIES = Dict{Tuple{Int,Int},AbstractEntity}()
 
+"""
+    global_add_entity!(ent::AbstractEntity)
+
+Add `ent` to the global dictionary [`ENTITIES`](@ref) and update [`TAGS`](@ref)
+with its `(dim,tag)` key. This function should be called by the inner constructor
+of *every* [`AbstractEntity`](@ref); see the constructor of
+[`ElementaryEntity`](@ref) for an example.
+"""
 function global_add_entity!(ent::AbstractEntity)
     d,t = geometric_dimension(ent), tag(ent)
     _add_tag!(d,t) # add this tag to global list to make sure it is not used again

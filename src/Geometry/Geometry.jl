@@ -21,8 +21,7 @@ using WavePropBase.Utils
 
 WavePropBase.@import_interface
 
-include("hyperrectangle.jl")
-include("clustertree.jl")
+include("point.jl")
 include("referenceshapes.jl")
 include("entities.jl")
 include("domain.jl")
@@ -32,7 +31,6 @@ export
     AbstractReferenceShape,
     AbstractEntity,
     AbstractParametricBody,
-    AbstractHyperRectangle,
     # types
     ElementaryEntity,
     ParametricEntity,
@@ -43,16 +41,10 @@ export
     ReferenceTriangle,
     ReferenceTetrahedron,
     ReferenceSquare,
-    HyperCube,
-    HyperRectangle,
-    ClusterTree,
-    GeometricSplitter,
-    GeometricMinimalSplitter,
-    PrincipalComponentSplitter,
-    DyadicSplitter,
-    CardinalitySplitter,
+    ReferenceHyperCube,
     # functions
     clear_entities!,
+    entities,
     tag,
     key,
     assertequaldim,
@@ -67,12 +59,10 @@ export
     line,
     new_tag,
     global_add_entity!,
-    root_elements,
     index_range,
     children,
     parent,
     container,
-    elements,
     loc2glob,
     points,
     # global variables

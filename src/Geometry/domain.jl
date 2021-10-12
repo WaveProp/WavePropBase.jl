@@ -14,8 +14,8 @@ end
 
 Return a vector of all elementary entities making up a domain.
 """
-
 entities(Ω::Domain) = Ω.entities
+
 Domain(ω::AbstractEntity) = Domain([ω,])
 Domain() = Domain(AbstractEntity[])
 

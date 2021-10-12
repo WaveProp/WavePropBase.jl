@@ -53,12 +53,21 @@ number_of_nodes(::ReferenceTriangle)       = 3
 vertices(::ReferenceTriangle) = SVector(0,0), SVector(1,0), SVector(0,1)
 
 """
-    struct ReferenceSquare
+    struct ReferenceHyperCube{N}
+
+Singleton type representing the axis-aligned hypercube in `N` dimensions with
+the lower corner at the origin and the upper-corner at `(1,1,…,1)`.
+"""
+struct ReferenceHyperCube{N} <: AbstractReferenceShape{N}
+end
+
+
+"""
+    const ReferenceSquare = ReferenceHyperCube{2}
 
 Singleton type representing the square with vertices `(0,0),(0,1),(1,1),(1,0)`
 """
-struct ReferenceSquare <: AbstractReferenceShape{2}
-end
+const ReferenceSquare = ReferenceHyperCube{2}
 Base.in(x,::ReferenceSquare)    = 0 ≤ x[1] ≤ 1 && 0 ≤ x[2] ≤ 1
 center(::Type{ReferenceSquare}) = SVector(0.5,0.5)
 center(::ReferenceSquare)       = SVector(0.5,0.5)

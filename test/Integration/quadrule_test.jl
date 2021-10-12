@@ -15,8 +15,8 @@ using WavePropBase.Integration
     @test integrate(x->sin(2π*x[1])^2,q) ≈ 0.5
 end
 
-@testset "TrapezoidalP quadrature" begin
-    q = TrapezoidalP{10}()
+@testset "TrapezoidalOpen quadrature" begin
+    q = TrapezoidalOpen{10}()
     D = domain(q)
     @test D == ReferenceLine()
     x,w = q()
@@ -33,17 +33,6 @@ end
     @test sum(w) ≈ 1
     # integrate all polynomial of degree N-1 exactly
     for n in 1:(N-1)
-        @test integrate(x->x[1]^n,q) ≈ 1/(n+1)
-    end
-end
-
-@testset "Gauss-Legendre quadrature" begin
-    N = 5
-    q = GaussLegendre{N}()
-    x,w = q()
-    @test sum(w) ≈ 1
-    # integrate all polynomial of degree 2N-1 exactly
-    for n in 1:(2*N-1)
         @test integrate(x->x[1]^n,q) ≈ 1/(n+1)
     end
 end
@@ -78,10 +67,10 @@ end
 
 @testset "Tensor product quad on square" begin
     N,M = 10,12
-    qx  = GaussLegendre(N)
+    qx  = Fejer(N)
     qy  = Fejer(M)
     q   = TensorProductQuadrature(qx,qy)
-    a,b = 2*N-1,M-1 # maximum integration order of monomials
+    a,b = N-1,M-1 # maximum integration order of monomials
     @test integrate( x -> 1,q) ≈ 1
     f = x -> x[1]^a*x[2]^b
     @test integrate(f,q) ≈ 1/(a+1)*1/(b+1)

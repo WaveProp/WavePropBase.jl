@@ -3,13 +3,12 @@
 
 Methods for integrating over instances of [`AbstractReferenceShape`](@ref).
 
-Besides some standard quadrature rules used in the `FEM` module, also defines
+Besides some standard quadrature rules used to integrate smooth functions, it also defines
 singular integration routines useful for (weakly) singular integrands.
 """
 module Integration
 
 using StaticArrays
-using QuadGK
 using LinearAlgebra
 
 using WavePropBase.Utils
@@ -27,9 +26,8 @@ export
     # types
     Gauss,
     Trapezoidal,
-    TrapezoidalP,
+    TrapezoidalOpen,
     Fejer,
-    GaussLegendre,
     TensorProductQuadrature,
     Kress,
     KressR,

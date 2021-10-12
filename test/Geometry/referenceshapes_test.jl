@@ -1,5 +1,7 @@
 using Test
+using WavePropBase
 using WavePropBase.Geometry
+using StaticArrays
 
 @testset "Line" begin
     l = ReferenceLine()

@@ -9,4 +9,6 @@ using SafeTestsets
 
 @safetestset "Mesh" begin include("Mesh/runtests.jl") end
 
+@safetestset "Trees" begin include("Trees/runtests.jl") end
+
 # @safetestset "IO" begin include("IO/runtests.jl") end

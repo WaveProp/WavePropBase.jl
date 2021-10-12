@@ -1,11 +1,11 @@
 
 """
-    abstract type AbstractHyperRectangle{N,T}
+    abstract type AbstractHyperRectangle{N,T} <: AbstractElement{ReferenceHyperCube{N},SVector{N,T}}
 
-Axis-aligned hyperrectangle in `N` dimensions with coordinates
-of type `SVector{N,T}`.
+Axis-aligned hyperrectangle in `N` dimensions with coordinates of type
+`SVector{N,T}`.
 """
-abstract type AbstractHyperRectangle{N,T} end
+abstract type AbstractHyperRectangle{N,T} <: AbstractElement{ReferenceHyperCube{N},SVector{N,T}} end
 
 Base.eltype(::AbstractHyperRectangle{N,T}) where {N,T}     = T
 ambient_dimension(::AbstractHyperRectangle{N}) where {N}   = N
@@ -44,6 +44,23 @@ function vertices(rec::AbstractHyperRectangle{3})
         SVector(hc[1],hc[2],hc[3]),
         SVector(lc[1],hc[2],hc[3])
     )
+end
+
+## implement the AbstractElement interface for convenience
+function (el::AbstractHyperRectangle)(u)
+    @assert u in domain(el)
+    lc  = low_corner(el)
+    hc  = high_corner(el)
+    # map from reference domain to
+    v = @. lc + (hc - lc)*u
+    return v
+end
+
+function jacobian(el::AbstractHyperRectangle,u)
+    @assert u in domain(el)
+    lc  = low_corner(el)
+    hc  = high_corner(el)
+    return SDiagonal(hc - lc)
 end
 
 """

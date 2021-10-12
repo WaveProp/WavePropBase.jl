@@ -28,7 +28,6 @@ export
     assert_concrete_type,
     cross_product_matrix,
     fill_zero_diagonal!,
-    Point3D,
     fill_zero_diagonal!,
     cart2sph,
     cart2pol,
@@ -205,55 +204,6 @@ function print_threads_info()
 end
 
 """
-    const Point1D
-    const Point1D(x1)
-
-A point in 1D space, stored in a StaticArray.
-Point1D = SVector{1, Float64}.
-"""
-const Point1D = SVector{1, Float64}
-
-"""
-    const Point2D
-    const Point2D(x1, x2)
-    const Point2D(x::NTuple{2, Float64})
-
-A point in 2D space, stored in a StaticArray.
-Point2D = SVector{2, Float64}.
-"""
-const Point2D = SVector{2, Float64}
-
-"""
-    const Point3D
-    const Point3D(x1, x2, x3)
-    const Point3D(x::NTuple{3, Float64})
-
-A point in 3D space, stored in a StaticArray.
-Point3D = SVector{3, Float64}.
-"""
-const Point3D = SVector{3, Float64}
-
-"""
-    const ComplexPoint3D
-    const ComplexPoint3D(x1, x2, x3)
-    const ComplexPoint3D(x::NTuple{3, ComplexF64})
-
-A complex 3D point, stored in a StaticArray.
-ComplexPoint3D = SVector{3, ComplexF64}.
-"""
-const ComplexPoint3D = SVector{3, ComplexF64}
-
-"""
-    const ComplexPoint2D
-    const ComplexPoint2D(x1, x2)
-    const ComplexPoint2D(x::NTuple{2, ComplexF64})
-
-A complex 2D point, stored in a StaticArray.
-ComplexPoint2D = SVector{2, ComplexF64}.
-"""
-const ComplexPoint2D = SVector{2, ComplexF64}
-
-"""
     const SType{T} = Union{T,Type{T}}
 
 Union type of `T` and its data type `Type{T}`. Used to simplify methods defined
@@ -409,51 +359,6 @@ macro interface(f,n=1)
     return esc(ex)
 end
 
-"""
-    depth(node,acc=0)
-
-Recursive function to compute the depth of `node` in a a tree-like structure.
-Require the method `getparent(node)` to be implemented. Overload this function
-if your structure has a more efficient way to compute `depth` (e.g. if it stores
-it in a field).
-"""
-function depth(node,acc=0)
-    if isroot(node)
-        return acc
-    else
-        depth(node.parent,acc+1)
-    end
-end
-
-"""
-    getnodes(filter,tree,[isterminal=true])
-
-Return all the nodes of `tree` satisfying `filter(node)::Bool`. If
-`isterminal`, do not consider childrens of a node for which
-`filter(block)==true`.
-"""
-function getnodes(f,tree,isterminal=true)
-    blocks = Vector{typeof(tree)}()
-    getnodes!(f,blocks,tree,isterminal)
-end
-
-"""
-    getnodes!(filter,nodes,tree,[isterminal=true])
-
-Like [`getnodes`](@ref), but append valid nodes to `nodes`.
-"""
-function getnodes!(f,blocks,tree,isterminal)
-    if f(tree)
-        push!(blocks,tree)
-        # terminate the search along this path if terminal=true
-        isterminal || map(x->getnodes!(f,blocks,x,isterminal),getchildren(tree))
-    else
-        # continue on on children
-        map(x->getnodes!(f,blocks,x,isterminal),tree.children)
-    end
-    return blocks
-end
-
 # some reasonable defaults for coords
 coords(x::Tuple)     = SVector(x)
 coords(x::SVector)   = x
@@ -465,6 +370,10 @@ function coords(x::T) where {T}
         error("type $T has no method nor field named `coords`.")
     end
 end
+
+# some reasonable defaults for center
+center(x::Tuple)     = SVector(x)
+center(x::SVector)   = x
 
 function normal(x::T) where {T}
     if hasfield(T,:normal)

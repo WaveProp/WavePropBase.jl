@@ -1,18 +1,18 @@
 """
     abstract type AbstractElement{D,T}
 
-Fixed interpolation schemes over the domain `D<:AbstractReferenceShape`. This
-means that the basis functions used for the interpolation are knonw from the
-type. The type parameter `T` determines the [`return_type`](@ref) of the interpolant.
+Elements given by a fixed interpolation schemes mapping points on the the domain
+`D<:AbstractReferenceShape` (of singleton type) to a value of type `T`.
 
 Instances `el` of `AbstractElement` are expected to implement:
-- `el(x̂)`: evaluate the interpolation scheme at the coordinate `x̂ ∈ D`.
+- `el(x̂)`: evaluate the interpolation scheme at the (reference) coordinate `x̂
+  ∈ D`.
 - `jacobian(el,x̂)` : evaluate the jacobian matrix of the interpolation at the
-    coordinate `x ∈ D`.
+  (reference) coordinate `x ∈ D`.
 
 !!! note
     For performance reasons, both `el(x̂)` and `jacobian(el,x̂)` should
-    take as input a `StaticVector` and output a static vector or array.
+    take as input a `StaticVector` and output a static vector or static array.
 """
 abstract type AbstractElement{D,T} end
 
@@ -24,7 +24,7 @@ function jacobian(el,x)
     abstractmethod(el)
 end
 
-function normal(el::AbstractElement, u)
+function WavePropBase.normal(el::AbstractElement, u)
     @assert u ∈ domain(el)
     jac = jacobian(el, u)
     normal(jac)
@@ -44,14 +44,29 @@ range_dimension(t::Type{<:AbstractElement{R,T}}) where {R,T} = length(T)
     struct LagrangeElement{D,Np,T} <: AbstractElement{D,T}
 
 Standard element over `D <: AbstractReferenceShape` commonly used in finite
-element methods. The underlying polynomial space is [`Pk{D,K}`](@ref), and it
-evaluates to `vals::SVector{Np,T}` on the `reference_nodes` of the element.
+element methods. The underlying polynomial space is [`Pk{D,K}`](@ref), and its
+interpolant maps the `Np` `reference_nodes` in `D` to `Np` values of type `T`
+stored in the field `vals`.
 """
 struct LagrangeElement{D,Np,T} <: AbstractElement{D,T}
     vals::SVector{Np,T}
 end
 
 vals(el::LagrangeElement) = el.vals
+
+"""
+    reference_nodes(el::LagrangeElement)
+
+Return the reference nodes on `domain(el)` used for the polynomial
+interpolation. The function values on these nodes completely determines the
+interpolating polynomial.
+
+We use the same convention as `gmsh` for defining the reference nodes and their
+order (see [node
+ordering](https://gmsh.info/doc/texinfo/gmsh.html#Node-ordering) on `gmsh`
+documentation).
+"""
+function reference_nodes end
 
 # a contructor which infers the extra information from nodes
 function LagrangeElement{R,K}(vals::SVector{Np,T}) where {R,K,T,Np}
@@ -104,16 +119,6 @@ function polynomial_space(::SType{LagrangeElement{D,Np}}) where {D,Np}
 end
 
 """
-    const LagrangePoint = LagrangeElement{ReferencePoint}
-"""
-const LagrangePoint        = LagrangeElement{ReferencePoint}
-
-"""
-    const Point = LagrangePoint
-"""
-const Point = LagrangePoint
-
-"""
     const LagrangeLine = LagrangeElement{ReferenceLine}
 """
 const LagrangeLine        = LagrangeElement{ReferenceLine}
@@ -138,17 +143,13 @@ Hardcode some basic elements.
 TODO: Eventually this could/should be automated, at least for the LagrangeElements.
 =#
 
-# LagrangePoint represents the map () -> vals
-function (el::LagrangePoint{1})()
-    return vals(el)
-end
-
 # P1 for ReferenceLine
 function (el::LagrangeLine{2})(u)
     @assert u ∈ ReferenceLine()
     v = vals(el)
     v[1] + (v[2] - v[1]) * u[1]
 end
+
 function jacobian(el::LagrangeLine{2}, u)
     @assert u ∈ ReferenceLine()
     v = vals(el)
@@ -161,6 +162,7 @@ function (el::LagrangeLine{3})(u)
     v = vals(el)
     v[1] + (4 * v[3] - 3 * v[1] - v[2]) * u[1]  + 2 * (v[2] + v[1] - 2 * v[3]) * u[1]^2
 end
+
 function jacobian(el::LagrangeLine{3}, u)
     @assert u ∈ domain(el)
     v = vals(el)
@@ -174,6 +176,7 @@ function (el::LagrangeTriangle{3})(u)
     v[1] + (v[2] - v[1]) * u[1] + (v[3] - v[1]) * u[2]
     # v[1]*(1-u[1]-u[2]) + v[2]*(u[1]) + v[3]*u[2]
 end
+
 function jacobian(el::LagrangeTriangle{3}, u)
     @assert u ∈ domain(el)
     v   = vals(el)
@@ -190,6 +193,7 @@ function (el::LagrangeElement{ReferenceTriangle,6})(u)
            u[1]*(-v[2]+u[1]*(2v[2]-4v[4])+4v[4]+u[2]*(-4v[4]+4v[5]-4v[6])) +
            u[2]*(-v[3]+u[2]*(2v[3]-4v[6])+4v[6])
 end
+
 function jacobian(el::LagrangeElement{ReferenceTriangle,6}, u)
     @assert u ∈ domain(el)
     v = vals(el)
@@ -205,6 +209,7 @@ function (el::LagrangeElement{ReferenceSquare,4})(u)
     v = vals(el)
     v[1] + (v[2] - v[1]) * u[1] + (v[4] - v[1]) * u[2] + (v[3] + v[1] - v[2] - v[4]) * u[1] * u[2]
 end
+
 function jacobian(el::LagrangeElement{ReferenceSquare,4}, u)
     @assert u ∈ domain(el)
     v = vals(el)
@@ -220,6 +225,7 @@ function (el::LagrangeElement{ReferenceTetrahedron,4})(u)
     v = vals(el)
     v[1] + (v[2] - v[1]) * u[1] + (v[3] - v[1]) * u[2] + (v[4] - v[1]) * u[3]
 end
+
 function jacobian(el::LagrangeElement{ReferenceTetrahedron,4}, u)
     @assert u ∈ domain(el)
     v = vals(el)

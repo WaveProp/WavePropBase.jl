@@ -62,9 +62,7 @@ end
 """
     struct Trapezoidal{N} <: AbstractQuadratureRule{ReferenceLine}
 
-`N`-point trapezoidal rule for integrating a function over the interval `[0,1]`.
-
-For periodic functions over `[0,1]`, see [`TrapezoidalP`](@ref).
+Closed `N`-point trapezoidal rule for integrating a function over the interval `[0,1]`.
 
 # Examples:
 ```julia
@@ -90,25 +88,24 @@ function (q::Trapezoidal{N})() where {N}
 end
 
 """
-    struct TrapezoidalP{N} <: AbstractQuadratureRule{ReferenceLine}
+    struct TrapezoidalOpen{N} <: AbstractQuadratureRule{ReferenceLine}
 
-Open trapezoidal rule. Useful for periodic functions since it does not duplicate
-the boundary nodes, void duplication.
+Open trapezoidal rule.
 """
-struct TrapezoidalP{N} <: AbstractQuadratureRule{ReferenceLine} end
+struct TrapezoidalOpen{N} <: AbstractQuadratureRule{ReferenceLine} end
 
-TrapezoidalP(n::Int) = TrapezoidalP{n}()
+TrapezoidalOpen(n::Int) = TrapezoidalOpen{n}()
 
-# open trapezoidal rule for periodic functions
-function _trapezoidalP(n)
+# open trapezoidal rule
+function _trapezoidal_open(n)
     h = 1 / n
     x = [(k-0.5) * h for k in 1:n]
     w = [h for _ in 1:n]
     return x, w
 end
 
-function (q::TrapezoidalP{N})() where {N}
-    x, w = _trapezoidalP(N)
+function (q::TrapezoidalOpen{N})() where {N}
+    x, w = _trapezoidal_open(N)
     # convert to static arrays
     xs = SVector{N}(SVector{1}.(x))
     ws = SVector{N}(w)
@@ -124,6 +121,8 @@ Exactly integrates all polynomials of degree `≤ N-1`.
 struct Fejer{N} <: AbstractQuadratureRule{ReferenceLine} end
 
 Fejer(n::Int) = Fejer{n}()
+
+Fejer(;order::Int) = Fejer(order+1)
 
 # N point fejer quadrature integrates all polynomials up to degree N-1
 order(::Fejer{N}) where {N} = N-1
@@ -142,47 +141,6 @@ function (q::Fejer{N})() where {N}
     ws = svector(i -> w[i] / 2, N)
     return xs, ws
 end
-
-"""
-    struct GaussLegendre{N}
-
-`N`-point Gauss-Legendre quadrature rule for integrating a function over `[0,1]`.
-Exactly integrates all polynomials of degree `≤ 2N-1`.
-"""
-struct GaussLegendre{N} <: AbstractQuadratureRule{ReferenceLine} end
-
-"""
-    GaussLegendre(;order)
-
-Construct a `GaussLegendre` of the desired order over the `[0,1]` interval.
-"""
-function GaussLegendre(;order=p)
-    N  = ceil(Int,(order + 1) /  2)
-    GaussLegendre{N}()
-end
-
-GaussLegendre(n::Int) = GaussLegendre{n}()
-
-# N point Gauss quadrature integrates all polynomials up to degree 2N-1, yielding
-# an error of order 2N
-order(q::GaussLegendre{N}) where {N} = 2*N-1
-
-@generated function (q::GaussLegendre{N})() where {N}
-    x, w  = gauss(N) # This is a quadgk function. Gives integral in [-1,1]. Converted to [0,1] below
-    xs   = svector(i -> SVector(0.5 * (x[i] + 1)), N)
-    ws   = svector(i -> w[i] / 2, N)
-    return :($xs, $ws)
-end
-
-"""
-    refine(q::AbstractQuadratureRule,[k=2])
-
-Generate a similar quadrature rule, but with `k`-times as many quadrature nodes.
-"""
-function refine(q::GaussLegendre{N},k=2) where {N}
-    GaussLegendre(Int(N*k))
-end
-
 
 """
     struct Gauss{D,N} <: AbstractQuadratureRule{D}
@@ -231,7 +189,7 @@ where `d=length(quad)`.
 # Examples
 ```julia
 qx = Fejer(10)
-qy = GaussLegendre(15)
+qy = TrapezoidalOpen(15)
 q  = TensorProductQuadrature(qx,qy)
 ```
 """
@@ -267,6 +225,7 @@ end
 function integration_measure(jac::SMatrix)
     M,N = size(jac)
     if M == N
+        # cheaper version when `M=N`
         det(jac) |> abs
     else
         transpose(jac)*jac |> det |> sqrt
@@ -281,7 +240,7 @@ an appropiate quadrature rule.
 """
 function qrule_for_reference_shape(ref,order)
     if ref isa ReferenceLine
-        return GaussLegendre(;order)
+        return Fejer(;order)
     elseif ref isa ReferenceSquare
         qx = qrule_for_reference_shape(ReferenceLine(),order)
         qy = qx
@@ -293,4 +252,34 @@ function qrule_for_reference_shape(ref,order)
     else
         error("no appropriate quadrature rule found.")
     end
+end
+
+abstract type CompositeQuadratureRule{D} <: AbstractQuadratureRule{D} end
+
+struct GaussKronrod{N} <: CompositeQuadratureRule{ReferenceLine}
+end
+
+@generated function (::GaussKronrod{N})() where {N}
+    x,w,wg = kronrod(N)
+    xk   = [x;reverse(-x[1:end-1])]
+    wk   = [w;reverse(w[1:end-1])]
+    wg   = [wg;reverse(wg[1:end-1])]
+    idxs = 2:2:length(xk)
+    xg   = xk[idxs]
+    return SVector{2*N+1}(xk),SVector{2*N+1}(wk),SVector{N}(xg),SVector{N}(wg)
+end
+
+function integrate(f,q::GaussKronrod{N}) where {N}
+    xk,wk,_,wg = q()
+    acc1 = 0.0
+    acc2 = 0.0
+    for n in 1:2N+1
+        v    = f(xk[n])
+        acc1 += v*wk[n]
+        if iseven(n)
+            acc2 += v*wg[n>>1]
+        end
+    end
+    E = abs(acc1 - acc2)
+    return acc1,E
 end

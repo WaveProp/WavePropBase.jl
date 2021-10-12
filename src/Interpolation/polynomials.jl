@@ -19,11 +19,11 @@ struct Pk{D,K} <: AbstractPolynomialSpace{D} end
 Pk(d::AbstractReferenceShape,k::Int) = Pk{typeof(d),k}()
 
 function Base.show(io::IO, pk::Pk{D,K}) where {D,K}
-    print(io, "Pk{$D,$K} : space of all polynomials over $D of order ≤ $K")
+    print(io, "Pk{$D,$K} : space of all polynomials over $D of degree ≤ $K")
 end
 
 function dimension(::SType{Pk{D,K}}) where {D,K}
-        if D == ReferenceLine
+    if D == ReferenceLine
         return K + 1
     elseif D == ReferenceTriangle
         return (K + 1) * (K + 2) ÷ 2

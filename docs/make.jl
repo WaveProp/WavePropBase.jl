@@ -1,7 +1,7 @@
 using WavePropBase
 using Documenter
 
-DocMeta.setdocmeta!(WavePropBase, :DocTestSetup, :(using WavePropBase); recursive=true)
+DocMeta.setdocmeta!(WavePropBase, :DocTestSetup, :(using WavePropBase; using WriteVTK); recursive=true)
 
 makedocs(;
     modules=[WavePropBase],
@@ -14,7 +14,15 @@ makedocs(;
         assets=String[],
     ),
     pages=[
-        "Home" => "index.md",
+        "WavePropBase" => "index.md",
+        "Utils module" => "utils.md",
+        "Geometry module" => "geometry.md",
+        "Interpolation module" => "interpolation.md",
+        "Integration module" => "integration.md",
+        "Mesh module" => "mesh.md",
+        "Trees module" => "trees.md",
+        "IO module" => "io.md",
+        "References" => "references.md"
     ],
 )
 
