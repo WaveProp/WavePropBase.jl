@@ -17,7 +17,7 @@ abstract type AbstractSplitter end
 
 Determine whether or not a `ClusterTree` should be further divided.
 """
-function should_split(clt,splitter)
+function should_split(clt,splitter::AbstractSplitter)
     abstract_method(splitter)
 end
 
@@ -26,7 +26,7 @@ end
 
 Divide `clt` using the strategy implemented by `splitter`.
 """
-function split!(clt,splitter)
+function split!(clt,splitter::AbstractSplitter)
     abstract_method(splitter)
 end
 

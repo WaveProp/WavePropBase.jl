@@ -371,6 +371,10 @@ function coords(x::T) where {T}
     end
 end
 
+# some reasonable defaults for center
+center(x::Tuple)     = SVector(x)
+center(x::SVector)   = x
+
 function normal(x::T) where {T}
     if hasfield(T,:normal)
         return getfield(x,:normal)

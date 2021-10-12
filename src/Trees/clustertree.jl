@@ -2,7 +2,7 @@
     mutable struct ClusterTree{T,S,D}
 
 Tree structure used to cluster elements of type `T` into containers of type `S`.
-The method `coords(::T)::SVector` is required for the clustering algorithms. An
+The method `center(::T)::SVector` is required for the clustering algorithms. An
 additional `data` field of type `D` can be associated with each node to store
 node-specific information (it defaults to `D=Nothing`).
 
@@ -16,7 +16,7 @@ original (global) indexing system used as input in the construction of the tree.
 - `parent::ClusterTree{N,T,D}`
 - `data::D` : generic data field of type `D`.
 """
-mutable struct ClusterTree{T,S,D}
+mutable struct ClusterTree{T,S,D} <: AbstractTree
     _elements::Vector{T}
     container::S
     index_range::UnitRange{Int}
@@ -76,13 +76,6 @@ the (global) indexes used upon the construction of the tree.
 loc2glob(clt::ClusterTree)      = clt.loc2glob
 
 """
-    points(clt::ClusterTree)
-
-An iterable collection of the coordinates of the elements of `clt`.
-"""
-points(clt::ClusterTree)        = (coords(el) for el in elements(clt))
-
-"""
     container_type(clt::ClusterTree)
 
 Type used to enclose the elements of `clt`.
@@ -95,11 +88,6 @@ container_type(::ClusterTree{T,S}) where {T,S} = S
 Type of elements sorted in `clt`.
 """
 element_type(::ClusterTree{T}) where {T} = T
-
-# interface to AbstractTrees. No children is determined by an empty tuple for
-# AbstractTrees.
-AbstractTrees.children(t::ClusterTree) = isleaf(t) ? () : t.children
-AbstractTrees.nodetype(t::ClusterTree) = typeof(t)
 
 isleaf(clt::ClusterTree)  = isempty(clt.children)
 isroot(clt::ClusterTree)  = clt.parent == clt
@@ -212,7 +200,7 @@ function binary_split_data(cluster::ClusterTree{T,S},conditions::Function) where
     xu_left = xu_right = low_corner(rec)
     #sort the points into left and right rectangle
     for i in irange
-        pt = els[i] |> coords
+        pt = els[i] |> center
         if f(pt)
             xl_left = min.(xl_left,pt)
             xu_left = max.(xu_left,pt)
@@ -243,7 +231,7 @@ function binary_split_data(cluster::ClusterTree,conditions::Tuple{Integer,Real})
     left_rec, right_rec = split(rec,dir,pos)
     #sort the points into left and right rectangle
     for i in irange
-        pt = els[i] |> coords
+        pt = els[i] |> center
         if pt in left_rec
             npts_left += 1
             buff[npts_left] = i

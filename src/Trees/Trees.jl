@@ -18,6 +18,7 @@ using Statistics: median
 using WavePropBase
 using WavePropBase.Utils
 using WavePropBase.Geometry
+using WavePropBase.Interpolation
 
 WavePropBase.@import_interface
 

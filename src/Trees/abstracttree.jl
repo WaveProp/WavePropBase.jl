@@ -6,15 +6,6 @@ Supertype for tree-like objects.
 abstract type AbstractTree end
 
 """
-    depth(t::AbstractTree)
-
-Number of predecessors between `t` and the root of the tree.
-"""
-function depth(t::AbstractTree)
-    abstractmethod(t)
-end
-
-"""
     children(t::AbstractTree)
 
 Iterable collection of the node's children.
@@ -38,7 +29,7 @@ end
 Return `true` if `t` is its own parent.
 """
 function isroot(t::AbstractTree)
-    abstractmethod(t)
+    parent(t) == t
 end
 
 """
@@ -47,7 +38,23 @@ end
 Return `true` if `t` has no children.
 """
 function isleaf(t::AbstractTree)
-    abstractmethod(t)
+    isempty(children(t))
+end
+
+"""
+    depth(tree::AbstractTree,acc=0)
+
+Recursive function to compute the depth of `node` in a a tree-like structure.
+
+Overload this function if your structure has a more efficient way to compute
+`depth` (e.g. if it stores it in a field).
+"""
+function depth(tree::AbstractTree,acc=0)
+    if isroot(tree)
+        return acc
+    else
+        depth(parent(tree),acc+1)
+    end
 end
 
 """
@@ -77,3 +84,8 @@ function Base.filter!(f,nodes,tree::AbstractTree,isterminal=true)
     end
     return nodes
 end
+
+# interface to AbstractTrees. No children is determined by an empty tuple for
+# AbstractTrees.
+AbstractTrees.children(t::AbstractTree) = isleaf(t) ? () : t.children
+AbstractTrees.nodetype(t::AbstractTree) = typeof(t)
