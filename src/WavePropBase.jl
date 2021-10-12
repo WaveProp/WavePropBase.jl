@@ -6,17 +6,15 @@ include("Utils/Utils.jl")
 
 include("Geometry/Geometry.jl")
 
-include("Trees/Trees.jl")
-
 include("Interpolation/Interpolation.jl")
 
 include("Integration/Integration.jl")
 
 include("Mesh/Mesh.jl")
 
-include("IO/IO.jl")
+include("Trees/Trees.jl")
 
-include("Simulation/Simulation.jl")
+include("IO/IO.jl")
 
 @export_interface
 
@@ -24,9 +22,9 @@ include("Simulation/Simulation.jl")
 export
     Utils,
     Geometry,
+    Trees,
     Interpolation,
     Integration,
-    Mesh,
-    Simulation
+    Mesh
 
 end

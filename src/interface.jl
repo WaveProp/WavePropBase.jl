@@ -1,12 +1,27 @@
+"""
+    const INTERFACE
+
+Methods comprising the package's interface.
+"""
 const INTERFACE = Vector{Symbol}()
 
 # Maybe just write the text into a file instead of using a macro here?
+"""
+    macro import_interface()
+
+Import all symbols inside [`INTERFACE`](@ref).
+"""
 macro import_interface()
     ex = Expr(:block)
     ex.args = [:(import WavePropBase: $f) for f in INTERFACE]
     return ex
 end
 
+"""
+    macro export_interface()
+
+Export all symbols inside [`INTERFACE`](@ref).
+"""
 macro export_interface()
     ex = Expr(:block)
     ex.args = [:(export $f) for f in INTERFACE]
@@ -139,6 +154,9 @@ Return the underlying parametrization of `el`.
 """
 function parametrization end
 push!(INTERFACE,:parametrization)
+
+function key end
+push!(INTERFACE,:key)
 
 """
     coords(x)

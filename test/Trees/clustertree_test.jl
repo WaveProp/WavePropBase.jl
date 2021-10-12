@@ -1,6 +1,7 @@
 ##
 using WavePropBase
 using WavePropBase.Geometry
+using WavePropBase.Interpolation
 using WavePropBase.Trees
 using StaticArrays
 using Test

@@ -1,6 +1,7 @@
 using Test
 using WavePropBase
 using WavePropBase.Geometry
+using WavePropBase.Interpolation
 using StaticArrays
 
 @testset "HyperRectangle tests" begin
