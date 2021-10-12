@@ -64,8 +64,6 @@ end
 
 Closed `N`-point trapezoidal rule for integrating a function over the interval `[0,1]`.
 
-For periodic functions over `[0,1]`, see [`TrapezoidalP`](@ref).
-
 # Examples:
 ```julia
 q    = Trapezoidal(10)

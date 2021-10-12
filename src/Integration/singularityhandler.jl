@@ -101,7 +101,7 @@ from `0` to `1` (the interval `0≤0≤1` is mappend onto itself), but with
 integrand given by `g(x) = f(ϕ(x))ϕ'(x)`. Since `ϕ'` vanishes (together with `P`
 of its derivatives), the function `g(x)` is now periodic (up to derivatives of
 order up to `P`) at the endpoints. Thus quadrature rules designed for periodic
-functions like the [`TrapezoidalP`](@ref) can be used to obtain high order
+functions like the [`TrapezoidalOpen`](@ref) can be used to obtain high order
 convergence of `g`, which in turn yields a modified quadrature rule when viewed
 as a quadrature rule for `f`.
 """
