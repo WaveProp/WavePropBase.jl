@@ -1,3 +1,5 @@
+using .WriteVTK
+
 """
     vtk_mesh_file(mesh::GenericMesh[, Ω::Domain], name::String)
 
@@ -74,10 +76,6 @@ function _vtk_cells(tags, E::DataType)
     vtk_cell_type, ind = etype_to_vtk_cell_type[E]
     return [MeshCell(vtk_cell_type, tags[ind, i]) for i in 1:size(tags, 2)]
 end
-function _vtk_cells(mesh::GenericMesh, E::DataType)
-    tags = elements(mesh)[E]
-    return _vtk_cells(tags, E)
-end
 function _vtk_cells(mesh::GenericMesh, Ω::Domain)
     cells = MeshCell[]
     # Loop on `ElementaryEntity`
@@ -94,15 +92,14 @@ end
 function _vtk_cells(mesh::GenericMesh)
     cells = MeshCell[]
     # Loop on `AbstractElement`
-    for E in etypes(mesh)
+    for (E,tags) in elements(mesh)
         # Export only the cells of the largest geometrical dimension
         if geometric_dimension(E) == ambient_dimension(mesh)
-            append!(cells,  _vtk_cells(mesh, E))
+            append!(cells,  _vtk_cells(tags, E))
         end
     end
     return cells
 end
-
 
 """
     const etype_to_vtk_cell_type
@@ -115,23 +112,23 @@ OrderedDictionary mapping internal element types to a tuple containing:
     elements available in the `VTK` specification, hence which may require
     a conversion of some sort.
 
-See VTK specification [Fig. 2]
-http://www.vtk.org/VTK/img/file-formats.pdf
+See VTK specification [Fig. 2] on
+[http://www.vtk.org/VTK/img/file-formats.pdf](http://www.vtk.org/VTK/img/file-formats.pdf)
 
-VTK_VERTEX (=1)
-VTK_POLY_VERTEX (=2)
-VTK_LINE (=3)
-VTK_POLY_LINE (=4)
-VTK_TRIANGLE (=5)
-VTK_TRIANGLE_STRIP (=6)
-VTK_POLYGON (=7)
-VTK_PIXEL (=8)
-VTK_QUAD (=9)
-VTK_TETRA (=10)
-VTK_VOXEL (=11)
-VTK_HEXAHEDRON (=12)
-VTK_WEDGE (=13)
-VTK_PYRAMID (=14)
+- VTK_VERTEX (=1)
+- VTK_POLY_VERTEX (=2)
+- VTK_LINE (=3)
+- VTK_POLY_LINE (=4)
+- VTK_TRIANGLE (=5)
+- VTK_TRIANGLE_STRIP (=6)
+- VTK_POLYGON (=7)
+- VTK_PIXEL (=8)
+- VTK_QUAD (=9)
+- VTK_TETRA (=10)
+- VTK_VOXEL (=11)
+- VTK_HEXAHEDRON (=12)
+- VTK_WEDGE (=13)
+- VTK_PYRAMID (=14)
 """
 const etype_to_vtk_cell_type = OrderedDict(
     SVector{3,Float64} => (VTKCellTypes.VTK_VERTEX, collect(1:1)),

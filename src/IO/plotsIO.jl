@@ -136,12 +136,12 @@ Used to plot entire tree associated with a tree node, instead of just the node.
 """
 struct PlotTree end
 
-@recipe function f(::PlotTree,tree::ClusterTree;filter=(x)->isleaf(x))
+@recipe function f(::PlotTree,tree::ClusterTree;predicate=(x)->isleaf(x))
     legend := false
     grid   --> false
     aspect_ratio --> :equal
     # plot nodes
-    blocks = getnodes(filter,tree)
+    blocks = filter(predicate,tree)
     for block in blocks
         @series begin
             block
@@ -157,12 +157,12 @@ end
     @series begin
         seriestype := :scatter
         markersize --> 2
-        PlotPoints(),tree.points[tree.loc2glob[tree.index_range]]
+        PlotPoints(),Trees.elements(tree)
     end
     # plot bounding box
     @series begin
         linestyle --> :solid
         seriescolor  --> :black
-        tree.bounding_box
+        container(tree)
     end
 end
