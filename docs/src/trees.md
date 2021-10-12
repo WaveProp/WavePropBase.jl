@@ -46,8 +46,7 @@ the available splitting strategies and parameters.
 An example of how to construct a `ClusterTree` is shown below:
 
 ```@example cluster-tree
-using WavePropBase, Plots
-pyplot() # hide
+using WavePropBase
 pts = rand(Geometry.Point2D,100)
 splitter = Trees.GeometricMinimalSplitter(nmax=5)
 clt = Trees.ClusterTree(pts,splitter)
@@ -58,8 +57,13 @@ simply call `plot(clt)`. More interestingly, if you want to plot e.g. the leaves
 of `clt`, you can do:
 
 ```@example cluster-tree
+using Plots
+plotlyjs() # hide
 plot(WavePropBase.IO.PlotTree(),clt;predicate=Trees.isleaf)
+savefig("clt1.png")
 ```
+
+![cluster tree](clt1.png)
 
 Changing the clustering strategy is as simple as:
 
@@ -67,7 +71,10 @@ Changing the clustering strategy is as simple as:
 splitter = Trees.DyadicSplitter(nmax=5)
 clt = Trees.ClusterTree(pts,splitter)
 plot(WavePropBase.IO.PlotTree(),clt)
+savefig("clt2.png")
 ```
+
+![cluster tree](clt2.png)
 
 In the example above the elements were simply points, which were sorted into
 container of [`HyperRectangle`](@ref Interpolation.HyperRectangle) type according to

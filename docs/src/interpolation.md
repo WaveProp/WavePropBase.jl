@@ -47,11 +47,14 @@ be created using:
 
 ```@example triangle-element
 using WavePropBase, Plots
-pyplot() # hide
+plotlyjs() # hide
 pts = (1,1),(2,2),(1.5,3)
 el  = Interpolation.LagrangeTriangle(pts)
 plot(el)
+savefig("el1.png")
 ```
+
+![triangular element](el1.png)
 
 Note that, as per the `AbstractElement` interface, you may evaluate the
 parametrization and the jacobian at any point on the reference element (not just
@@ -69,7 +72,10 @@ three-dimensional points:
 pts = (1,1,0),(2,2,1),(1.5,3,1)
 el  = Interpolation.LagrangeTriangle(pts)
 plot(el)
+savefig("el2.png")
 ```
+
+![triangular element](el2.png)
 
 Very similar constructs can be used to work higher order (curved) triangles, or
 with other `LagrangeElements` such as [`LagrangeSquare`](@ref
