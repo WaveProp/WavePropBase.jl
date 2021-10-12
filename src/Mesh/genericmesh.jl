@@ -21,7 +21,7 @@ ent2tags(m::GenericMesh) = m.ent2tags
 
 Base.keys(m::GenericMesh) = keys(elements(m))
 
-entities(m::GenericMesh)  = keys(ent2tags(m)) |> collect
+Geometry.entities(m::GenericMesh)  = keys(ent2tags(m)) |> collect
 
 domain(m::GenericMesh)    = entities(m) |> Domain
 
@@ -105,7 +105,7 @@ function convert_to_2d(mesh::GenericMesh{3})
     end
     # construct new 2d mesh
     GenericMesh{2,T}(;
-        nodes=[x[1:2] for x in vals(mesh)],
+        nodes=[x[1:2] for x in nodes(mesh)],
         elements=els,
         ent2tags=e2t
     )
