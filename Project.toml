@@ -1,14 +1,12 @@
 name = "WavePropBase"
 uuid = "91c5bd54-65f5-4719-ae3b-9579edfc4a0b"
 authors = ["Luiz M. Faria <maltezfaria@gmail.com> and contributors"]
-version = "0.1.0"
+version = "0.1.2"
 
 [deps]
 AbstractTrees = "1520ce14-60c1-5f80-bbc7-55ef81b5835c"
-ArtifactUtils = "8b73e784-e7d8-4ea5-973d-377fed4e3bce"
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 OrderedCollections = "bac558e1-5e72-5ebc-8fee-abe8a469f55d"
-Pkg = "44cfe95a-1eb2-52ea-b672-e2afdf69b78f"
 Printf = "de0858da-6303-5e67-8744-51eddeeeb8d7"
 RecipesBase = "3cdcf5f2-1ef4-517c-9805-6587b60abb01"
 Requires = "ae029012-a4dd-5104-9daa-d747884805df"

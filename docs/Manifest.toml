@@ -19,12 +19,6 @@ version = "3.3.1"
 [[ArgTools]]
 uuid = "0dad84c5-d112-42e6-8d28-ef12dabb789f"
 
-[[ArtifactUtils]]
-deps = ["Downloads", "Pkg", "SHA"]
-git-tree-sha1 = "519f8fcc0ef248d31c399818bb3e3412bece6edd"
-uuid = "8b73e784-e7d8-4ea5-973d-377fed4e3bce"
-version = "0.1.1"
-
 [[Artifacts]]
 uuid = "56f22d72-fd6d-98f1-02f0-08ddc0907c33"
 
@@ -772,7 +766,7 @@ version = "1.0.2"
 uuid = "4ec0a83e-493e-50e2-b9ac-8f72acf5a8f5"
 
 [[WavePropBase]]
-deps = ["AbstractTrees", "ArtifactUtils", "LinearAlgebra", "OrderedCollections", "Pkg", "Printf", "RecipesBase", "Requires", "StaticArrays", "Statistics"]
+deps = ["AbstractTrees", "LinearAlgebra", "OrderedCollections", "Printf", "RecipesBase", "Requires", "StaticArrays", "Statistics"]
 path = ".."
 uuid = "91c5bd54-65f5-4719-ae3b-9579edfc4a0b"
 version = "0.1.0"
