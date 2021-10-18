@@ -22,6 +22,7 @@ export
     # structs
     ParametricElement,
     LagrangeElement,
+    LagrangePoint,
     LagrangeLine,
     LagrangeTriangle,
     LagrangeSquare,

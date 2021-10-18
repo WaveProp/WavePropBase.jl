@@ -42,6 +42,8 @@ export
     ReferenceTetrahedron,
     ReferenceSquare,
     ReferenceHyperCube,
+    Point2D,
+    Point3D,
     # functions
     clear_entities!,
     entities,

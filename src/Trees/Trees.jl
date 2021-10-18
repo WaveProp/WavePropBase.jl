@@ -43,6 +43,7 @@ export
     isleaf,
     container,
     loc2glob,
-    points
+    root_elements,
+    index_range
 
 end # module

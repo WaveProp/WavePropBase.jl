@@ -119,6 +119,11 @@ function polynomial_space(::SType{LagrangeElement{D,Np}}) where {D,Np}
 end
 
 """
+    const LagrangePoint{N,T} = LagrangeElement{ReferencePoint,1,SVector{N,T}}
+"""
+const LagrangePoint{N,T}        = LagrangeElement{ReferencePoint,1,SVector{N,T}}
+
+"""
     const LagrangeLine = LagrangeElement{ReferenceLine}
 """
 const LagrangeLine        = LagrangeElement{ReferenceLine}

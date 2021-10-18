@@ -116,7 +116,7 @@ strategy encoded in `splitter`. If `copy_elements` is set to false, the
 `elements` argument are directly stored in the `ClusterTree` and are permuted
 during the tree construction.
 """
-function ClusterTree{D}(elements,splitter;copy_elements=true) where {D}
+function ClusterTree{D}(elements,splitter=CardinalitySplitter();copy_elements=true) where {D}
     copy_elements && (elements = deepcopy(elements))
     if splitter isa DyadicSplitter
         # make a cube for bounding box for quad/oct trees
@@ -134,7 +134,7 @@ function ClusterTree{D}(elements,splitter;copy_elements=true) where {D}
     _build_cluster_tree!(root,splitter)
     return root
 end
-ClusterTree(elements,splitter;copy_elements=true) = ClusterTree{Nothing}(elements,splitter;copy_elements)
+ClusterTree(args...;kwargs...) = ClusterTree{Nothing}(args...;kwargs...)
 
 function _build_cluster_tree!(current_node,splitter)
     if should_split(current_node,splitter)
