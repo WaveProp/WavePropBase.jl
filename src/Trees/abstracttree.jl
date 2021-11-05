@@ -19,7 +19,7 @@ end
 
 The node's parent. If `t` is a root, then `parent(t)==t`.
 """
-function parent(t::AbstractTree)
+function Base.parent(t::AbstractTree)
     abstractmethod(t)
 end
 
@@ -58,29 +58,30 @@ function depth(tree::AbstractTree,acc=0)
 end
 
 """
-    filter(filter,tree::AbstractTree,[isterminal=true])
+    filter_tree(f,tree,isterminal=true)
 
-Return all the nodes of `tree` satisfying `filter(node)==true`. If
-`isterminal`, do not recurse on children of nodes for which `filter(node)==true`.
+Return a vector containing all the nodes of `tree` such that
+`filter(node)==true`.  The argument `isterminal` can be used to control whether
+to continue the search on `children` of nodes for which `f(node)==true`.
 """
-function Base.filter(f,tree::AbstractTree,isterminal=true)
+function filter_tree(f,tree,isterminal=true)
     nodes = Vector{typeof(tree)}()
-    filter!(f,nodes,tree,isterminal)
+    filter_tree!(f,nodes,tree,isterminal)
 end
 
 """
-    filter!(filter,nodes,tree,[isterminal=true])
+    filter_tree!(filter,nodes,tree,[isterminal=true])
 
-Like [`filter`](@ref), but appends results to `nodes`.
+Like [`filter_tree`](@ref), but appends results to `nodes`.
 """
-function Base.filter!(f,nodes,tree::AbstractTree,isterminal=true)
+function filter_tree!(f,nodes,tree,isterminal=true)
     if f(tree)
         push!(nodes,tree)
         # terminate the search along this path if terminal=true
-        isterminal || map(x->filter!(f,nodes,x,isterminal),getchildren(tree))
+        isterminal || map(x->filter_tree!(f,nodes,x,isterminal),children(tree))
     else
         # continue on on children
-        map(x->filter!(f,nodes,x,isterminal),tree.children)
+        map(x->filter_tree!(f,nodes,x,isterminal),children(tree))
     end
     return nodes
 end

@@ -36,14 +36,22 @@ export
     PrincipalComponentSplitter,
     DyadicSplitter,
     CardinalitySplitter,
+    # re-exported from AbstractTrees
+    Leaves,
+    PreOrderDFS,
+    PostOrderDFS,
+    print_tree,
     # functions
     children,
     parent,
     isroot,
     isleaf,
+    depth,
     container,
     loc2glob,
     root_elements,
-    index_range
+    index_range,
+    filter_tree,
+    filter_tree!
 
 end # module

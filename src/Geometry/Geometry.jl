@@ -14,7 +14,7 @@ using OrderedCollections
 using AbstractTrees
 using RecipesBase
 using Printf
-using Statistics: median
+using Statistics:median
 
 using WavePropBase
 using WavePropBase.Utils
@@ -62,7 +62,6 @@ export
     new_tag,
     global_add_entity!,
     index_range,
-    children,
     parent,
     container,
     loc2glob,

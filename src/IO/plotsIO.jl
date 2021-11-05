@@ -141,7 +141,7 @@ struct PlotTree end
     grid   --> false
     aspect_ratio --> :equal
     # plot nodes
-    blocks = filter(predicate,tree)
+    blocks = filter_tree(predicate,tree)
     for block in blocks
         @series begin
             block

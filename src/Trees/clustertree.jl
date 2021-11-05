@@ -51,7 +51,7 @@ index_range(clt::ClusterTree)   = clt.index_range
 
 children(clt::ClusterTree)      = clt.children
 
-parent(clt::ClusterTree)        = clt.parent
+Base.parent(clt::ClusterTree)        = clt.parent
 
 """
     container(clt::ClusterTree)
