@@ -28,7 +28,7 @@ end
 
 Return `true` if `t` is its own parent.
 """
-function isroot(t::AbstractTree)
+function isroot(t)
     parent(t) == t
 end
 
@@ -49,7 +49,7 @@ Recursive function to compute the depth of `node` in a a tree-like structure.
 Overload this function if your structure has a more efficient way to compute
 `depth` (e.g. if it stores it in a field).
 """
-function depth(tree::AbstractTree,acc=0)
+function depth(tree,acc=0)
     if isroot(tree)
         return acc
     else
