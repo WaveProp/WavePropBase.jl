@@ -24,7 +24,7 @@ Base.view(m::GenericMesh,ent::AbstractEntity) = SubMesh(m,Domain(ent))
 Base.view(m::SubMesh,Ω::Domain)           = view(mesh(m),intersect(Ω,domain(m)))
 Base.view(m::SubMesh,ent::AbstractEntity) = view(m,Domain(ent))
 
-parent(m::SubMesh) = m.parent
+Base.parent(m::SubMesh) = m.parent
 domain(m::SubMesh) = m.domain
 
 # ElementIterator for submesh

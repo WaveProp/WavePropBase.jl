@@ -153,7 +153,7 @@ Base.isapprox(h1::HyperCube,h2::HyperCube;kwargs...) = isapprox(h1.low_corner,h2
 # Utils
 ######
 
-function bounding_box(els,cube=false)
+function HyperRectangle(els,cube=false)
     isempty(els)  && (error("data cannot be empty") )
     lb  = first(els) |> coords
     ub  = first(els) |> coords
@@ -171,7 +171,6 @@ function bounding_box(els,cube=false)
     end
     return HyperRectangle(lb,ub)
 end
-HyperRectangle(data,cube=false) = bounding_box(data,cube)
 
 """
     split(rec::AbstractHyperRectangle,[axis]::Int,[place])

@@ -7,7 +7,7 @@ additional `data` field of type `D` can be associated with each node to store
 node-specific information (it defaults to `D=Nothing`).
 
 # Fields:
-- `_elements::T` : vector containing the sorted elements.
+- `_elements::Vector{T}` : vector containing the sorted elements.
 - `container::S` : container for the elements in the current node.
 - `index_range::UnitRange{Int}` : indices of elements contained in the current node.
 - `loc2glob::Vector{Int}` : permutation from the local indexing system to the
@@ -154,7 +154,7 @@ end
 Split a `ClusterTree` into two, sorting all elements in the process.
 For each resulting child assign `child.parent=parentcluster`.
 
-Passing a `dir` and `pos` arguments splits the `bounding_box` box of `node`
+Passing a `dir` and `pos` arguments splits the `container` of `node`
 along direction `dir` at position `pos`, then sorts all points into the
 resulting  left/right nodes.
 
