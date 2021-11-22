@@ -19,9 +19,12 @@ Base.keys(m::UniformCartesianMesh{N,T}) where {N,T} = (HyperRectangle{N,T},)
 Base.step(m::UniformCartesianMesh) = step.(grids(m))
 
 """
-    UniformCartesianMesh(;domain::HyperRectangle,sz::NTuple)
+    UniformCartesianMesh(domain::HyperRectangle,sz::NTuple)
+    UniformCartesianMesh(domain::HyperRectangle;step::NTuple)
 
-Construct a uniform `UniformCartesianMesh` with `sz[d]` elements along dimension `d`.
+Construct a uniform `UniformCartesianMesh` with `sz[d]` elements along dimension
+`d`. If the kwarg `step` is passed, construct a `UniformCartesianMesh` with
+elements of approximate size `step`.
 """
 function UniformCartesianMesh(domain::HyperRectangle{N,T},sz::NTuple{N}) where {N,T}
     lc = low_corner(domain)
@@ -34,12 +37,10 @@ function UniformCartesianMesh(domain::HyperRectangle{N,T},sz::NTuple{N}) where {
     UniformCartesianMesh(grids1d)
 end
 UniformCartesianMesh(domain::HyperRectangle{N,T},sz::Int) where {N,T} = UniformCartesianMesh(domain,ntuple(i->sz,N))
-UniformCartesianMesh(;domain,sz) = UniformCartesianMesh(domain,sz)
 
 # in case you pass arguments like UniformCartesianMesh(xgrid,ygrid), convert
 # them to a Tuple
 UniformCartesianMesh(grids::Vararg{LinRange{T}}) where {T} = UniformCartesianMesh(Tuple(grids))
-
 
 function UniformCartesianMesh(domain::HyperRectangle{N};step::NTuple{N}) where {N}
     lc = low_corner(domain)
