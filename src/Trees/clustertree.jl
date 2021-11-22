@@ -1,13 +1,13 @@
 """
     mutable struct ClusterTree{T,S,D}
 
-Tree structure used to cluster elements of type `T` into containers of type `S`.
-The method `center(::T)::SVector` is required for the clustering algorithms. An
+Tree structure used to cluster elements of type `V = eltype(T)` into containers of type `S`.
+The method `center(::V)::SVector` is required for the clustering algorithms. An
 additional `data` field of type `D` can be associated with each node to store
 node-specific information (it defaults to `D=Nothing`).
 
 # Fields:
-- `_elements::Vector{T}` : vector containing the sorted elements.
+- `_elements::T` : vector containing the sorted elements.
 - `container::S` : container for the elements in the current node.
 - `index_range::UnitRange{Int}` : indices of elements contained in the current node.
 - `loc2glob::Vector{Int}` : permutation from the local indexing system to the
@@ -17,7 +17,7 @@ original (global) indexing system used as input in the construction of the tree.
 - `data::D` : generic data field of type `D`.
 """
 mutable struct ClusterTree{T,S,D} <: AbstractTree
-    _elements::Vector{T}
+    _elements::T
     container::S
     index_range::UnitRange{Int}
     loc2glob::Vector{Int}
@@ -25,7 +25,7 @@ mutable struct ClusterTree{T,S,D} <: AbstractTree
     parent::ClusterTree{T,S,D}
     data::D
     # inner constructors handling missing fields.
-    function ClusterTree{D}(els::Vector{T},container::S,loc_idxs,loc2glob,children,parent,data=nothing) where {T,S,D}
+    function ClusterTree{D}(els::T,container::S,loc_idxs,loc2glob,children,parent,data=nothing) where {T,S,D}
         clt = new{T,S,D}(els,container,loc_idxs,loc2glob)
         clt.children = isnothing(children) ? Vector{typeof(clt)}() : children
         clt.parent   = isnothing(parent)   ? clt : parent
@@ -87,7 +87,7 @@ container_type(::ClusterTree{T,S}) where {T,S} = S
 
 Type of elements sorted in `clt`.
 """
-element_type(::ClusterTree{T}) where {T} = T
+element_type(::ClusterTree{T}) where {T} = eltype(T)
 
 isleaf(clt::ClusterTree)  = isempty(clt.children)
 isroot(clt::ClusterTree)  = clt.parent == clt

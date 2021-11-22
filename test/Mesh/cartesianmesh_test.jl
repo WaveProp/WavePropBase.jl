@@ -29,7 +29,7 @@ end
 @testset "Two dimensions" begin
     l    = HyperRectangle((0.0,0.0),(1.0,1.0))
     E    = typeof(l) # type of mesh element
-    mesh = UniformCartesianMesh(domain=l,sz=(10,20))
+    mesh = UniformCartesianMesh(l,(10,20))
     iter = ElementIterator(mesh,E)
     @test iter[1,1] ≈ HyperRectangle((0,0),(0.1,0.05))
     @test length(iter) == 200

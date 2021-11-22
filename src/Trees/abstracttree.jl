@@ -86,6 +86,45 @@ function filter_tree!(f,nodes,tree,isterminal=true)
     return nodes
 end
 
+"""
+    partition_by_depth(tree)
+
+Given a `tree`, return a `partition` vector whose `i`-th entry stores all the nodes in
+`tree` with `depth=i-1`. Empty nodes are not added to the partition.
+"""
+function partition_by_depth(tree)
+    T         = eltype(tree)
+    partition = Vector{Vector{T}}()
+    depth = 0
+    _partition_by_depth!(partition,tree,depth)
+end
+
+function _partition_by_depth!(partition,tree,depth)
+    T = eltype(tree)
+    if length(partition) < depth+1
+         push!(partition,T[])
+    end
+    length(tree) > 0 && push!(partition[depth+1],tree)
+    for chd in children(tree)
+        _partition_by_depth!(partition,chd,depth+1)
+    end
+    return partition
+end
+
+"""
+    partition_by_height(tree)
+
+Given a `tree`, return a `partition` vector whose `i`-th entry stores all the nodes in
+`tree` with `height=i-1`. The `height` of the tree is thus `lenth(partition)`,
+with `partition(end)==tree`.
+"""
+function partition_by_height(tree)
+    # TODO: how to do this more or less efficiently? One idea is to start at the
+    # leaves, push them, then push their parents and recurse, making sure call
+    # `unique!` as you go up in order to avoid duplicate parents.
+end
+
+
 # interface to AbstractTrees. No children is determined by an empty tuple for
 # AbstractTrees.
 AbstractTrees.children(t::AbstractTree) = isleaf(t) ? () : t.children
