@@ -2,13 +2,13 @@
     struct UniformCartesianMesh{N,T} <: AbstractMesh{N,T}
 
 An `N`-dimensional cartesian grid given as the tensor-product of `N`
-one-dimensional `LinRange{T}` grids.
+one-dimensional `LinRange{T,Int}` grids.
 
 Iterating over a `UniformCartesianMesh` generates the elements which compose the mesh;
 i.e. the `HyperRectangle` cells.
 """
 struct UniformCartesianMesh{N,T} <: AbstractMesh{N,T}
-    grids::NTuple{N,LinRange{T}}
+    grids::NTuple{N,LinRange{T,Int}}
 end
 
 grids(g::UniformCartesianMesh)     = g.grids
@@ -32,7 +32,7 @@ function UniformCartesianMesh(domain::HyperRectangle{N,T},sz::NTuple{N}) where {
     grids1d = ntuple(N) do n
         # to have sz elements, need sz+1 points in LinRange.
         npts = sz[n] + 1
-        LinRange{float(T)}(lc[n], uc[n], npts) # use float(T) in case T<:Integer
+        LinRange{float(T),Int}(lc[n], uc[n], npts) # use float(T) in case T<:Integer
     end
     UniformCartesianMesh(grids1d)
 end
