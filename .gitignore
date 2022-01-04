@@ -6,3 +6,4 @@
 .gitignore
 .vscode/*
 Manifest.toml
+scratch/*
