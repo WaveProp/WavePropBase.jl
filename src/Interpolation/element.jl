@@ -149,40 +149,40 @@ TODO: Eventually this could/should be automated, at least for the LagrangeElemen
 =#
 
 # P1 for ReferenceLine
-function (el::LagrangeLine{2})(u)
+@fastmath function (el::LagrangeLine{2})(u)
     @assert u ∈ ReferenceLine()
     v = vals(el)
     v[1] + (v[2] - v[1]) * u[1]
 end
 
-function jacobian(el::LagrangeLine{2}, u)
+@fastmath function jacobian(el::LagrangeLine{2}, u)
     @assert u ∈ ReferenceLine()
     v = vals(el)
     return hcat(v[2] - v[1])
 end
 
 # P2 for ReferenceLine
-function (el::LagrangeLine{3})(u)
+@fastmath function (el::LagrangeLine{3})(u)
     @assert u ∈ domain(el)
     v = vals(el)
     v[1] + (4 * v[3] - 3 * v[1] - v[2]) * u[1]  + 2 * (v[2] + v[1] - 2 * v[3]) * u[1]^2
 end
 
-function jacobian(el::LagrangeLine{3}, u)
+@fastmath function jacobian(el::LagrangeLine{3}, u)
     @assert u ∈ domain(el)
     v = vals(el)
     hcat(4 * v[3] - 3 * v[1] - v[2] + 4 * (v[2] + v[1] - 2 * v[3]) * u[1])
 end
 
 # P1 for ReferenceTriangle
-function (el::LagrangeTriangle{3})(u)
+@fastmath function (el::LagrangeTriangle{3})(u)
     @assert u ∈ domain(el)
     v = vals(el)
     v[1] + (v[2] - v[1]) * u[1] + (v[3] - v[1]) * u[2]
     # v[1]*(1-u[1]-u[2]) + v[2]*(u[1]) + v[3]*u[2]
 end
 
-function jacobian(el::LagrangeTriangle{3}, u)
+@fastmath function jacobian(el::LagrangeTriangle{3}, u)
     @assert u ∈ domain(el)
     v   = vals(el)
     jac = hcat( v[2] - v[1],
@@ -191,7 +191,7 @@ function jacobian(el::LagrangeTriangle{3}, u)
 end
 
 # P2 for ReferenceTriangle
-function (el::LagrangeElement{ReferenceTriangle,6})(u)
+@fastmath function (el::LagrangeTriangle{6})(u)
     @assert u ∈ domain(el)
     v = vals(el)
     return (1+u[2]*(-3+2u[2])+u[1]*(-3+2u[1]+4u[2]))*v[1] +
@@ -199,7 +199,7 @@ function (el::LagrangeElement{ReferenceTriangle,6})(u)
            u[2]*(-v[3]+u[2]*(2v[3]-4v[6])+4v[6])
 end
 
-function jacobian(el::LagrangeElement{ReferenceTriangle,6}, u)
+@fastmath function jacobian(el::LagrangeTriangle{6}, u)
     @assert u ∈ domain(el)
     v = vals(el)
     hcat(
@@ -208,14 +208,63 @@ function jacobian(el::LagrangeElement{ReferenceTriangle,6}, u)
     )
 end
 
+# P3 for ReferenceTriangle
+# source: https://www.math.uci.edu/~chenlong/iFEM/doc/html/dofP3doc.html
+@fastmath function (el::LagrangeTriangle{10})(u)
+    @assert u ∈ domain(el)
+    λ₁ = 1-u[1]-u[2]
+    λ₂ = u[1]
+    λ₃ = u[2]
+    ϕ₁ = 0.5*(3λ₁-1)*(3λ₁-2)*λ₁
+    ϕ₂ = 0.5*(3λ₂-1)*(3λ₂-2)*λ₂
+    ϕ₃ = 0.5*(3λ₃-1)*(3λ₃-2)*λ₃
+    ϕ₄ = 4.5*λ₁*λ₂*(3λ₁-1) #894567
+    ϕ₅ = 4.5*λ₁*λ₂*(3λ₂-1)
+    ϕ₆ = 4.5*λ₃*λ₂*(3λ₂-1)
+    ϕ₇ = 4.5*λ₃*λ₂*(3λ₃-1)
+    ϕ₈ = 4.5*λ₁*λ₃*(3λ₃-1)
+    ϕ₉ = 4.5*λ₁*λ₃*(3λ₁-1)
+    ϕ₁₀ = 27*λ₁*λ₂*λ₃
+    v = vals(el)
+    return v[1]*ϕ₁ + v[2]*ϕ₂ + v[3]*ϕ₃ +
+           v[4]*ϕ₄ + v[5]*ϕ₅ + v[6]*ϕ₆ +
+           v[7]*ϕ₇ + v[8]*ϕ₈ + v[9]*ϕ₉ +
+           v[10]*ϕ₁₀
+end
+
+@fastmath function jacobian(el::LagrangeTriangle{10,T}, u) where T
+    @assert u ∈ domain(el)
+    λ₁ = 1-u[1]-u[2]
+    λ₂ = u[1]
+    λ₃ = u[2]
+    ∇λ₁ = SMatrix{1,2,eltype(T),2}(-1.,-1.)
+    ∇λ₂ = SMatrix{1,2,eltype(T),2}(1.,0.)
+    ∇λ₃ = SMatrix{1,2,eltype(T),2}(0.,1.)
+    ∇ϕ₁ = (13.5*λ₁*λ₁-9λ₁+1)*∇λ₁
+    ∇ϕ₂ = (13.5*λ₂*λ₂-9λ₂+1)*∇λ₂
+    ∇ϕ₃ = (13.5*λ₃*λ₃-9λ₃+1)*∇λ₃
+    ∇ϕ₄ = 4.5*((3*λ₁*λ₁-λ₁)*∇λ₂+λ₂*(6λ₁-1)*∇λ₁)
+    ∇ϕ₅ = 4.5*((3*λ₂*λ₂-λ₂)*∇λ₁+λ₁*(6λ₂-1)*∇λ₂)
+    ∇ϕ₆ = 4.5*((3*λ₂*λ₂-λ₂)*∇λ₃+λ₃*(6λ₂-1)*∇λ₂)
+    ∇ϕ₇ = 4.5*((3*λ₃*λ₃-λ₃)*∇λ₂+λ₂*(6λ₃-1)*∇λ₃)
+    ∇ϕ₈ = 4.5*((3*λ₃*λ₃-λ₃)*∇λ₁+λ₁*(6λ₃-1)*∇λ₃)
+    ∇ϕ₉ = 4.5*((3*λ₁*λ₁-λ₁)*∇λ₃+λ₃*(6λ₁-1)*∇λ₁)
+    ∇ϕ₁₀ = 27*(λ₁*λ₂*∇λ₃+λ₁*λ₃*∇λ₂+λ₃*λ₂*∇λ₁)
+    v = vals(el)
+    return v[1]*∇ϕ₁ + v[2]*∇ϕ₂ + v[3]*∇ϕ₃ +
+           v[4]*∇ϕ₄ + v[5]*∇ϕ₅ + v[6]*∇ϕ₆ +
+           v[7]*∇ϕ₇ + v[8]*∇ϕ₈ + v[9]*∇ϕ₉ +
+           v[10]*∇ϕ₁₀
+end
+
 # P1 for ReferenceSquare
-function (el::LagrangeElement{ReferenceSquare,4})(u)
+@fastmath function (el::LagrangeElement{ReferenceSquare,4})(u)
     @assert u ∈ domain(el)
     v = vals(el)
     v[1] + (v[2] - v[1]) * u[1] + (v[4] - v[1]) * u[2] + (v[3] + v[1] - v[2] - v[4]) * u[1] * u[2]
 end
 
-function jacobian(el::LagrangeElement{ReferenceSquare,4}, u)
+@fastmath function jacobian(el::LagrangeElement{ReferenceSquare,4}, u)
     @assert u ∈ domain(el)
     v = vals(el)
     hcat(
@@ -225,13 +274,13 @@ function jacobian(el::LagrangeElement{ReferenceSquare,4}, u)
 end
 
 # P1 for ReferenceTetrahedron
-function (el::LagrangeElement{ReferenceTetrahedron,4})(u)
+@fastmath function (el::LagrangeElement{ReferenceTetrahedron,4})(u)
     @assert u ∈ domain(el)
     v = vals(el)
     v[1] + (v[2] - v[1]) * u[1] + (v[3] - v[1]) * u[2] + (v[4] - v[1]) * u[3]
 end
 
-function jacobian(el::LagrangeElement{ReferenceTetrahedron,4}, u)
+@fastmath function jacobian(el::LagrangeElement{ReferenceTetrahedron,4}, u)
     @assert u ∈ domain(el)
     v = vals(el)
     hcat(
