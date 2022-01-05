@@ -19,7 +19,10 @@ Random.seed!(1)
     triangle6_nodes = [T(0,0),T(1,0),T(0,1),T(1/2,0),T(1/2,1/2),T(0,1/2)]
     triangle10_nodes = [T(0,0),T(1,0),T(0,1),T(1/3,0),T(2/3,0),T(2/3,1/3),
                         T(1/3,2/3),T(0,2/3),T(0,1/3),T(1/3,1/3)]
-    triangle_list = [triangle3_nodes,triangle6_nodes,triangle10_nodes]
+    triangle15_nodes = [T(0,0),T(1,0),T(0,1),T(0.25,0),T(0.5,0),T(0.75,0),T(0.75,0.25),
+                        T(0.5,0.5),T(0.25,0.75),T(0,0.75),T(0,0.5),T(0,0.25),T(0.25,0.25),
+                        T(0.5,0.25),T(0.25,0.5)]
+    triangle_list = [triangle3_nodes,triangle6_nodes,triangle10_nodes,triangle15_nodes]
     p = T(2/5,3/7)   # a point in the Reference Triangle
     @test p ∈ ReferenceTriangle()
     for triangle_nodes in triangle_list
