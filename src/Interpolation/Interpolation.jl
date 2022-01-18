@@ -8,6 +8,7 @@ module Interpolation
 
 using StaticArrays
 using LinearAlgebra
+import ForwardDiff  # to compute jacobian of LagrangeTriangle{55}
 
 using WavePropBase
 using WavePropBase.Utils
@@ -60,6 +61,7 @@ export
 
 include("polynomials.jl")
 include("element.jl")
+include("highorder_triangles.jl")
 include("hyperrectangle.jl")
 include("tensorlaginterp.jl")
 
