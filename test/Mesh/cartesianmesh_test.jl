@@ -11,6 +11,9 @@ using StaticArrays
     h = 0.1 # grid spacing
     mesh = UniformCartesianMesh(l,(10,))
     @test mesh == UniformCartesianMesh(l,10)
+    @test mesh == UniformCartesianMesh(grids(mesh)) == UniformCartesianMesh(grids(mesh)...)
+    @test mesh == UniformCartesianMesh(l; step=step(mesh))
+    @test Mesh.xgrid(mesh) == LinRange(0.,1.,11)
     @test keys(mesh) == (E,)
     iter = ElementIterator(mesh,E)
     @test eltype(iter) == E
@@ -32,6 +35,10 @@ end
     E    = typeof(l) # type of mesh element
     mesh = UniformCartesianMesh(l,(10,20))
     iter = ElementIterator(mesh,E)
+    @test mesh == UniformCartesianMesh(grids(mesh)) == UniformCartesianMesh(grids(mesh)...)
+    @test mesh == UniformCartesianMesh(l; step=step(mesh))
+    @test Mesh.xgrid(mesh) == LinRange(0.,1.,11)
+    @test Mesh.ygrid(mesh) == LinRange(0.,1.,21)
     @test iter[1,1] ≈ HyperRectangle((0,0),(0.1,0.05))
     @test length(iter) == 200
     @test size(iter) == (10,20)

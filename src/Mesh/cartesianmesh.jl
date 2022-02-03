@@ -8,7 +8,7 @@ Iterating over a `UniformCartesianMesh` generates the elements which compose the
 i.e. the `HyperRectangle` cells.
 """
 struct UniformCartesianMesh{N,T} <: AbstractMesh{N,T}
-    domain::HyperRectangle{N,T}  # stores the `low_corner` and `high_corner` of the `UniformCartesianMesh`
+    domain::HyperRectangle{N,T}  # stores the `low_corner` and the `high_corner` of the `UniformCartesianMesh`
     sz::NTuple{N,Int}            # number of `HyperRectangle` cells per dimension
 end
 
@@ -39,7 +39,7 @@ function Base.step(m::UniformCartesianMesh{N}) where N
     lc = low_corner(m)
     hc = high_corner(m)
     sz = size(m)
-    return ntuple(N) do 
+    return ntuple(N) do i 
         (hc[i]-lc[i])/sz[i]
     end     
 end
@@ -77,11 +77,9 @@ end
 
 ambient_dimension(::UniformCartesianMesh{N}) where {N} = N
 
-xgrid(g::UniformCartesianMesh) = grids(g)[1]
-
-ygrid(g::UniformCartesianMesh) = grids(g)[2]
-
-zgrid(g::UniformCartesianMesh) = grids(g)[3]
+xgrid(g::UniformCartesianMesh) = grids(g,1)
+ygrid(g::UniformCartesianMesh) = grids(g,2)
+zgrid(g::UniformCartesianMesh) = grids(g,3)
 
 # implement ElementIterator interface to UniformCartesianMesh
 
