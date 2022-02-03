@@ -10,6 +10,7 @@ using StaticArrays
     E = typeof(l) # type of mesh element
     h = 0.1 # grid spacing
     mesh = UniformCartesianMesh(l,(10,))
+    @test mesh == UniformCartesianMesh(l,10)
     @test keys(mesh) == (E,)
     iter = ElementIterator(mesh,E)
     @test eltype(iter) == E
@@ -34,8 +35,19 @@ end
     @test iter[1,1] ≈ HyperRectangle((0,0),(0.1,0.05))
     @test length(iter) == 200
     @test size(iter) == (10,20)
+    for I in CartesianIndices(iter)
+        i,j = Tuple(I)
+        el = iter[i,j]
+        @test el ≈ HyperRectangle(((i-1)*0.1,(j-1)*0.05),(i*0.1,j*0.05))
+    end
+
     iter = NodeIterator(mesh)
     @test eltype(iter) == SVector{2,Float64}
     @test length(iter) == 11*21
     @test size(iter) == (11,21)
+    for I in CartesianIndices(iter)
+        i,j = Tuple(I)
+        el = iter[i,j]
+        @test el ≈ SVector((i-1)*0.1,(j-1)*0.05)
+    end
 end
