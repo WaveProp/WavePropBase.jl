@@ -54,8 +54,6 @@ export
     skeleton,
     internal_boundary,
     external_boundary,
-    low_corner,
-    high_corner,
     measure,
     vertices,
     line,
