@@ -14,6 +14,8 @@ WavePropBase.@import_interface
 export
     # Type alises
     SType,
+    # Types
+    PseudoBlockMatrix,
     # methods
     svector,
     matrix_to_blockmatrix,
@@ -41,6 +43,44 @@ export
 Just like [`Base.ntuple`](https://docs.julialang.org/en/v1/base/base/#Base.ntuple), but convert output to an `SVector`.
 """
 @inline svector(f,n) = ntuple(f,n) |> SVector
+
+"""
+    struct PseudoBlockMatrix{T<:SMatrix,S} <: AbstractMatrix{T}
+
+A struct which behaves identically to a `Matrix{T}`, but with the underlying
+`data` stored as a `Matrix{S}`, where `S::Number = eltype(T)`. This allows for
+the use of `blas` routines under-the-hood, while providing a convenient
+interface for handling matrices over tensors.
+"""
+struct PseudoBlockMatrix{T,S} <: AbstractMatrix{T}
+    data::Matrix{S}
+    function PseudoBlockMatrix{T}(data::Matrix{S}) where {T<:Union{SMatrix,Number},S<:Number}
+        @assert S == eltype(T)
+        @assert sum(rem.(size(data),size(T))) == 0
+        new{T,S}(data)
+    end
+end
+
+block_size(::PseudoBlockMatrix{T}) where {T} = size(T)
+
+function Base.size(A::PseudoBlockMatrix)
+    size(A.data) .÷ block_size(A)
+end
+
+function Base.getindex(A::PseudoBlockMatrix{T},i::Int,j::Int) where {T}
+    p,q = size(T)
+    I = (i-1)+1:i
+    J = (j-1)+1:j
+    view(A.data,i,j) |> T
+    A.data[i,j]
+end
+
+function Base.setindex!(A::PseudoBlockMatrix{T},v::T,i::Int,j::Int) where {T<:SMatrix}
+    p,q = block_size(A)
+    I = (i-1)*p+1:i*p
+    J = (j-1)*q+1:j*q
+    A.data[I,J] = v
+end
 
 """
     blockmatrix_to_matrix(A::Matrix{B}) where {B<:SMatrix}
