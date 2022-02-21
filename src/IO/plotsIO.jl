@@ -13,7 +13,7 @@ struct PlotPoints end
     elseif N2 == 3
         xx = SVector{N1, Float64}(pt[1] for pt in pts)
         yy = SVector{N1, Float64}(pt[2] for pt in pts)
-        yy = SVector{N1, Float64}(pt[3] for pt in pts)
+        zz = SVector{N1, Float64}(pt[3] for pt in pts)
         return xx,yy,zz
     else
         notimplemented()
