@@ -11,7 +11,8 @@ node-specific information (it defaults to `D=Nothing`).
 - `container::S` : container for the elements in the current node.
 - `index_range::UnitRange{Int}` : indices of elements contained in the current node.
 - `loc2glob::Vector{Int}` : permutation from the local indexing system to the
-original (global) indexing system used as input in the construction of the tree.
+  original (global) indexing system used as input in the construction of the
+  tree.
 - `children::Vector{ClusterTree{N,T,D}}`
 - `parent::ClusterTree{N,T,D}`
 - `data::D` : generic data field of type `D`.

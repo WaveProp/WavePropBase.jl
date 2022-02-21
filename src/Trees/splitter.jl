@@ -31,10 +31,12 @@ function split!(clt, splitter::AbstractSplitter)
 end
 
 """
-    struct DyadicSplitter
+    struct DyadicSplitter <: AbstractSplitter
 
 Used to split an `N` dimensional `ClusterTree` into `2^N` children until at most
 `nmax` points are contained in node.
+
+## See also: [`AbstractSplitter`](@ref)
 """
 Base.@kwdef struct DyadicSplitter <: AbstractSplitter
     nmax::Int = typemax(Int)
@@ -140,6 +142,8 @@ end
 Used to split a `ClusterTree` along the largest dimension if
 `length(tree)>nmax`. The split is performed so the `data` is evenly distributed
 amongst all children.
+
+## See also: [`AbstractSplitter`](@ref)
 """
 Base.@kwdef struct CardinalitySplitter <: AbstractSplitter
     nmax::Int = 50
