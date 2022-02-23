@@ -283,3 +283,27 @@ function integrate(f,q::GaussKronrod{N}) where {N}
     E = abs(acc1 - acc2)
     return acc1,E
 end
+
+"""
+    struct CustomQuadratureRule{D<:AbstractReferenceShape,N,T<:SVector} <: AbstractQuadratureRule{D}
+
+`N`-point user-defined quadrature rule for integrating over `D`.
+"""
+struct CustomQuadratureRule{D<:AbstractReferenceShape,N,T<:SVector} <: AbstractQuadratureRule{D}
+    qnodes::SVector{N,T}
+    qweights::SVector{N,Float64}
+end
+
+function CustomQuadratureRule{D}(;qnodes,qweights) where D
+    return CustomQuadratureRule{D,length(qnodes),eltype(qnodes)}(qnodes,qweights)
+end
+function CustomQuadratureRule(;domain::AbstractReferenceShape,qnodes,qweights)
+    return CustomQuadratureRule{typeof(domain)}(;qnodes,qweights)
+end
+
+(q::CustomQuadratureRule)() = q.qnodes, q.qweights
+
+const CustomLineQuadratureRule        = CustomQuadratureRule{ReferenceLine}
+const CustomTriangleQuadratureRule    = CustomQuadratureRule{ReferenceTriangle}
+const CustomSquareQuadratureRule      = CustomQuadratureRule{ReferenceSquare}
+const CustomTetrahedronQuadratureRule = CustomQuadratureRule{ReferenceTetrahedron}

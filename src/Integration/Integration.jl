@@ -35,6 +35,11 @@ export
     IMT,
     Duffy,
     SingularQuadratureRule,
+    CustomQuadratureRule,
+    CustomLineQuadratureRule,
+    CustomTriangleQuadratureRule,
+    CustomSquareQuadratureRule,
+    CustomTetrahedronQuadratureRule,
     # functions
     integrate,
     qnodes,

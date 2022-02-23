@@ -88,3 +88,13 @@ end
     f = x -> x[1]^a*x[2]^b
     @test integrate(f,q) ≈ 1/(a+1)*1/(b+1)
 end
+
+@testset "Custom quadrature rules" begin
+    order = 3
+    D = ReferenceTriangle()
+    q1 = qrule_for_reference_shape(D,order)
+    q2 = CustomQuadratureRule(;domain=D,qnodes=qnodes(q1),qweights=qweights(q1))
+    q3 = CustomTriangleQuadratureRule(;qnodes=qnodes(q1),qweights=qweights(q1))
+    @test q1() == q2()
+    @test q2 == q3
+end
