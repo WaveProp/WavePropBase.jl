@@ -27,7 +27,7 @@ export
     LagrangeTriangle,
     LagrangeSquare,
     LagrangeTetrahedron,
-    Pk,
+    PolynomialSpace,
     TensorLagInterp,
     ChebInterp,
     MonomialBasis,

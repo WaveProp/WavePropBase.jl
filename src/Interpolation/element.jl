@@ -44,7 +44,7 @@ range_dimension(t::Type{<:AbstractElement{R,T}}) where {R,T} = length(T)
     struct LagrangeElement{D,Np,T} <: AbstractElement{D,T}
 
 Standard element over `D <: AbstractReferenceShape` commonly used in finite
-element methods. The underlying polynomial space is [`Pk{D,K}`](@ref), and its
+element methods. The underlying polynomial space is [`PolynomialSpace{D,K}`](@ref), and its
 interpolant maps the `Np` `reference_nodes` in `D` to `Np` values of type `T`
 stored in the field `vals`.
 """
@@ -94,7 +94,7 @@ end
     degree(el::LagrangeElement)
 
 The polynomial degree of the element. A `LagrangeElement` of degree `K` and
-domain `D` belongs to the space [`Pk{D,K}`](@ref).
+domain `D` belongs to the space [`PolynomialSpace{D,K}`](@ref).
 """
 function degree(::SType{LagrangeElement{D,Np}})::Int where {D,Np}
     if D == ReferenceLine
@@ -115,7 +115,7 @@ end
 
 function polynomial_space(::SType{LagrangeElement{D,Np}}) where {D,Np}
     K = degree(LagrangeElement{D,Np})
-    Pk{D,K}()
+    PolynomialSpace{D,K}()
 end
 
 """

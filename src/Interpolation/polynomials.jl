@@ -7,22 +7,22 @@ and scalar multiplication.
 abstract type AbstractPolynomialSpace{D} end
 
 """
-    struct Pk{D,K} <: AbstractPolynomialSpace{D}
+    struct PolynomialSpace{D,K} <: AbstractPolynomialSpace{D}
 
 The space of all polynomials over `D` of degree `≤K`.
 
-When `D` is a hypercube in `d` dimensions, the precise definition is `Pk{D,K} =
+When `D` is a hypercube in `d` dimensions, the precise definition is `PolynomialSpace{D,K} =
 span{𝐱ᶿ : max(θ)≤ K}`; when `D` is a `d`-dimensional simplex, the space is
-`Pk{D,K} = span{𝐱ᶿ : sum(θ)≤ K}`, where `θ ∈ 𝐍ᵈ` is a multi-index.
+`PolynomialSpace{D,K} = span{𝐱ᶿ : sum(θ)≤ K}`, where `θ ∈ 𝐍ᵈ` is a multi-index.
 """
-struct Pk{D,K} <: AbstractPolynomialSpace{D} end
-Pk(d::AbstractReferenceShape,k::Int) = Pk{typeof(d),k}()
+struct PolynomialSpace{D,K} <: AbstractPolynomialSpace{D} end
+PolynomialSpace(d::AbstractReferenceShape,k::Int) = PolynomialSpace{typeof(d),k}()
 
-function Base.show(io::IO, pk::Pk{D,K}) where {D,K}
-    print(io, "Pk{$D,$K} : space of all polynomials over $D of degree ≤ $K")
+function Base.show(io::IO, pk::PolynomialSpace{D,K}) where {D,K}
+    print(io, "PolynomialSpace{$D,$K} : space of all polynomials over $D of degree ≤ $K")
 end
 
-function dimension(::SType{Pk{D,K}}) where {D,K}
+function dimension(::SType{PolynomialSpace{D,K}}) where {D,K}
     if D == ReferenceLine
         return K + 1
     elseif D == ReferenceTriangle
@@ -39,14 +39,14 @@ function dimension(::SType{Pk{D,K}}) where {D,K}
 end
 
 """
-    monomial_basis(sp::Pk)
+    monomial_basis(sp::PolynomialSpace)
 
 Return an `NTuple` containing a basis of monomials `𝐱ᶿ` spanning the polynomial
-space [`Pk`](@ref).
+space [`PolynomialSpace`](@ref).
 """
 function monomial_basis end
 
-@generated function monomial_basis(::Pk{ReferenceLine,K}) where {K}
+@generated function monomial_basis(::PolynomialSpace{ReferenceLine,K}) where {K}
     # NOTE: it would be more efficient to interpolate the variable i directly
     # here.
     # the K+1 monomials x^0, x^1, ..., x^K
@@ -56,7 +56,7 @@ function monomial_basis end
     return :($b)
 end
 
-@generated function monomial_basis(::Pk{ReferenceSquare,K}) where {K}
+@generated function monomial_basis(::PolynomialSpace{ReferenceSquare,K}) where {K}
     # the K+1 monomials x^(0,0), x^(0,1),x^(1,0), ..., x^(K,K)
     I = CartesianIndices((K + 1, K + 1)) .- CartesianIndex(1, 1)
     N = length(I)
@@ -67,7 +67,7 @@ end
     return :($b)
 end
 
-@generated function monomial_basis(::Pk{ReferenceTriangle,K}) where {K}
+@generated function monomial_basis(::PolynomialSpace{ReferenceTriangle,K}) where {K}
     # the (K+1)*(K+2)/2 monomials x^(a,b) with a+b ≤ K
     # construct first the indices for the square, then filter only those for
     # which the sum is less than K.
