@@ -10,6 +10,7 @@ using WavePropBase.Integration
     @test D == ReferenceLine()
     x,w = q()
     @test sum(w) ≈ 1
+    @test all(qnode ∈ D for qnode in x)
     # integrate a periodic function. Should be very accurate.
     @test isapprox(integrate(x->cos(2π*x),q),0,atol=1e-10)
     @test integrate(x->sin(2π*x[1])^2,q) ≈ 0.5
@@ -21,6 +22,7 @@ end
     @test D == ReferenceLine()
     x,w = q()
     @test sum(w) ≈ 1
+    @test all(qnode ∈ D for qnode in x)
     # integrate a periodic function. Should be very accurate.
     @test isapprox(integrate(x->cos(2π*x[1]),q),0,atol=1e-10)
     @test integrate(x->sin(2π*x[1])^2,q) ≈ 0.5
@@ -30,6 +32,9 @@ end
     N = 5
     q = Fejer{N}()
     x,w = q()
+    D = domain(q)
+    @test D == ReferenceLine()
+    @test all(qnode ∈ D for qnode in x)
     @test sum(w) ≈ 1
     # integrate all polynomial of degree N-1 exactly
     for n in 1:(N-1)
@@ -46,6 +51,8 @@ end
     for p in orders
         q     = Gauss(;domain=d,order=p)
         x,w   = q()
+        @test domain(q) == d
+        @test all(qnode ∈ d for qnode in x)
         for i in 0:p
             for j in 0:p-i
                 @test integrate(x->x[1]^i*x[2]^j,q) ≈ exa(i,j)
@@ -60,6 +67,8 @@ end
         q = Gauss(;domain=d,order=p)
         x,w = q()
         @test sum(w) ≈ 1/6
+        @test domain(q) == d
+        @test all(qnode ∈ d for qnode in x)
     end
     # FIXME: check that we integrate all monomials up to `order` like in the
     # reference triangle
@@ -70,8 +79,22 @@ end
     qx  = Fejer(N)
     qy  = Fejer(M)
     q   = TensorProductQuadrature(qx,qy)
+    x,w = q()
+    D = domain(q)
+    @test D == ReferenceSquare()
+    @test all(qnode ∈ D for qnode in x)
     a,b = N-1,M-1 # maximum integration order of monomials
     @test integrate( x -> 1,q) ≈ 1
     f = x -> x[1]^a*x[2]^b
     @test integrate(f,q) ≈ 1/(a+1)*1/(b+1)
+end
+
+@testset "Custom quadrature rules" begin
+    order = 3
+    D = ReferenceTriangle()
+    q1 = qrule_for_reference_shape(D,order)
+    q2 = CustomQuadratureRule(;domain=D,qnodes=qnodes(q1),qweights=qweights(q1))
+    q3 = CustomTriangleQuadratureRule(;qnodes=qnodes(q1),qweights=qweights(q1))
+    @test q1() == q2()
+    @test q2 == q3
 end
