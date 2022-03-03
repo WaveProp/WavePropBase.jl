@@ -210,7 +210,7 @@ The implementation consists of adding one to the maximum value of `TAGS[dim]`
 # See also: [`TAGS`](@ref).
 
 """
-function new_tag(dim)
+function new_tag(dim::Integer)
     if !haskey(TAGS,dim)
         return 1
     else

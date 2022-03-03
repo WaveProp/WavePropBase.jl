@@ -9,17 +9,21 @@ abstract type AbstractPolynomialSpace{D} end
 """
     struct PolynomialSpace{D,K} <: AbstractPolynomialSpace{D}
 
-The space of all polynomials over `D` of degree `≤K`.
+The space of all polynomials of degree `≤K`, commonly referred to as `ℙₖ`.
 
-When `D` is a hypercube in `d` dimensions, the precise definition is `PolynomialSpace{D,K} =
-span{𝐱ᶿ : max(θ)≤ K}`; when `D` is a `d`-dimensional simplex, the space is
-`PolynomialSpace{D,K} = span{𝐱ᶿ : sum(θ)≤ K}`, where `θ ∈ 𝐍ᵈ` is a multi-index.
+The type parameter `D`, of singleton type, is used to determine the reference
+domain of the polynomial basis. In particular, when `D` is a hypercube in `d`
+dimensions, the precise definition is `ℙₖ = span{𝐱ᶿ : 0≤max(θ)≤ K}`; when `D` is
+a `d`-dimensional simplex, the space is `ℙₖ = span{𝐱ᶿ : 0≤sum(θ)≤ K}`, where `θ ∈
+𝐍ᵈ` is a multi-index.
+
+See also: [`monomial_basis`](@ref), [`lagrange_basis`](@ref)
 """
 struct PolynomialSpace{D,K} <: AbstractPolynomialSpace{D} end
 PolynomialSpace(d::AbstractReferenceShape,k::Int) = PolynomialSpace{typeof(d),k}()
 
 function Base.show(io::IO, pk::PolynomialSpace{D,K}) where {D,K}
-    print(io, "PolynomialSpace{$D,$K} : space of all polynomials over $D of degree ≤ $K")
+    print(io, "ℙ$K : space of all polynomials over $D of degree ≤ $K")
 end
 
 function dimension(::SType{PolynomialSpace{D,K}}) where {D,K}
