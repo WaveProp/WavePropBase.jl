@@ -93,16 +93,16 @@ Given a `tree`, return a `partition` vector whose `i`-th entry stores all the no
 `tree` with `depth=i-1`. Empty nodes are not added to the partition.
 """
 function partition_by_depth(tree)
-    T         = eltype(tree)
+    T         = typeof(tree)
     partition = Vector{Vector{T}}()
     depth = 0
     _partition_by_depth!(partition,tree,depth)
 end
 
 function _partition_by_depth!(partition,tree,depth)
-    T = eltype(tree)
+    T = typeof(tree)
     if length(partition) < depth+1
-         push!(partition,T[])
+         push!(partition,[])
     end
     length(tree) > 0 && push!(partition[depth+1],tree)
     for chd in children(tree)
