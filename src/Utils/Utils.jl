@@ -35,7 +35,9 @@ export
     cart2pol,
     sph2cart,
     pol2cart,
-    getnodes
+    getnodes,
+    increment_index,
+    decrement_index
 
 """
     svector(f,n)
@@ -430,6 +432,29 @@ function weight(x::T) where {T}
     else
         error("type $T has no method nor field named `weight`.")
     end
+end
+
+"""
+    increment_index(I::CartesianIndex,k[,n=1])
+
+Increment `I` by `n` along  the dimension `k`. This is equivalent to `I +=
+n*eₖ`, where `eₖ` is a vector with with `1` at the  `k`-th coordinate and zeros elsewhere.
+"""
+function increment_index(I::CartesianIndex,dim::Integer,nb::Integer=1)
+    N = length(I)
+    @assert 1 ≤ dim ≤ length(I)
+    return I + CartesianIndex(ntuple(i -> i==dim ? nb : 0,N))
+end
+
+"""
+    decrement_index(I::CartesianIndex,k[,n=1])
+
+Equivalent to [`increment_index`](@ref)(I,k,-n)
+"""
+function decrement_index(I::CartesianIndex,dim::Integer,nb::Integer=1)
+    N = length(I)
+    @assert 1 ≤ dim ≤ length(I)
+    return I + CartesianIndex(ntuple(i -> i==dim ? -nb : 0,N))
 end
 
 end # module
