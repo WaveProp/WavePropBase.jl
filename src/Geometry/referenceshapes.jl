@@ -11,8 +11,20 @@ examples of concrete subtypes.
 """
 abstract type AbstractReferenceShape{N} end
 
+"""
+    ambient_dimension(x)
+
+Dimension of the ambient space where `x` lives. For geometrical objects this can
+differ from its [`geometric_dimension`](@ref); for example a triangle in `ℝ³` has
+ambient dimension `3` but geometric dimension `2`, while a curve in `ℝ³` has
+ambient dimension 3 but geometric dimension 1.
+"""
 ambient_dimension(::SType{<:AbstractReferenceShape{N}}) where {N}    = N
+
+
 geometric_dimension(::SType{<:AbstractReferenceShape{N}}) where {N}  = N
+
+
 dimension(::SType{<:AbstractReferenceShape{N}}) where {N}  = N
 
 """

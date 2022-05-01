@@ -1,43 +1,8 @@
-"""
-    Utils
+#=
 
-Module containing various utility functions for `WaveProp`.
-"""
-module Utils
+Utility functions
 
-using StaticArrays
-using WavePropBase
-
-# import all methods in WavePropBase.INTERFACE_METHODS
-WavePropBase.@import_interface
-
-export
-    # Type alises
-    SType,
-    # Types
-    PseudoBlockMatrix,
-    # methods
-    svector,
-    matrix_to_blockmatrix,
-    blockmatrix_to_matrix,
-    blockmatrix_to_matrix!,
-    diagonalblockmatrix_to_matrix,
-    blockvector_to_vector,
-    vector_to_blockvector,
-    notimplemented,
-    abstractmethod,
-    assert_extension,
-    assert_concrete_type,
-    cross_product_matrix,
-    fill_zero_diagonal!,
-    fill_zero_diagonal!,
-    cart2sph,
-    cart2pol,
-    sph2cart,
-    pol2cart,
-    getnodes,
-    increment_index,
-    decrement_index
+=#
 
 """
     svector(f,n)
@@ -364,8 +329,8 @@ which is independent of `A` but which implements the interface
 function `f`:
 ```jldoctest
 module A
-    using WavePropBase.Utils
-    Utils.@interface foo
+    using WavePropBase: @interface
+    @interface foo
     # a method which works on any type `x` implementing the `foo` function
     do_work(x) = 2*foo(x)
 end
@@ -402,7 +367,12 @@ macro interface(f,n=1)
     return esc(ex)
 end
 
-# some reasonable defaults for coords
+"""
+    coords(x)
+
+Return an `SVector` with the cartesian coordinates associated to a geometrical
+object `x`.
+"""
 coords(x::Tuple)     = SVector(x)
 coords(x::SVector)   = x
 
@@ -456,5 +426,3 @@ function decrement_index(I::CartesianIndex,dim::Integer,nb::Integer=1)
     @assert 1 ≤ dim ≤ length(I)
     return I + CartesianIndex(ntuple(i -> i==dim ? -nb : 0,N))
 end
-
-end # module

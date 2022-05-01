@@ -21,7 +21,7 @@ ent2tags(m::GenericMesh) = m.ent2tags
 
 Base.keys(m::GenericMesh) = keys(elements(m))
 
-Geometry.entities(m::GenericMesh)  = keys(ent2tags(m)) |> collect
+entities(m::GenericMesh)  = keys(ent2tags(m)) |> collect
 
 domain(m::GenericMesh)    = entities(m) |> Domain
 

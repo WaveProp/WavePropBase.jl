@@ -26,6 +26,12 @@ function Base.show(io::IO, pk::PolynomialSpace{D,K}) where {D,K}
     print(io, "ℙ$K : space of all polynomials over $D of degree ≤ $K")
 end
 
+"""
+    dimension(space)
+
+The length of a basis for `space`; i.e. the number of linearly independent elements
+required to span `space`.
+"""
 function dimension(::SType{PolynomialSpace{D,K}}) where {D,K}
     if D == ReferenceLine
         return K + 1

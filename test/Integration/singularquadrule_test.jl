@@ -1,39 +1,37 @@
 using Test
-using WavePropBase
+import WavePropBase as WPB
 using StaticArrays
-using WavePropBase.Geometry
-using WavePropBase.Integration
 using LinearAlgebra
 using Random
 Random.seed!(1)
 
 @testset "Reference segment" begin
-    qstd = Fejer(20)
-    d     = domain(qstd)
+    qstd = WPB.Fejer(20)
+    d     = WPB.domain(qstd)
     # simple test on smooth integrand
-    for shand in [IMT(), Kress(), KressP()]
-        q     = SingularQuadratureRule(qstd,shand)
-        @test isapprox(integrate(cos,q),sin(1),rtol=1e-2)
+    for shand in [WPB.IMT(), WPB.Kress(), WPB.KressP()]
+        q     = WPB.SingularQuadratureRule(qstd,shand)
+        @test isapprox(WPB.integrate(cos,q),sin(1),rtol=1e-2)
     end
     # non-smooth integrand, singularity at 0
     f     = (x) -> log(abs(x))
     Ie    = -1
-    for shand in [IMT(), Kress(),KressP()]
-        q     = SingularQuadratureRule(qstd,shand)
-        Ia    = integrate(f,q)
+    for shand in [WPB.IMT(), WPB.Kress(),WPB.KressP()]
+        q     = WPB.SingularQuadratureRule(qstd,shand)
+        Ia    = WPB.integrate(f,q)
         @test isapprox(Ia,Ie,rtol=1e-4)
         # check that the `naive` integration woudl have failed the test
-        Istd    = integrate(f,qstd)
+        Istd    = WPB.integrate(f,qstd)
         @test !isapprox(Istd,Ie,rtol=1e-4)
     end
     # test that KressP() can handle singularity at both endpoints, and Kress() cannot
     f     = (x) -> log(x) + log(1-x)
     Ie    = -2
-    q     = SingularQuadratureRule(qstd,KressP())
-    Ia    = integrate(f,q)
+    q     = WPB.SingularQuadratureRule(qstd,WPB.KressP())
+    Ia    = WPB.integrate(f,q)
     @test isapprox(Ia,Ie,rtol=1e-5)
-    q     = SingularQuadratureRule(qstd,Kress())
-    Ia    = integrate(f,q)
+    q     = WPB.SingularQuadratureRule(qstd,WPB.Kress())
+    Ia    = WPB.integrate(f,q)
     @test !isapprox(Ia,Ie,rtol=1e-5)
     # non-smooth integrand with singularity inside
     s     = 0.1
@@ -47,48 +45,48 @@ Random.seed!(1)
     # yields a singular value for the integrand. Note that the same can happen
     # with other singularity handler types, but IMT is worse due to the
     # exponential nature of the change of variables.
-    for shand in [Kress(),KressP()]
-        q     = SingularQuadratureRule(qstd,shand)
+    for shand in [WPB.Kress(),WPB.KressP()]
+        q     = WPB.SingularQuadratureRule(qstd,shand)
         x,w  = q(s) # singular nodes and weights which depend on s
-        Ia    = integrate(f,x,w)
+        Ia    = WPB.integrate(f,x,w)
         @test isapprox(Ia,Ie,rtol=1e-5)
         # check that the `naive` integration woudl have failed the test
-        Istd    = integrate(f,qstd)
+        Istd    = WPB.integrate(f,qstd)
         @test !isapprox(Istd,Ie,rtol=1e-5)
     end
 end
 
 @testset "Duffy" begin
-    q1d   = Fejer(5)
-    qstd  = TensorProductQuadrature(q1d,q1d)
-    duffy = Duffy()
-    qsin  = SingularQuadratureRule(qstd,duffy)
+    q1d   = WPB.Fejer(5)
+    qstd  = WPB.TensorProductQuadrature(q1d,q1d)
+    duffy = WPB.Duffy()
+    qsin  = WPB.SingularQuadratureRule(qstd,duffy)
     x,w  = qsin()
     # regular kernel
     k    = x -> cos(x[1])*sin(x[2])
     Ie   = 1/2*(sin(1)-cos(1))
-    Ia   = integrate(k,qsin)
+    Ia   = WPB.integrate(k,qsin)
     @test isapprox(Ie,Ia,rtol=1e-4)
     # singular kernel at right vertex
     s    = SVector(1,0)
     k    = x -> 1/norm(x-s)
-    Ia   = integrate(k,qsin)
+    Ia   = WPB.integrate(k,qsin)
     Ie   = acosh(sqrt(2))
     @test isapprox(Ie,Ia,rtol=1e-5)
     # singular kernel at wrong vertex (should not be accurate, see test below)
     s    = SVector(0,1)
     k    = x -> 1/norm(x-s)
     Ie   = acosh(sqrt(2))
-    Ia   = integrate(k,qsin)
+    Ia   = WPB.integrate(k,qsin)
     @test !isapprox(Ie,Ia,rtol=1e-5)
 end
 
 @testset "2d Kress" begin
-    q1d   = Fejer{10}()
-    qstd  = TensorProductQuadrature(q1d,q1d)
-    s1d   = Kress(order=2)
-    sing_handler = TensorProductSingularityHandler(s1d,s1d)
-    qsin = SingularQuadratureRule(qstd,sing_handler)
+    q1d   = WPB.Fejer{10}()
+    qstd  = WPB.TensorProductQuadrature(q1d,q1d)
+    s1d   = WPB.Kress(order=2)
+    sing_handler = WPB.TensorProductSingularityHandler(s1d,s1d)
+    qsin = WPB.SingularQuadratureRule(qstd,sing_handler)
     x,w  = qsin()
     # regular kernel
     k = (x) -> cos(x[1])

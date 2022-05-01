@@ -7,4 +7,4 @@ using SafeTestsets
 
 @safetestset "Tensor lagrange interpolant" begin include("tensorlaginterp_test.jl") end
 
-@safetestset "Lagrange Triangle" begin include("lagrangetriangle_test.jl") end
+@safetestset "Elements" begin include("element_test.jl") end

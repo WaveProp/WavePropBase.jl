@@ -12,6 +12,11 @@ following methods:
 """
 abstract type AbstractQuadratureRule{D} end
 
+"""
+    domain(f)
+
+Given a function-like object `f: Ω → R`, return `Ω`.
+"""
 domain(q::AbstractQuadratureRule{D}) where {D} = D()
 
 """

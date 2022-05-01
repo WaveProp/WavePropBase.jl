@@ -153,7 +153,7 @@ function Base.issubset(Ω1::Domain, Ω2::Domain)
 end
 
 """
-    boundary(Ω)
+    boundary(Ω::Domain)
 
 Return a domain comprising the external boundary of Ω.
 

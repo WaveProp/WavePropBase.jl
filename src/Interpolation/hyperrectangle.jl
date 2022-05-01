@@ -12,9 +12,28 @@ ambient_dimension(::AbstractHyperRectangle{N}) where {N}   = N
 geometric_dimension(::AbstractHyperRectangle{N}) where {N} = N
 low_corner(r::AbstractHyperRectangle)  = abstractmethod(r)
 high_corner(r::AbstractHyperRectangle) = abstractmethod(r)
+
+"""
+    diameter(Ω)
+
+Largest distance between `x` and `y` for `x,y ∈ Ω`.
+"""
 diameter(r::AbstractHyperRectangle)    = abstractmethod(r)
+
+"""
+    center(Ω)
+
+Center of the smallest ball containing `Ω`.
+"""
 center(r::AbstractHyperRectangle)      = abstractmethod(r)
+
+"""
+    radius(Ω)
+
+Half the [`diameter`](@ref).
+"""
 radius(r::AbstractHyperRectangle)      = abstractmethod(r)
+
 vertices(r::AbstractHyperRectangle)    = abstractmethod(r)
 
 Base.in(point,h::AbstractHyperRectangle) = all(low_corner(h) .<= point .<= high_corner(h))
@@ -64,9 +83,9 @@ function jacobian(el::AbstractHyperRectangle,u)
 end
 
 """
-    distance(r1::AbstractHyperRectangle,r2::AbstractHyperRectangle)
+    distance(Ω₁,Ω₂)
 
-The (minimal) Euclidean distance between a point `x ∈ r1` and `y ∈ r2`.
+Minimal Euclidean distance between a point `x ∈ Ω₁` and `y ∈ Ω₂`.
 """
 function distance(rec1::AbstractHyperRectangle{N},rec2::AbstractHyperRectangle{N}) where {N}
     d2 = 0
@@ -123,6 +142,16 @@ center(r::HyperRectangle)   = (low_corner(r) + high_corner(r)) / 2
 diameter(r::HyperRectangle) = norm(high_corner(r) .- low_corner(r),2)
 radius(r::HyperRectangle)   = diameter(r) / 2
 Base.isapprox(h1::HyperRectangle,h2::HyperRectangle;kwargs...) = isapprox(h1.low_corner,h2.low_corner;kwargs...) && isapprox(h1.high_corner,h2.high_corner;kwargs...)
+width(r::HyperRectangle) = high_corner(r) - low_corner(r)
+half_width(r::HyperRectangle) = width(r)/2
+
+function Base.intersect(r1::HyperRectangle,r2::HyperRectangle)
+    lb = max.(low_corner(r1),low_corner(r2))
+    ub = min.(high_corner(r1),high_corner(r2))
+    HyperRectangle(lb,ub)
+end
+
+Base.isempty(r::HyperRectangle) = any(low_corner(r) .> high_corner(r))
 
 ######
 # HyperCube
@@ -199,4 +228,15 @@ end
 function Base.split(rec::AbstractHyperRectangle)
     axis = argmax(high_corner(rec) .- low_corner(rec))
     return split(rec,axis)
+end
+
+"""
+    section(rec::HyperRectangle{D},ax)
+
+Return the dimension `D-1` `HyperRectangle` obtained by deleting the coordinates
+at the `ax` dimension.
+"""
+function section(rec::HyperRectangle{D}, ax::Integer) where{D}
+    @assert 1 ≤ ax ≤ D
+    HyperRectangle(deleteat(low_corner(rec), ax), deleteat(high_corner(rec), ax))
 end

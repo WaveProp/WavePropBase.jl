@@ -18,6 +18,12 @@ end
 IMT(;a=1,p=1) = IMT{a,p}()
 
 domain(::IMT) = ReferenceLine()
+
+"""
+    image(f)
+
+The a function-like object `f: Ω → R`, return `R`.
+"""
 image(::IMT)  = ReferenceLine()
 
 function (f::IMT{A,P})(x) where {A,P}

@@ -22,6 +22,17 @@ Integer tag used to idetify geometrical entities.
 """
 tag(e::AbstractEntity) = e.tag
 
+"""
+    geometric_dimension(x::AbstractEntity)
+    geometric_dimension(Ω::Domain)
+
+Number of degrees of freedom necessary to locally represent the geometrical
+object. For example, lines have geometric dimension of 1 (whether in `ℝ²` or in
+`ℝ³`), while surfaces have geometric dimension of 2.
+
+When the argument is a `Domain`, return the largest geometric dimension
+encoutered.
+"""
 geometric_dimension(e::AbstractEntity) = e.dim
 
 boundary(e::AbstractEntity) = e.boundary
@@ -59,9 +70,16 @@ Base.hash(ent::AbstractEntity,h::UInt)= hash((geometric_dimension(ent),abs(tag(e
 function normal(ent::AbstractEntity, u)
     s = tag(ent) |> sign
     jac::SMatrix = jacobian(ent, u)
-    s*normal(jac)
+    s*_normal(jac)
 end
-function normal(jac::SMatrix{N,M}) where {N,M}
+
+"""
+    _normal(jac::SMatrix{M,N})
+
+Given a an `M` by `N` matrix representing the jacobian of a codimension one
+object, compute the normal vector.
+"""
+function _normal(jac::SMatrix{N,M}) where {N,M}
     msg = "computing the normal vector requires the element to be of co-dimension one."
     @assert (N - M == 1) msg
     if M == 1 # a line in 2d

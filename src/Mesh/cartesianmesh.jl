@@ -2,7 +2,7 @@
     struct UniformCartesianMesh{N,T} <: AbstractMesh{N,T}
 
 An `N`-dimensional cartesian grid given as the tensor-product of `N`
-one-dimensional `LinRange{T}` grids. 
+one-dimensional `LinRange{T}` grids.
 
 Iterating over a `UniformCartesianMesh` generates the elements which compose the mesh;
 i.e. the `HyperRectangle` cells.
@@ -12,8 +12,8 @@ struct UniformCartesianMesh{N,T} <: AbstractMesh{N,T}
     sz::NTuple{N,Int}            # number of `HyperRectangle` cells per dimension
 end
 
-Interpolation.low_corner(g::UniformCartesianMesh)  = low_corner(g.domain)
-Interpolation.high_corner(g::UniformCartesianMesh) = high_corner(g.domain)
+low_corner(g::UniformCartesianMesh)  = low_corner(g.domain)
+high_corner(g::UniformCartesianMesh) = high_corner(g.domain)
 
 Base.size(g::UniformCartesianMesh)   = g.sz
 Base.size(g::UniformCartesianMesh,i) = g.sz[i]
@@ -39,9 +39,9 @@ function Base.step(m::UniformCartesianMesh{N}) where N
     lc = low_corner(m)
     hc = high_corner(m)
     sz = size(m)
-    return ntuple(N) do i 
+    return ntuple(N) do i
         (hc[i]-lc[i])/sz[i]
-    end     
+    end
 end
 
 """

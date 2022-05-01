@@ -1,28 +1,25 @@
 using Test
-using WavePropBase
-using WavePropBase.Geometry
-using WavePropBase.Interpolation
-using WavePropBase.Mesh
+import WavePropBase as WPB
 using StaticArrays
 
 @testset "One dimension" begin
-    l = HyperRectangle(0.0,1.0)
+    l = WPB.HyperRectangle(0.0,1.0)
     E = typeof(l) # type of mesh element
     h = 0.1 # grid spacing
-    mesh = UniformCartesianMesh(l,(10,))
-    @test mesh == UniformCartesianMesh(l,10)
-    @test mesh == UniformCartesianMesh(grids(mesh)) == UniformCartesianMesh(grids(mesh)...)
-    @test mesh == UniformCartesianMesh(l; step=step(mesh))
-    @test Mesh.xgrid(mesh) == LinRange(0.,1.,11)
+    mesh = WPB.UniformCartesianMesh(l,(10,))
+    @test mesh == WPB.UniformCartesianMesh(l,10)
+    @test mesh == WPB.UniformCartesianMesh(WPB.grids(mesh)) == WPB.UniformCartesianMesh(WPB.grids(mesh)...)
+    @test mesh == WPB.UniformCartesianMesh(l; step=step(mesh))
+    @test WPB.xgrid(mesh) == LinRange(0.,1.,11)
     @test keys(mesh) == (E,)
-    iter = ElementIterator(mesh,E)
+    iter = WPB.ElementIterator(mesh,E)
     @test eltype(iter) == E
-    @test iter[1] ≈ HyperRectangle(0,0.1)
-    @test iter[3] ≈ HyperRectangle(0.2,0.3)
+    @test iter[1] ≈ WPB.HyperRectangle(0,0.1)
+    @test iter[3] ≈ WPB.HyperRectangle(0.2,0.3)
     for (n,el) in enumerate(iter)
-        @test el ≈ HyperRectangle((n-1)*0.1,n*0.1)
+        @test el ≈ WPB.HyperRectangle((n-1)*0.1,n*0.1)
     end
-    iter = NodeIterator(mesh)
+    iter = WPB.NodeIterator(mesh)
     @test eltype(iter) == SVector{1,Float64}
     @test size(iter) == (11,)
     for (n,x) in enumerate(iter)
@@ -31,24 +28,24 @@ using StaticArrays
 end
 
 @testset "Two dimensions" begin
-    l    = HyperRectangle((0.0,0.0),(1.0,1.0))
+    l    = WPB.HyperRectangle((0.0,0.0),(1.0,1.0))
     E    = typeof(l) # type of mesh element
-    mesh = UniformCartesianMesh(l,(10,20))
-    iter = ElementIterator(mesh,E)
-    @test mesh == UniformCartesianMesh(grids(mesh)) == UniformCartesianMesh(grids(mesh)...)
-    @test mesh == UniformCartesianMesh(l; step=step(mesh))
-    @test Mesh.xgrid(mesh) == LinRange(0.,1.,11)
-    @test Mesh.ygrid(mesh) == LinRange(0.,1.,21)
-    @test iter[1,1] ≈ HyperRectangle((0,0),(0.1,0.05))
+    mesh = WPB.UniformCartesianMesh(l,(10,20))
+    iter = WPB.ElementIterator(mesh,E)
+    @test mesh == WPB.UniformCartesianMesh(WPB.grids(mesh)) == WPB.UniformCartesianMesh(WPB.grids(mesh)...)
+    @test mesh == WPB.UniformCartesianMesh(l; step=step(mesh))
+    @test WPB.xgrid(mesh) == LinRange(0.,1.,11)
+    @test WPB.ygrid(mesh) == LinRange(0.,1.,21)
+    @test iter[1,1] ≈ WPB.HyperRectangle((0,0),(0.1,0.05))
     @test length(iter) == 200
     @test size(iter) == (10,20)
     for I in CartesianIndices(iter)
         i,j = Tuple(I)
         el = iter[i,j]
-        @test el ≈ HyperRectangle(((i-1)*0.1,(j-1)*0.05),(i*0.1,j*0.05))
+        @test el ≈ WPB.HyperRectangle(((i-1)*0.1,(j-1)*0.05),(i*0.1,j*0.05))
     end
 
-    iter = NodeIterator(mesh)
+    iter = WPB.NodeIterator(mesh)
     @test eltype(iter) == SVector{2,Float64}
     @test length(iter) == 11*21
     @test size(iter) == (11,21)
