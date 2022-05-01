@@ -24,7 +24,9 @@ end
 """
     split!(clt::ClusterTree,splitter::AbstractSplitter)
 
-Divide `clt` using the strategy implemented by `splitter`.
+Divide `clt` using the strategy implemented by `splitter`. This function is
+reponsible of assigning the `children` and `parent` fields, as well as of
+permuting the data of `clt`.
 """
 function split!(clt, splitter::AbstractSplitter)
     abstractmethod(splitter)
@@ -59,7 +61,8 @@ function split!(parentcluster::ClusterTree, ::DyadicSplitter)
             append!(clusters, _binary_split!(clt, i, pos; parentcluster))
         end
     end
-    return clusters
+    parentcluster.children = clusters
+    return parentcluster
 end
 
 """
@@ -77,7 +80,8 @@ function split!(cluster::ClusterTree, ::GeometricSplitter)
     rec = cluster.container
     wmax, imax = findmax(high_corner(rec) - low_corner(rec))
     left_node, right_node = _binary_split!(cluster, imax, low_corner(rec)[imax] + wmax / 2)
-    return [left_node, right_node]
+    cluster.children = [left_node,right_node]
+    return cluster
 end
 
 """
@@ -97,7 +101,8 @@ function split!(cluster::ClusterTree, ::GeometricMinimalSplitter)
     mid = low_corner(rec)[imax] + wmax / 2
     predicate = (x) -> x[imax] < mid
     left_node, right_node = _binary_split!(cluster, predicate)
-    return [left_node, right_node]
+    cluster.children = [left_node,right_node]
+    return cluster
 end
 
 """
@@ -114,25 +119,28 @@ function split!(cluster::ClusterTree, ::PrincipalComponentSplitter)
     irange = cluster.index_range
     xc = center_of_mass(cluster)
     # compute covariance matrix for principal direction
+    l2g = loc2glob(cluster)
     cov = sum(irange) do i
-        x = coords(pts[i])
+        x = coords(pts[l2g[i]])
         (x - xc) * transpose(x - xc)
     end
     v = eigvecs(cov)[:, end]
     predicate = (x) -> dot(x - xc, v) < 0
     left_node, right_node = _binary_split!(cluster, predicate)
-    return [left_node, right_node]
+    cluster.children = [left_node,right_node]
+    return cluster
 end
 
 function center_of_mass(clt::ClusterTree)
     pts = clt._elements
     loc_idxs = clt.index_range
+    l2g = loc2glob(clt)
     # w    = clt.weights
     n = length(loc_idxs)
     # M    = isempty(w) ? n : sum(i->w[i],glob_idxs)
     # xc   = isempty(w) ? sum(i->pts[i]/M,glob_idxs) : sum(i->w[i]*pts[i]/M,glob_idxs)
     M = n
-    xc = sum(i -> coords(pts[i]) / M, loc_idxs)
+    xc = sum(i -> coords(pts[l2g[i]]) / M, loc_idxs)
     return xc
 end
 
@@ -156,8 +164,10 @@ function split!(cluster::ClusterTree, ::CardinalitySplitter)
     irange = cluster.index_range
     rec = container(cluster)
     _, imax = findmax(high_corner(rec) - low_corner(rec))
-    med = median(coords(points[i])[imax] for i in irange) # the median along largest axis `imax`
+    l2g = loc2glob(cluster)
+    med = median(coords(points[l2g[i]])[imax] for i in irange) # the median along largest axis `imax`
     predicate = (x) -> x[imax] < med
     left_node, right_node = _binary_split!(cluster, predicate)
-    return [left_node, right_node]
+    cluster.children = [left_node,right_node]
+    return cluster
 end
