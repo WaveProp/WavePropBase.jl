@@ -194,8 +194,10 @@ function HyperRectangle(els,cube=false)
     if cube # fit a square/cube instead
         w  = maximum(ub-lb)
         xc = (ub + lb) / 2
-        lb = xc .- w/2
-        ub = xc .+ w/2
+        # min/max below helps avoid floating point issues with results with the
+        # cube not being exactly contained in the original rectangle
+        lb = min.(xc .- w/2,lb)
+        ub = max.(xc .+ w/2,ub)
         # TODO: return HyperCube instead
     end
     return HyperRectangle(lb,ub)
