@@ -1,4 +1,4 @@
-# [Interpolation module](@id interpolation-section)
+# [Interpolation](@id interpolation-section)
 
 ```@meta
 CurrentModule = WavePropBase
@@ -8,15 +8,14 @@ CurrentModule = WavePropBase
 
 The `Interpolation` module defines an interface for talking about polynomial
 spaces and interpolation. The central concept of this module is that of an
-[`AbstractElement{D,T}`](@ref Interpolation.AbstractElement), which maps points
-on a reference domain (of type [`<:AbstractReferenceShape`](@ref
-Geometry.AbstractReferenceShape)) to values of type `T`. The `AbstractElement`
+[`AbstractElement{D,T}`](@ref AbstractElement), which maps points
+on a reference domain (of type [`<:AbstractReferenceShape`](@ref AbstractReferenceShape)) to values of type `T`. The `AbstractElement`
 interface expects the methods `(el::AbstractElement)(u)`, which evaluates the
 underlying interpolant at the (reference) coordinate `u`, and `jacobian(el,u)`,
 which computes the jacobian at the (reference) coordinate `u`.
 
 `AbstractElement`s are commonly used to describe functions over
-[`AbstractReferenceShape`](@ref Geometry.AbstractReferenceShape)s, and such
+[`AbstractReferenceShape`](@ref AbstractReferenceShape)s, and such
 functions can in turn be used to describe more complex geometrical shapes used
 e.g. in a mesh. By composing a function representation on a reference element
 with the representation of the element itself as a map from the reference
@@ -34,7 +33,7 @@ package).
 
 One of the simplest `AbstractElement`s is the `LagrangeElement{D,T,Np}`, which
 defines a polynomial mapping the `Np` reference nodes on `D` to `Np` values of
-type `T`. The [`reference_nodes`](@ref Interpolation.reference_nodes) depend
+type `T`. The [`reference_nodes`](@ref reference_nodes) depend
 only on `D` and `Np` (and therefore on the type of the element). We use the same
 convention as *Gmsh* to define the order of the reference nodes on the various
 reference shapes; see [node
@@ -49,7 +48,7 @@ be created using:
 using WavePropBase, Plots
 plotlyjs() # hide
 pts = (1,1),(2,2),(1.5,3)
-el  = Interpolation.LagrangeTriangle(pts)
+el  = WavePropBase.LagrangeTriangle(pts)
 plot(el)
 savefig("el1.png")
 ```
@@ -61,8 +60,8 @@ parametrization and the jacobian at any point on the reference element (not just
 the reference nodes):
 
 ```@example triangle-element
-u = Geometry.Point2D(0.25,0.25)
-@show el(u), jacobian(el,u)
+u = WavePropBase.Point2D(0.25,0.25)
+@show el(u), WavePropBase.jacobian(el,u)
 ```
 
 If the triangle is instead in three dimensions, it suffices to pass
@@ -70,7 +69,7 @@ three-dimensional points:
 
 ```@example triangle-element
 pts = (1,1,0),(2,2,1),(1.5,3,1)
-el  = Interpolation.LagrangeTriangle(pts)
+el  = WavePropBase.LagrangeTriangle(pts)
 plot(el)
 savefig("el2.png")
 ```
@@ -78,10 +77,5 @@ savefig("el2.png")
 ![triangular element](el2.png)
 
 Very similar constructs can be used to work higher order (curved) triangles, or
-with other `LagrangeElements` such as [`LagrangeSquare`](@ref
-Interpolation.LagrangeSquare) or [`LagrangeTetrahedron`](@ref
-Interpolation.LagrangeTetrahedron); see their docstrings for more details.
-
-```@index
-Modules = [WavePropBase.Interpolation]
-```
+with other `LagrangeElements` such as [`LagrangeSquare`](@ref LagrangeSquare) or
+[`LagrangeTetrahedron`](@ref); see their docstrings for more details.

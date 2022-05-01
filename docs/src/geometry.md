@@ -1,9 +1,8 @@
-# [Geometry module](@id geometry-section)
+# [Geometry](@id geometry-section)
 
 ```@meta
-CurrentModule = WavePropBase.Geometry
+CurrentModule = WavePropBase
 ```
-
 ## Overview
 
 The `Geometry` module is of fundamental importance as it defines the interface
@@ -86,15 +85,9 @@ Furthremore, domains can be used to index parts of a mesh, as described in the
 The `AbstractReferenceShape{N}` type describes singleton types representing
 (fixed) geometrical shapes in `N` dimensions. Concrete subtypes include
 [`ReferenceLine`](@ref), [`ReferenceTriangle`](@ref), [`ReferenceSquare`](@ref),
-and the [`ReferenceTetrahedron`](@ref). 
+and the [`ReferenceTetrahedron`](@ref).
 
 Various interpolation and integration routines can then be efficiently defined
 on these singleton types, and more complex interpolation/integration over more
 complex elements can be carried out by combining the routines on the reference
 element with a parametrization of the complex element.
-
-## Index
-
-```@index
-Modules = [Geometry]
-```

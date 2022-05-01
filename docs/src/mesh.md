@@ -1,6 +1,10 @@
-# [Mesh module](@id mesh-section)
+# [Mesh](@id mesh-section)
 
-## Overview 
+```@meta
+CurrentModule = WavePropBase
+```
+
+## Overview
 
 ## Mesh structures
 
@@ -19,8 +23,4 @@ using GmshSDK
     #Ω    = GmshSDK.Domain()
     #msh  = GmshSDK.meshgen(Ω)
 end
-```
-
-```@index
-Modules = [WavePropBase.Mesh]
 ```

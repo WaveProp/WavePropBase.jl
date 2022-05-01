@@ -15,13 +15,13 @@ makedocs(;
     ),
     pages=[
         "WavePropBase" => "index.md",
-        "Utils module" => "utils.md",
-        "Geometry module" => "geometry.md",
-        "Interpolation module" => "interpolation.md",
-        "Integration module" => "integration.md",
-        "Mesh module" => "mesh.md",
-        "Trees module" => "trees.md",
-        "IO module" => "io.md",
+        "Utils" => "utils.md",
+        "Geometry" => "geometry.md",
+        "Interpolation" => "interpolation.md",
+        "Integration" => "integration.md",
+        "Meshes" => "mesh.md",
+        "Trees" => "trees.md",
+        "IO" => "io.md",
         "References" => "references.md"
     ],
 )
