@@ -38,6 +38,9 @@ end
         splitter  = WPB.DyadicSplitter(nmax=1)
         clt = WPB.ClusterTree(points,splitter)
         @test sortperm(points) == clt.loc2glob
+        splitter  = WPB.DyadicMinimalSplitter(nmax=1)
+        clt = WPB.ClusterTree(points,splitter)
+        @test sortperm(points) == clt.loc2glob
     end
 
     @testset "2d" begin
@@ -55,6 +58,9 @@ end
         clt = WPB.ClusterTree(points,splitter)
         @test test_cluster_tree(clt)
         splitter = WPB.DyadicSplitter(nmax=32)
+        clt = WPB.ClusterTree(points,splitter)
+        @test test_cluster_tree(clt)
+        splitter  = WPB.DyadicMinimalSplitter(nmax=1)
         clt = WPB.ClusterTree(points,splitter)
         @test test_cluster_tree(clt)
     end
@@ -76,6 +82,9 @@ end
         splitter   = WPB.DyadicSplitter(nmax=32)
         clt = WPB.ClusterTree(points,splitter)
         @test test_cluster_tree(clt)
+        splitter  = WPB.DyadicMinimalSplitter(nmax=1)
+        clt = WPB.ClusterTree(points,splitter)
+        @test test_cluster_tree(clt)
     end
 
     @testset "3d + threads" begin
@@ -94,6 +103,9 @@ end
         clt = WPB.ClusterTree(points,splitter;threads)
         @test test_cluster_tree(clt)
         splitter   = WPB.DyadicSplitter(nmax=32)
+        clt = WPB.ClusterTree(points,splitter;threads)
+        @test test_cluster_tree(clt)
+        splitter   = WPB.DyadicMinimalSplitter(nmax=32)
         clt = WPB.ClusterTree(points,splitter;threads)
         @test test_cluster_tree(clt)
     end

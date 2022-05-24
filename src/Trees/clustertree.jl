@@ -122,7 +122,7 @@ during the tree construction.
 """
 function ClusterTree{D}(elements,splitter=CardinalitySplitter();copy_elements=true, threads=false) where {D}
     copy_elements && (elements = deepcopy(elements))
-    if splitter isa DyadicSplitter
+    if splitter isa DyadicSplitter || splitter isa DyadicMinimalSplitter || splitter isa DyadicMaxDepthSplitter
         # make a cube for bounding box for quad/oct trees
         bbox         = HyperRectangle(elements,true)
     else
@@ -143,16 +143,16 @@ function ClusterTree{D}(elements,splitter=CardinalitySplitter();copy_elements=tr
 end
 ClusterTree(args...;kwargs...) = ClusterTree{Nothing}(args...;kwargs...)
 
-function _build_cluster_tree!(current_node,splitter,threads)
-    if should_split(current_node,splitter)
+function _build_cluster_tree!(current_node,splitter,threads,depth=0)
+    if should_split(current_node,depth,splitter)
         split!(current_node,splitter)
         if threads
             Threads.@threads for child in children(current_node)
-                _build_cluster_tree!(child,splitter,threads)
+                _build_cluster_tree!(child,splitter,threads,depth+1)
             end
         else
             for child in children(current_node)
-                _build_cluster_tree!(child,splitter,threads)
+                _build_cluster_tree!(child,splitter,threads,depth+1)
             end
         end
     end
