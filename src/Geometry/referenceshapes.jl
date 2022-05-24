@@ -72,7 +72,11 @@ the lower corner at the origin and the upper-corner at `(1,1,…,1)`.
 """
 struct ReferenceHyperCube{N} <: AbstractReferenceShape{N}
 end
+Base.in(x,::ReferenceHyperCube)    = all(0 ≤ xi ≤ 1 for xi in x)
 
+center(::SType{ReferenceHyperCube{N}}) where {N} = svector(i->0.5,N)
+
+number_of_nodes(::SType{ReferenceHyperCube{N}}) where {N} = 2^N
 
 """
     const ReferenceSquare = ReferenceHyperCube{2}
@@ -80,11 +84,6 @@ end
 Singleton type representing the square with vertices `(0,0),(0,1),(1,1),(1,0)`
 """
 const ReferenceSquare = ReferenceHyperCube{2}
-Base.in(x,::ReferenceSquare)    = 0 ≤ x[1] ≤ 1 && 0 ≤ x[2] ≤ 1
-center(::Type{ReferenceSquare}) = SVector(0.5,0.5)
-center(::ReferenceSquare)       = SVector(0.5,0.5)
-number_of_nodes(::Type{ReferenceSquare}) = 4
-number_of_nodes(::ReferenceSquare)       = 4
 
 vertices(sq::ReferenceSquare) = SVector(0,0), SVector(1,0), SVector(1,1), SVector(0,1)
 

@@ -200,6 +200,7 @@ function HyperRectangle(els,cube=false)
         ub = max.(xc .+ w/2,ub)
         # TODO: return HyperCube instead
     end
+    lb == ub && (lb = prevfloat.(lb); ub = nextfloat.(ub)) # to avoid "empty" rectangles
     return HyperRectangle(lb,ub)
 end
 
