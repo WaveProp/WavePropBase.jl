@@ -122,7 +122,7 @@ during the tree construction.
 """
 function ClusterTree{D}(elements,splitter=CardinalitySplitter();copy_elements=true, threads=false) where {D}
     copy_elements && (elements = deepcopy(elements))
-    if splitter isa DyadicSplitter || splitter isa DyadicMinimalSplitter || splitter isa DyadicMaxDepthSplitter
+    if splitter isa DyadicSplitter || splitter isa DyadicMaxDepthSplitter
         # make a cube for bounding box for quad/oct trees
         bbox         = HyperRectangle(elements,true)
     else
