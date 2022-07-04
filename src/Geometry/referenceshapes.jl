@@ -54,7 +54,7 @@ vertices(ln::ReferenceLine) = SVector(0), SVector(1)
 """
     struct ReferenceTriangle
 
-Singleton type representing the triangle with vertices `(0,0),(0,1),(1,0)`
+Singleton type representing the triangle with vertices `(0,0),(1,0),(0,0)`
 """
 struct ReferenceTriangle <: AbstractReferenceShape{2}
 end

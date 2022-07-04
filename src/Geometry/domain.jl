@@ -143,7 +143,7 @@ function Base.intersect(Ω1::Domain, Ω2::Domain)
     end
 end
 
-function Base.push!(Ω::Domain,ent::ElementaryEntity)
+function Base.push!(Ω::Domain,ent::AbstractEntity)
     push!(entities(Ω),ent)
 end
 
