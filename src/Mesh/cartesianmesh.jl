@@ -66,7 +66,9 @@ end
 # them to a Tuple
 UniformCartesianMesh(grids::Vararg{LinRange{T}}) where {T} = UniformCartesianMesh(Tuple(grids))
 
-function UniformCartesianMesh(domain::HyperRectangle{N};step::NTuple{N}) where {N}
+function UniformCartesianMesh(domain::HyperRectangle{N};step) where {N}
+    msg = "`step` argument must be either a `Number` or an `NTuple{$N,<:Number}`"
+    step = step isa Number ? ntuple(i->step,N) : step isa NTuple{N} ? step : error(msg)
     lc = low_corner(domain)
     hc = high_corner(domain)
     sz = ntuple(N) do i

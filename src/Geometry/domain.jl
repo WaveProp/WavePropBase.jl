@@ -112,6 +112,8 @@ function Base.union(Ω1::Domain,Ωs::Domain...)
 end
 Base.union(Ω::Domain) = Domain(unique(entities(Ω)))
 
+Base.append!(Ω1,Ω2) = (append!(entities(Ω1),entities(Ω2)); Ω1)
+
 """
     assertequaldim(Ω1::Domain,Ω2::Domain)
 
@@ -157,7 +159,7 @@ end
 
 Return a domain comprising the external boundary of Ω.
 
-See also: [`external_boundary`](@ref)
+# See also: [`external_boundary`](@ref)
 """
 boundary(Ω::Domain) = external_boundary(Ω::Domain)
 

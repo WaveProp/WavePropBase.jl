@@ -37,21 +37,6 @@ end
 number_of_nodes(::SType{ReferencePoint}) = 1
 
 """
-    struct ReferenceLine
-
-Singleton type representing the `[0,1]` segment.
-"""
-struct ReferenceLine <: AbstractReferenceShape{1}
-end
-Base.in(x,::ReferenceLine)    = 0 ≤ x[1] ≤ 1
-center(::Type{ReferenceLine}) = 0.5
-center(::ReferenceLine)       = 0.5
-number_of_nodes(::Type{ReferenceLine}) = 2
-number_of_nodes(::ReferenceLine)       = 2
-
-vertices(ln::ReferenceLine) = SVector(0), SVector(1)
-
-"""
     struct ReferenceTriangle
 
 Singleton type representing the triangle with vertices `(0,0),(1,0),(0,0)`
@@ -77,6 +62,15 @@ Base.in(x,::ReferenceHyperCube)    = all(0 ≤ xi ≤ 1 for xi in x)
 center(::SType{ReferenceHyperCube{N}}) where {N} = svector(i->0.5,N)
 
 number_of_nodes(::SType{ReferenceHyperCube{N}}) where {N} = 2^N
+
+"""
+    const ReferenceLine = ReferenceHyperCube{1}
+
+Singleton type representing the `[0,1]` segment.
+"""
+const ReferenceLine = ReferenceHyperCube{1}
+
+vertices(ln::ReferenceLine) = SVector(0), SVector(1)
 
 """
     const ReferenceSquare = ReferenceHyperCube{2}

@@ -17,7 +17,7 @@ dimensions, the precise definition is `ℙₖ = span{𝐱ᶿ : 0≤max(θ)≤ K}
 a `d`-dimensional simplex, the space is `ℙₖ = span{𝐱ᶿ : 0≤sum(θ)≤ K}`, where `θ ∈
 𝐍ᵈ` is a multi-index.
 
-See also: [`monomial_basis`](@ref), [`lagrange_basis`](@ref)
+# See also: [`monomial_basis`](@ref), [`lagrange_basis`](@ref)
 """
 struct PolynomialSpace{D,K} <: AbstractPolynomialSpace{D} end
 PolynomialSpace(d::AbstractReferenceShape,k::Int) = PolynomialSpace{typeof(d),k}()

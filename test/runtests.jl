@@ -8,6 +8,8 @@ using SafeTestsets
 
 @safetestset "Mesh" begin include("Mesh/runtests.jl") end
 
+@safetestset "ParametricEntities" begin include("ParametricEntities/runtests.jl") end
+
 @safetestset "Trees" begin include("Trees/runtests.jl") end
 
 # FIXME: I still can't figure out how to add an unregistered package as a

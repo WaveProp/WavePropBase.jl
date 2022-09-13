@@ -23,11 +23,28 @@ end
 """
     jacobian(f,x)
 
-Given a (possibly vector-valued) function `f : 𝐑ᵐ → 𝐅ᵐ`, return the `m × n`
-matrix `Aᵢⱼ = ∂fᵢ/∂xⱼ`.
+Given a (possibly vector-valued) functor `f : 𝐑ᵐ → 𝐅ⁿ`, return the `n × m`
+matrix `Aᵢⱼ = ∂fᵢ/∂xⱼ`. By default a finite-difference approximation is
+performed, but you should overload this method for specific `f` if better
+performance and/or precision is required.
+
+Note: both `x` and `f(x)` are expected to be of `SVector` type.
 """
-function jacobian(el,x)
-    abstractmethod(el)
+function jacobian(f,x)
+    T = eltype(x)
+    N = length(x)
+    h = (eps(T))^(1/3)
+    partials = svector(N) do d
+        xp = ntuple(i-> i==d ? x[i]+h : x[i] , N) |> SVector
+        xm = ntuple(i-> i==d ? x[i]-h : x[i] , N) |> SVector
+        (f(xp) - f(xm))/(2h)
+    end
+    hcat(partials...)
+end
+
+function jacobian(f::AbstractElement,x)
+    # make sure users of AbstractElement implement a custom jacobian
+    abstractmethod(f)
 end
 
 """

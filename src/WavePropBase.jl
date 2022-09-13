@@ -15,6 +15,7 @@ include("Geometry/Geometry.jl")
 include("Interpolation/Interpolation.jl")
 include("Integration/Integration.jl")
 include("Mesh/Mesh.jl")
+include("ParametricEntities/ParametricEntities.jl")
 include("Trees/Trees.jl")
 include("IO/IO.jl")
 
