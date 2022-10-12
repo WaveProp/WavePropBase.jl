@@ -128,7 +128,6 @@ end
 
 geometric_dimension(ω::ElementaryEntity) = ω.dim
 tag(ω::ElementaryEntity) = ω.tag
-boundary(ω::ElementaryEntity) = ω.boundary
 
 """
     ElementaryEntity(dim,tag)

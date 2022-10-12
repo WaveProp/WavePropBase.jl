@@ -131,6 +131,7 @@ Fejer(;order::Int) = Fejer(order+1)
 
 # N point fejer quadrature integrates all polynomials up to degree N-1
 order(::Fejer{N}) where {N} = N-1
+
 function (q::Fejer{N})() where {N}
     theta = [(2j - 1) * π / (2 * N) for j = 1:N]
     x = -cos.(theta)
@@ -145,6 +146,23 @@ function (q::Fejer{N})() where {N}
     xs = svector(i -> SVector(0.5 * (x[i] + 1)), N)
     ws = svector(i -> w[i] / 2, N)
     return xs, ws
+end
+
+function integrate_fejer1d(f,a=0,b=1;atol=0,rtol= atol ==0 ? sqrt(eps(Float64)) : 0)
+    w = b-a
+    n  = 5
+    f̂  = (s) -> f(a + s*w)*w
+    I1 = integrate(f̂,Fejer(n))
+    I2 = integrate(f̂,Fejer(2*n))
+    er = norm(I2-I1)
+    while er > max(atol,I2*rtol)
+        n *= 2
+        I1 = I2
+        I2 = integrate(f̂,Fejer(2n))
+        er = norm(I2-I1)
+        n  > 100 && error("did not converge quickly enough")
+    end
+    return I2
 end
 
 """
@@ -226,17 +244,6 @@ function (q::TensorProductQuadrature)()
     return SArray(x), w
 end
 
-# some helper functions
-function integration_measure(jac::SMatrix)
-    M,N = size(jac)
-    if M == N
-        # cheaper version when `M=N`
-        det(jac) |> abs
-    else
-        transpose(jac)*jac |> det |> sqrt
-    end
-end
-
 """
     qrule_for_reference_shape(ref,order)
 
@@ -259,38 +266,9 @@ function qrule_for_reference_shape(ref,order)
     end
 end
 
-abstract type CompositeQuadratureRule{D} <: AbstractQuadratureRule{D} end
-
-struct GaussKronrod{N} <: CompositeQuadratureRule{ReferenceLine}
-end
-
-@generated function (::GaussKronrod{N})() where {N}
-    x,w,wg = kronrod(N)
-    xk   = [x;reverse(-x[1:end-1])]
-    wk   = [w;reverse(w[1:end-1])]
-    wg   = [wg;reverse(wg[1:end-1])]
-    idxs = 2:2:length(xk)
-    xg   = xk[idxs]
-    return SVector{2*N+1}(xk),SVector{2*N+1}(wk),SVector{N}(xg),SVector{N}(wg)
-end
-
-function integrate(f,q::GaussKronrod{N}) where {N}
-    xk,wk,_,wg = q()
-    acc1 = 0.0
-    acc2 = 0.0
-    for n in 1:2N+1
-        v    = f(xk[n])
-        acc1 += v*wk[n]
-        if iseven(n)
-            acc2 += v*wg[n>>1]
-        end
-    end
-    E = abs(acc1 - acc2)
-    return acc1,E
-end
-
+abstract type NestedQuadratureRule{D} <: AbstractQuadratureRule{D} end
 """
-    struct CustomQuadratureRule{D<:AbstractReferenceShape,N,T<:SVector} <: AbstractQuadratureRule{D}
+    struct CustomQuadratureRule{D,N,T} <: AbstractQuadratureRule{D}
 
 `N`-point user-defined quadrature rule for integrating over `D`.
 """
