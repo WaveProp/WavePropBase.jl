@@ -1,3 +1,5 @@
+@info "including vtkIO.jl from WavePropBase/IO"
+
 using .WriteVTK
 
 """

@@ -24,7 +24,7 @@ function Base.show(io::IO,msh::AbstractMesh)
     print(io,"$(typeof(msh)) containing:")
     for E in keys(msh)
         iter = ElementIterator(msh,E)
-        print(io,"\n\t $(length(iter)) elements of type ",E,)
+        print(io,"\n\t $(length(iter)) elements of type ",E)
     end
     return io
 end

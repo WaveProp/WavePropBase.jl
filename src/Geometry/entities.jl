@@ -126,9 +126,6 @@ struct ElementaryEntity <: AbstractEntity
     end
 end
 
-geometric_dimension(ω::ElementaryEntity) = ω.dim
-tag(ω::ElementaryEntity) = ω.tag
-
 """
     ElementaryEntity(dim,tag)
 

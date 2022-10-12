@@ -6,7 +6,7 @@ using StaticArrays
 using LinearAlgebra
 using AbstractTrees
 using RecipesBase
-using Requires # for conditional loading of vtkIO
+using Requires
 using Printf
 using Statistics: median
 
@@ -20,11 +20,9 @@ include("Trees/Trees.jl")
 include("IO/IO.jl")
 
 function __init__()
-    # if WriteVTK is available, include vtkIO
-    @require WriteVTK="64499a7a-5c06-52f2-abe2-ccb03c286192" begin
-        @info "including vtkIO.jl from WavePropBase/IO"
-        include("IO/vtkIO.jl")
-    end
+    # handling of optional dependencies
+    @require WriteVTK="64499a7a-5c06-52f2-abe2-ccb03c286192" include("IO/vtkIO.jl")
+    @require Gmsh = "705231aa-382f-11e9-3f0c-b7cb4346fdeb" include("IO/gmshIO.jl")
 end
 
 end
