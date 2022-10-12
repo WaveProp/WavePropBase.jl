@@ -35,29 +35,3 @@ function (el::ParametricElement)(u)
     f = parametrization(el)
     return f(u)
 end
-
-# Plot recipes
-@recipe function f(el::ParametricElement;npts=2)
-    D = domain(el)
-    grid   --> false
-    aspect_ratio --> :equal
-    label --> ""
-    if D isa ReferenceLine
-        s       = LinRange(0,1,npts)
-        pts     = [el(v) for v in s]
-        x       = [pt[1] for pt in pts]
-        y       = [pt[2] for pt in pts]
-        x,y
-    elseif D isa ReferenceSquare
-        seriestype := :surface
-        xrange = LinRange(0,1,npts)
-        yrange = LinRange(0,1,npts)
-        pts    = [el((x,y)) for x in xrange, y in yrange]
-        x      =  [pt[1] for pt in pts]
-        y      =  [pt[2] for pt in pts]
-        z      =  [pt[3] for pt in pts]
-        x,y,z
-    else
-        notimplemented()
-    end
-end

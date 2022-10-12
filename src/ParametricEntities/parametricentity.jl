@@ -68,30 +68,3 @@ function line(a::SVector, b::SVector)
     ParametricEntity(f, d)
 end
 line(a, b) = line(SVector(a), SVector(b))
-
-# Plot recipes
-@recipe function f(ent::ParametricEntity; step=0.1)
-    D = domain(ent)
-    grid --> false
-    aspect_ratio --> :equal
-    label --> ""
-    if D isa HyperRectangle{1}
-        msh = UniformCartesianMesh(D;step)
-        iter = NodeIterator(msh)
-        pts = [ent(v) for v in iter]
-        x = [pt[1] for pt in pts]
-        y = [pt[2] for pt in pts]
-        x, y
-    elseif D isa HyperRectangle{2}
-        seriestype := :surface
-        msh = UniformCartesianMesh(D;step)
-        iter = NodeIterator(msh)
-        pts = [ent(v) for v in iter]
-        x = [pt[1] for pt in pts]
-        y = [pt[2] for pt in pts]
-        z = [pt[3] for pt in pts]
-        x, y, z
-    else
-        notimplemented()
-    end
-end
