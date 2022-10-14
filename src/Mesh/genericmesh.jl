@@ -29,7 +29,7 @@ domain(m::GenericMesh)    = entities(m) |> Domain
 function Base.size(iter::ElementIterator{<:LagrangeElement,<:GenericMesh})
     msh               = mesh(iter)
     E                 = eltype(iter)
-    tags::Matrix{Int} = msh.elements[E]
+    tags::Matrix{UInt64} = msh.elements[E]
     _, Nel           = size(tags)
     return (Nel,)
 end
@@ -37,7 +37,7 @@ end
 function Base.getindex(iter::ElementIterator{<:LagrangeElement,<:GenericMesh},i::Int)
     E                   = eltype(iter)
     M                   = mesh(iter)
-    tags::Matrix{Int}   = M.elements[E]
+    tags::Matrix{UInt64}   = M.elements[E]
     node_tags           = view(tags,:,i)
     vtx                 = view(M.nodes,node_tags)
     el                  = E(vtx)
