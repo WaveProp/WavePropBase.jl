@@ -73,7 +73,7 @@ const GAUSS_QRULES = Dict(
 )
 
 """
-    _get_qnodes_and_qweights(R::Type{<:AbstractReferenceShape{D}}, N) where D
+    _get_gauss_and_qweights(R::Type{<:AbstractReferenceShape{D}}, N) where D
 
 Returns the `N`-point symmetric gaussian qnodes and qweights `(x, w)` for integration over `R`.
 """
