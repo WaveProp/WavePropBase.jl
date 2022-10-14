@@ -1,14 +1,12 @@
 """
-    abstract type AbstractQuadratureRule{D<:AbstractReferenceShape}
+    abstract type AbstractQuadratureRule{D}
 
 A quadrature rule for integrating a function over the domain `D`.
 
-An instance `q` of `AbstractQuadratureRule{D}` is expected to implement the
-following methods:
+Calling `q()` returns the nodes `x` and weights `w` for performing integration
+over `domain(q)`.
 
-- `q()` : return the nodes `x` and weights `w` of the quadrature rule on the
-  reference domain `D`. For performance reasons, the result should depend only
-  on the type of `q`.
+Calling `q(el)` returns the nodes and weights for integrating over `el`.
 """
 abstract type AbstractQuadratureRule{D} end
 
@@ -18,6 +16,15 @@ abstract type AbstractQuadratureRule{D} end
 Given a function-like object `f: Ω → R`, return `Ω`.
 """
 domain(q::AbstractQuadratureRule{D}) where {D} = D()
+
+"""
+    image(f)
+
+Given a function-like object `f: Ω → R`, return `R`.
+"""
+function image(f)
+    abstractmethod(f)
+end
 
 """
     qnodes(Y)
@@ -33,12 +40,30 @@ Return the quadrature weights associated with `Y`.
 """
 qweights(q::AbstractQuadratureRule) = q()[2]
 
-"""
-    (q::AbstractQuadratureRule)()
+function (q::AbstractQuadratureRule)()
+    abstractmethod(q)
+end
 
-Return the quadrature nodes `x` and weights `w` on the `domain(q)`.
+function (q::AbstractQuadratureRule)(el::AbstractElement)
+    msg = "reference domain of quadrature rule and element must match"
+    @assert domain(q) == domain(el) msg
+    X̂,Ŵ = q()
+    X    = map(el,X̂)
+    W    = map(X̂,Ŵ) do x̂,ŵ
+        jac = jacobian(el,x̂)
+        μ   = sqrt(det(jac'*jac))
+        μ*ŵ
+    end
+    X,W
+end
+
 """
-function (q::AbstractQuadratureRule)() end
+    quadgen(el,q::AbstractQuadratureRule)
+
+Return a set of points and weights for integrating over `el` based on the
+quadrature rule `q`.
+"""
+quadgen(el::AbstractElement,q::AbstractQuadratureRule) = q(el)
 
 """
     integrate(f,q::AbstractQuadrature)
@@ -175,6 +200,8 @@ struct Gauss{D,N} <: AbstractQuadratureRule{D}
     # of nodes. This ensures you don't instantiate quadratures which are not
     # tabulated.
     function Gauss(;domain,order)
+        domain == :triangle && (domain=ReferenceTriangle())
+        domain == :tetrehedron && (domain=ReferenceTetrahedron())
         if domain isa ReferenceTriangle
             msg = "quadrature of order $order not available for ReferenceTriangle"
             haskey(TRIANGLE_GAUSS_ORDER_TO_NPTS,order) || error(msg)
@@ -266,7 +293,6 @@ function qrule_for_reference_shape(ref,order)
     end
 end
 
-abstract type NestedQuadratureRule{D} <: AbstractQuadratureRule{D} end
 """
     struct CustomQuadratureRule{D,N,T} <: AbstractQuadratureRule{D}
 
