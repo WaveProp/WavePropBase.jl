@@ -47,6 +47,12 @@ function jacobian(f::AbstractElement,x)
     abstractmethod(f)
 end
 
+function derivative(f,x)
+    jac = jacobian(f,x)
+    @assert length(jac) == 1
+    return first(jac)
+end
+
 """
     normal(el,x̂)
 
