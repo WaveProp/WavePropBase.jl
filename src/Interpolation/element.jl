@@ -33,18 +33,13 @@ Note: both `x` and `f(x)` are expected to be of `SVector` type.
 function jacobian(f,x)
     T = eltype(x)
     N = length(x)
-    h = (eps(T))^(1/3)
+    h = (eps())^(1/3)
     partials = svector(N) do d
         xp = ntuple(i-> i==d ? x[i]+h : x[i] , N) |> SVector
         xm = ntuple(i-> i==d ? x[i]-h : x[i] , N) |> SVector
         (f(xp) - f(xm))/(2h)
     end
     hcat(partials...)
-end
-
-function jacobian(f::AbstractElement,x)
-    # make sure users of AbstractElement implement a custom jacobian
-    abstractmethod(f)
 end
 
 function derivative(f,x)
