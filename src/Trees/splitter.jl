@@ -18,7 +18,7 @@ abstract type AbstractSplitter end
 Determine whether or not a `ClusterTree` should be further divided.
 """
 function should_split(clt, depth, splitter::AbstractSplitter)
-    abstractmethod(splitter)
+    return abstractmethod(splitter)
 end
 
 """
@@ -29,7 +29,7 @@ reponsible of assigning the `children` and `parent` fields, as well as of
 permuting the data of `clt`.
 """
 function split!(clt, splitter::AbstractSplitter)
-    abstractmethod(splitter)
+    return abstractmethod(splitter)
 end
 
 """
@@ -54,21 +54,21 @@ function split!(parentcluster::ClusterTree, spl::DyadicSplitter)
     clusters = [parentcluster]
     rec = container(parentcluster)
     rec_center = center(rec)
-    for i = 1:d
+    for i in 1:d
         pos = rec_center[i]
         nel = length(clusters) #2^(i-1)
-        for _ = 1:nel
+        for _ in 1:nel
             clt = popfirst!(clusters)
             append!(clusters, _binary_split!(clt, i, pos; parentcluster))
         end
     end
     if !spl.keep_empty
         iempty = Int[]
-        for (i,cluster) in enumerate(clusters)
+        for (i, cluster) in enumerate(clusters)
             irange = index_range(cluster)
-            isempty(irange) && (push!(iempty,i))
+            isempty(irange) && (push!(iempty, i))
         end
-        clusters = deleteat!(clusters,iempty)
+        clusters = deleteat!(clusters, iempty)
     end
     parentcluster.children = clusters
     return parentcluster
@@ -87,20 +87,22 @@ Base.@kwdef struct DyadicMinimalSplitter <: AbstractSplitter
     keep_empty::Bool = false
 end
 
-should_split(node::ClusterTree, depth, splitter::DyadicMinimalSplitter) = length(node) > splitter.nmax
+function should_split(node::ClusterTree, depth, splitter::DyadicMinimalSplitter)
+    return length(node) > splitter.nmax
+end
 
 function split!(parentcluster::ClusterTree, spl::DyadicMinimalSplitter)
     # split as a dyadic splitter, then shrink bounding boxes
-    split!(parentcluster,DyadicSplitter(spl.nmax,spl.keep_empty))
+    split!(parentcluster, DyadicSplitter(spl.nmax, spl.keep_empty))
     # shrink bounding boxes to minimal one
     l2g = loc2glob(parentcluster)
     root_els = root_elements(parentcluster)
     clusters = children(parentcluster)
-    for (i,cluster) in enumerate(clusters)
+    for (i, cluster) in enumerate(clusters)
         irange = index_range(cluster)
         isempty(irange) && continue
-        els    = (root_els[l2g[j]] for j in irange)
-        cluster.container = HyperRectangle(els,true)
+        els = (root_els[l2g[j]] for j in irange)
+        cluster.container = HyperRectangle(els, true)
     end
     return parentcluster
 end
@@ -121,12 +123,12 @@ function should_split(node::ClusterTree, depth, spl::DyadicMaxDepthSplitter)
     if !spl.keep_empty
         length(node) == 0 && (return false)
     end
-    depth < spl.depth
+    return depth < spl.depth
 end
 
 function split!(parentcluster::ClusterTree, spl::DyadicMaxDepthSplitter)
     # exactly like the dyadic splitter
-    split!(parentcluster, DyadicSplitter(-1,spl.keep_empty))
+    return split!(parentcluster, DyadicSplitter(-1, spl.keep_empty))
 end
 
 """
@@ -138,13 +140,15 @@ Base.@kwdef struct GeometricSplitter <: AbstractSplitter
     nmax::Int = 50
 end
 
-should_split(node::ClusterTree, depth, splitter::GeometricSplitter) = length(node) > splitter.nmax
+function should_split(node::ClusterTree, depth, splitter::GeometricSplitter)
+    return length(node) > splitter.nmax
+end
 
 function split!(cluster::ClusterTree, ::GeometricSplitter)
     rec = cluster.container
     wmax, imax = findmax(high_corner(rec) - low_corner(rec))
     left_node, right_node = _binary_split!(cluster, imax, low_corner(rec)[imax] + wmax / 2)
-    cluster.children = [left_node,right_node]
+    cluster.children = [left_node, right_node]
     return cluster
 end
 
@@ -157,7 +161,9 @@ Base.@kwdef struct GeometricMinimalSplitter <: AbstractSplitter
     nmax::Int = 50
 end
 
-should_split(node::ClusterTree, depth, splitter::GeometricMinimalSplitter) = length(node) > splitter.nmax
+function should_split(node::ClusterTree, depth, splitter::GeometricMinimalSplitter)
+    return length(node) > splitter.nmax
+end
 
 function split!(cluster::ClusterTree, ::GeometricMinimalSplitter)
     rec = cluster.container
@@ -165,7 +171,7 @@ function split!(cluster::ClusterTree, ::GeometricMinimalSplitter)
     mid = low_corner(rec)[imax] + wmax / 2
     predicate = (x) -> x[imax] < mid
     left_node, right_node = _binary_split!(cluster, predicate)
-    cluster.children = [left_node,right_node]
+    cluster.children = [left_node, right_node]
     return cluster
 end
 
@@ -176,7 +182,9 @@ Base.@kwdef struct PrincipalComponentSplitter <: AbstractSplitter
     nmax::Int = 50
 end
 
-should_split(node::ClusterTree, depth, splitter::PrincipalComponentSplitter) = length(node) > splitter.nmax
+function should_split(node::ClusterTree, depth, splitter::PrincipalComponentSplitter)
+    return length(node) > splitter.nmax
+end
 
 function split!(cluster::ClusterTree, ::PrincipalComponentSplitter)
     pts = cluster._elements
@@ -186,12 +194,12 @@ function split!(cluster::ClusterTree, ::PrincipalComponentSplitter)
     l2g = loc2glob(cluster)
     cov = sum(irange) do i
         x = coords(pts[l2g[i]])
-        (x - xc) * transpose(x - xc)
+        return (x - xc) * transpose(x - xc)
     end
     v = eigvecs(cov)[:, end]
     predicate = (x) -> dot(x - xc, v) < 0
     left_node, right_node = _binary_split!(cluster, predicate)
-    cluster.children = [left_node,right_node]
+    cluster.children = [left_node, right_node]
     return cluster
 end
 
@@ -221,7 +229,9 @@ Base.@kwdef struct CardinalitySplitter <: AbstractSplitter
     nmax::Int = 50
 end
 
-should_split(node::ClusterTree, depth, splitter::CardinalitySplitter) = length(node) > splitter.nmax
+function should_split(node::ClusterTree, depth, splitter::CardinalitySplitter)
+    return length(node) > splitter.nmax
+end
 
 function split!(cluster::ClusterTree, ::CardinalitySplitter)
     points = cluster._elements
@@ -232,6 +242,6 @@ function split!(cluster::ClusterTree, ::CardinalitySplitter)
     med = median(coords(points[l2g[i]])[imax] for i in irange) # the median along largest axis `imax`
     predicate = (x) -> x[imax] < med
     left_node, right_node = _binary_split!(cluster, predicate)
-    cluster.children = [left_node,right_node]
+    cluster.children = [left_node, right_node]
     return cluster
 end

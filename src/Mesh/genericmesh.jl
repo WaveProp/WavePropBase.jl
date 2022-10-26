@@ -10,10 +10,12 @@ Base.@kwdef struct GenericMesh{N,T} <: AbstractMesh{N,T}
     # elements (value).
     elements::Dict{DataType,Any} = Dict{DataType,Any}()
     # mapping from entity to (etype,tags)
-    ent2tags::Dict{AbstractEntity,Dict{DataType,Vector{Int}}} = Dict{AbstractEntity,Dict{DataType,Vector{Int}}}()
+    ent2tags::Dict{AbstractEntity,Dict{DataType,Vector{Int}}} = Dict{AbstractEntity,
+                                                                     Dict{DataType,
+                                                                          Vector{Int}}}()
 end
 
-nodes(m::GenericMesh)    = m.nodes
+nodes(m::GenericMesh) = m.nodes
 
 elements(m::GenericMesh) = m.elements
 
@@ -21,32 +23,32 @@ ent2tags(m::GenericMesh) = m.ent2tags
 
 Base.keys(m::GenericMesh) = keys(elements(m))
 
-entities(m::GenericMesh)  = keys(ent2tags(m)) |> collect
+entities(m::GenericMesh) = collect(keys(ent2tags(m)))
 
-domain(m::GenericMesh)    = entities(m) |> Domain
+domain(m::GenericMesh) = Domain(entities(m))
 
 # implement the interface for ElementIterator of lagrange elements on a generic mesh
 function Base.size(iter::ElementIterator{<:LagrangeElement,<:GenericMesh})
-    msh               = mesh(iter)
-    E                 = eltype(iter)
+    msh = mesh(iter)
+    E = eltype(iter)
     tags::Matrix{UInt64} = msh.elements[E]
-    _, Nel           = size(tags)
+    _, Nel = size(tags)
     return (Nel,)
 end
 
-function Base.getindex(iter::ElementIterator{<:LagrangeElement,<:GenericMesh},i::Int)
-    E                   = eltype(iter)
-    M                   = mesh(iter)
-    tags::Matrix{UInt64}   = M.elements[E]
-    node_tags           = view(tags,:,i)
-    vtx                 = view(M.nodes,node_tags)
-    el                  = E(vtx)
+function Base.getindex(iter::ElementIterator{<:LagrangeElement,<:GenericMesh}, i::Int)
+    E = eltype(iter)
+    M = mesh(iter)
+    tags::Matrix{UInt64} = M.elements[E]
+    node_tags = view(tags, :, i)
+    vtx = view(M.nodes, node_tags)
+    el = E(vtx)
     return el
 end
 
 function Base.iterate(iter::ElementIterator{<:LagrangeElement,<:GenericMesh}, state=1)
     state > length(iter) && (return nothing)
-    iter[state], state + 1
+    return iter[state], state + 1
 end
 
 """
@@ -89,8 +91,8 @@ function convert_to_2d(mesh::GenericMesh{3})
     @assert all(E -> geometric_dimension(domain(E)) < 3, keys(mesh))
     T = primitive_type(mesh)
     # create new dictionaries for elements and ent2tags with 2d elements as keys
-    els  = empty(elements(mesh))
-    e2t  = empty(ent2tags(mesh))
+    els = empty(elements(mesh))
+    e2t = empty(ent2tags(mesh))
     for (E, tags) in elements(mesh)
         E2d = convert_to_2d(E)
         els[E2d] = tags
@@ -104,13 +106,12 @@ function convert_to_2d(mesh::GenericMesh{3})
         e2t[ent] = new_dict
     end
     # construct new 2d mesh
-    GenericMesh{2,T}(;
-        nodes=[x[1:2] for x in nodes(mesh)],
-        elements=els,
-        ent2tags=e2t
-    )
+    return GenericMesh{2,T}(;
+                            nodes=[x[1:2] for x in nodes(mesh)],
+                            elements=els,
+                            ent2tags=e2t)
 end
 
 function convert_to_2d(::Type{LagrangeElement{R,N,SVector{3,T}}}) where {R,N,T}
-    LagrangeElement{R,N,SVector{2,T}}
+    return LagrangeElement{R,N,SVector{2,T}}
 end

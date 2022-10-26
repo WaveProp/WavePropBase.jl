@@ -30,7 +30,7 @@ struct GmshEntity <: AbstractEntity
     function GmshEntity(d::Integer, gmshtag::Integer, model, boundary=GmshEntity[])
         msg = "an elementary entities in the boundary has the wrong dimension"
         for b in boundary
-            @assert geometric_dimension(b) == d-1 msg
+            @assert geometric_dimension(b) == d - 1 msg
         end
         tag = new_tag(d)
         ent = new(d, gmshtag, tag, boundary, model)
@@ -54,9 +54,9 @@ dimension `dim`; by defaul the current `gmsh` model is used.
     This function assumes that `gmsh` has been initialized, and
     does not handle its finalization.
 """
-function gmsh_import_domain(model=gmsh.model.getCurrent();dim=3)
+function gmsh_import_domain(model=gmsh.model.getCurrent(); dim=3)
     Ω = Domain() # Create empty domain
-    gmsh_import_domain!(Ω,model;dim)
+    gmsh_import_domain!(Ω, model; dim)
     return Ω
 end
 
@@ -70,13 +70,13 @@ creating a new domain.
     This function assumes that `gmsh` has been initialized, and does not handle its
     finalization.
 """
-function gmsh_import_domain!(Ω::Domain,model=gmsh.model.getCurrent();dim=3)
+function gmsh_import_domain!(Ω::Domain, model=gmsh.model.getCurrent(); dim=3)
     old_model = gmsh.model.getCurrent()
     gmsh.model.setCurrent(model)
     dim_tags = gmsh.model.getEntities(dim)
     for (_, tag) in dim_tags
         ent = GmshEntity(dim, tag, model)
-        _fill_entity_boundary!(ent,model)
+        _fill_entity_boundary!(ent, model)
         push!(Ω, ent)
     end
     gmsh.model.setCurrent(old_model)
@@ -93,9 +93,9 @@ two-dimensional mesh by projecting the original mesh onto the `x,y` plane.
     This function assumes that `gmsh` has been initialized, and does not handle its
     finalization.
 """
-function gmsh_import_mesh(Ω::Domain;dim=3)
+function gmsh_import_mesh(Ω::Domain; dim=3)
     msh = GenericMesh{3,Float64}()
-    gmsh_import_mesh!(msh,Ω)
+    gmsh_import_mesh!(msh, Ω)
     if dim == 3
         return msh
     elseif dim == 2
@@ -115,11 +115,11 @@ creating a new mesh.
     This function assumes that `gmsh` has been initialized, and does not handle its
     finalization.
 """
-function gmsh_import_mesh!(msh::GenericMesh,Ω::Domain)
+function gmsh_import_mesh!(msh::GenericMesh, Ω::Domain)
     _, coord, _ = gmsh.model.mesh.getNodes()
-    nodes = reinterpret(SVector{3,Float64}, coord) |> collect
+    nodes = collect(reinterpret(SVector{3,Float64}, coord))
     shift = length(msh.nodes) # gmsh node tags need to be shifted
-    append!(msh.nodes,nodes)
+    append!(msh.nodes, nodes)
     els = elements(msh)
     e2t = ent2tags(msh)
     # Recursively populate the dictionaries
@@ -137,14 +137,14 @@ dimension `dim`.
     This function assumes that `gmsh` has been initialized, and does not handle its
     finalization.
 """
-function gmsh_read_geo(fname;dim=3)
+function gmsh_read_geo(fname; dim=3)
     Ω = Domain() # Create empty domain
     try
         gmsh.open(fname)
     catch
         @error "could not open $fname"
     end
-    gmsh_import_domain!(Ω;dim)
+    gmsh_import_domain!(Ω; dim)
     return Ω
 end
 
@@ -158,16 +158,16 @@ entities in `Ω` of dimension `dim`.
     This function assumes that `gmsh` has been initialized, and does not handle its
     finalization.
 """
-function gmsh_read_msh(fname;dim=3)
+function gmsh_read_msh(fname; dim=3)
     Ω = Domain()
     try
         gmsh.open(fname)
     catch
         @error "could not open $fname"
     end
-    Ω   = gmsh_import_domain(;dim)
-    msh = gmsh_import_mesh(Ω;dim)
-    return Ω,msh
+    Ω = gmsh_import_domain(; dim)
+    msh = gmsh_import_mesh(Ω; dim)
+    return Ω, msh
 end
 
 """
@@ -177,16 +177,17 @@ Use the `gmsh` API to add the boundary of an `ElementaryEntity`.
 
 This is a helper function, and should not be called by itself.
 """
-function _fill_entity_boundary!(ent,model)
-    combine  = true # FIXME: what should we use here?
+function _fill_entity_boundary!(ent, model)
+    combine = true # FIXME: what should we use here?
     oriented = false
-    dim_tags = gmsh.model.getBoundary((geometric_dimension(ent), gmshtag(ent)),combine,oriented)
+    dim_tags = gmsh.model.getBoundary((geometric_dimension(ent), gmshtag(ent)), combine,
+                                      oriented)
     for (d, t) in dim_tags
         # if haskey(ENTITIES,(d,t))
         #     bnd = ENTITIES[(d,t)]
         # else
-            bnd = GmshEntity(d, t, model)
-            _fill_entity_boundary!(bnd,model)
+        bnd = GmshEntity(d, t, model)
+        _fill_entity_boundary!(bnd, model)
         # end
         push!(ent.boundary, bnd)
     end
@@ -204,7 +205,7 @@ function _domain_to_mesh!(elements, ent2tag, Ω::Domain, shift)
         _ent_to_mesh!(elements, ent2tag, ω, shift)
     end
     Γ = skeleton(Ω)
-    _domain_to_mesh!(elements, ent2tag, Γ, shift)
+    return _domain_to_mesh!(elements, ent2tag, Γ, shift)
 end
 
 """
@@ -225,13 +226,13 @@ function _ent_to_mesh!(elements, ent2tag, ω::GmshEntity, shift)
     ω in keys(ent2tag) && (return elements, ent2tag)
     etypes_to_etags = Dict{DataType,Vector{Int}}()
     # Loop on GMSH element types (integer)
-    type_tags, _, ntagss = gmsh.model.mesh.getElements(geometric_dimension(ω),gmshtag(ω))
+    type_tags, _, ntagss = gmsh.model.mesh.getElements(geometric_dimension(ω), gmshtag(ω))
     for (type_tag, ntags) in zip(type_tags, ntagss)
         _, _, _, Np, _ = gmsh.model.mesh.getElementProperties(type_tag)
         ntags = reshape(ntags, Int(Np), :)
         etype = _type_tag_to_etype(type_tag)
         if etype in keys(elements)
-            etag = size(elements[etype], 2) .+ collect(1:size(ntags,2))
+            etag = size(elements[etype], 2) .+ collect(1:size(ntags, 2))
             ntags = hcat(elements[etype], ntags .+ shift)
         else
             etag = collect(1:size(ntags, 2))
@@ -245,21 +246,21 @@ end
 
 function set_meshsize(hmax, hmin=hmax)
     gmsh.option.setNumber("Mesh.CharacteristicLengthMin", hmin)
-    gmsh.option.setNumber("Mesh.CharacteristicLengthMax", hmax)
+    return gmsh.option.setNumber("Mesh.CharacteristicLengthMax", hmax)
 end
 
 function set_meshorder(order)
-    gmsh.option.setNumber("Mesh.ElementOrder", order)
+    return gmsh.option.setNumber("Mesh.ElementOrder", order)
 end
 
 function set_verbosity(i)
-    gmsh.option.setNumber("General.Verbosity",i)
+    return gmsh.option.setNumber("General.Verbosity", i)
 end
 
 function summary(model)
     gmsh.model.setCurrent(model)
     @printf("List of entities in model `%s`: \n", model)
-    @printf("|%10s|%10s|%10s|\n","name","dimension","tag")
+    @printf("|%10s|%10s|%10s|\n", "name", "dimension", "tag")
     ents = gmsh.model.getEntities()
     # pgroups = gmsh.model.getPhysicalGroups()
     for ent in ents
@@ -267,7 +268,7 @@ function summary(model)
         dim, tag = ent
         @printf("|%10s|%10d|%10d|\n", name, dim, tag)
     end
-    println()
+    return println()
 end
 
 function summary()
@@ -285,17 +286,17 @@ equivalent of those. This function assumes `gmsh` has been initilized.
 """
 function _type_tag_to_etype(tag)
     T = SVector{3,Float64} # point type
-    name,dim,order,num_nodes,ref_nodes,num_primary_nodes  = gmsh.model.mesh.getElementProperties(tag)
+    name, dim, order, num_nodes, ref_nodes, num_primary_nodes = gmsh.model.mesh.getElementProperties(tag)
     num_nodes = Int(num_nodes) #convert to Int64
-    if occursin("Point",name)
+    if occursin("Point", name)
         etype = LagrangePoint{3,Float64}
-    elseif occursin("Line",name)
-    etype = LagrangeLine{num_nodes,T}
-    elseif occursin("Triangle",name)
+    elseif occursin("Line", name)
+        etype = LagrangeLine{num_nodes,T}
+    elseif occursin("Triangle", name)
         etype = LagrangeTriangle{num_nodes,T}
-    elseif occursin("Quadrilateral",name)
+    elseif occursin("Quadrilateral", name)
         etype = LagrangeSquare{num_nodes,T}
-    elseif occursin("Tetrahedron",name)
+    elseif occursin("Tetrahedron", name)
         etype = LagrangeTetrahedron{num_nodes,T}
     else
         error("unable to parse gmsh element of family $name")
@@ -313,7 +314,7 @@ function _etype_to_type_tag(el::LagrangeElement)
     etype = typeof(el)
     tag = 1
     while true
-        E   = _type_tag_to_etype(tag)
+        E = _type_tag_to_etype(tag)
         E === etype && (return tag)
         tag = tag + 1
     end

@@ -10,8 +10,8 @@ See also: [`AbstractEntity`](@ref)
 struct ParametricEntity <: AbstractEntity
     dim::UInt8
     tag::Int
-    parametrization
-    domain
+    parametrization::Any
+    domain::Any
     boundary::Vector{<:AbstractEntity}
     function ParametricEntity(dim, tag, f, d)
         ent = new(dim, tag, f, d, AbstractEntity[])
@@ -31,13 +31,14 @@ boundary(p::ParametricEntity) = p.boundary
 
 function flip_normal(ent::ParametricEntity)
     @assert ambient_dimension(ent) == geometric_dimension(ent) + 1
-    ParametricEntity(geometric_dimension(ent), -tag(ent), parametrization(ent), domain(ent))
+    return ParametricEntity(geometric_dimension(ent), -tag(ent), parametrization(ent),
+                            domain(ent))
 end
 
 function ParametricEntity(f, dom)
     d = geometric_dimension(dom)
     t = new_tag(d) # automatically generate a new (valid) tag
-    ParametricEntity(d, t, f, dom)
+    return ParametricEntity(d, t, f, dom)
 end
 
 function return_type(p::ParametricEntity)
@@ -53,7 +54,7 @@ ambient_dimension(p::ParametricEntity) = length(return_type(p))
 
 function (par::ParametricEntity)(x)
     @assert x in domain(par)
-    par.parametrization(x)
+    return par.parametrization(x)
 end
 
 """
@@ -65,6 +66,6 @@ of [`ParametricEntity`](@ref).
 function line(a::SVector, b::SVector)
     f = (u) -> a + u[1] * (b - a)
     d = HyperRectangle(0.0, 1.0)
-    ParametricEntity(f, d)
+    return ParametricEntity(f, d)
 end
 line(a, b) = line(SVector(a), SVector(b))

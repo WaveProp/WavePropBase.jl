@@ -20,11 +20,11 @@ geometric_dimension(M::AbstractMesh) = maximum(x -> geometric_dimension(x), enti
 
 primitive_type(M::AbstractMesh{N,T}) where {N,T} = T
 
-function Base.show(io::IO,msh::AbstractMesh)
-    print(io,"$(typeof(msh)) containing:")
+function Base.show(io::IO, msh::AbstractMesh)
+    print(io, "$(typeof(msh)) containing:")
     for E in keys(msh)
-        iter = ElementIterator(msh,E)
-        print(io,"\n\t $(length(iter)) elements of type ",E)
+        iter = ElementIterator(msh, E)
+        print(io, "\n\t $(length(iter)) elements of type ", E)
     end
     return io
 end
@@ -47,16 +47,16 @@ mesh(iter::ElementIterator) = iter.mesh
 
 Base.eltype(::SType{ElementIterator{E}}) where {E} = E
 
-ElementIterator{E}(parent::M) where {E,M <: AbstractMesh} = ElementIterator{E,M}(parent)
+ElementIterator{E}(parent::M) where {E,M<:AbstractMesh} = ElementIterator{E,M}(parent)
 
-ElementIterator(parent,E) = ElementIterator{E}(parent)
+ElementIterator(parent, E) = ElementIterator{E}(parent)
 
 # indexing a mesh with an element type return an interator over that element
 # (like a dict)
-Base.getindex(m::AbstractMesh,E::DataType) = ElementIterator(m, E)
+Base.getindex(m::AbstractMesh, E::DataType) = ElementIterator(m, E)
 
 function Base.length(iter::ElementIterator)
-    prod(size(iter))
+    return prod(size(iter))
 end
 
 """
