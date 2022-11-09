@@ -152,6 +152,12 @@ function Base.intersect(r1::HyperRectangle, r2::HyperRectangle)
     return HyperRectangle(lb, ub)
 end
 
+function Base.union(r1::HyperRectangle, r2::HyperRectangle)
+    lb = min.(low_corner(r1), low_corner(r2))
+    ub = max.(high_corner(r1), high_corner(r2))
+    return HyperRectangle(lb, ub)
+end
+
 Base.isempty(r::HyperRectangle) = any(low_corner(r) .> high_corner(r))
 
 ######

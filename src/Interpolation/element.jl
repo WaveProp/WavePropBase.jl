@@ -75,6 +75,8 @@ range_dimension(el::AbstractElement{R,T}) where {R,T} = length(T)
 
 range_dimension(t::Type{<:AbstractElement{R,T}}) where {R,T} = length(T)
 
+center(el::AbstractElement{D}) where {D} = el(center(D()))
+
 """
     struct LagrangeElement{D,Np,T} <: AbstractElement{D,T}
 
