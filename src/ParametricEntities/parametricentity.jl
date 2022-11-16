@@ -10,8 +10,8 @@ See also: [`AbstractEntity`](@ref)
 struct ParametricEntity <: AbstractEntity
     dim::UInt8
     tag::Int
-    parametrization
-    domain
+    parametrization::Any
+    domain::Any
     boundary::Vector{<:AbstractEntity}
     function ParametricEntity(dim, tag, f, d)
         ent = new(dim, tag, f, d, AbstractEntity[])
@@ -31,13 +31,14 @@ boundary(p::ParametricEntity) = p.boundary
 
 function flip_normal(ent::ParametricEntity)
     @assert ambient_dimension(ent) == geometric_dimension(ent) + 1
-    ParametricEntity(geometric_dimension(ent), -tag(ent), parametrization(ent), domain(ent))
+    return ParametricEntity(geometric_dimension(ent), -tag(ent), parametrization(ent),
+                            domain(ent))
 end
 
 function ParametricEntity(f, dom)
     d = geometric_dimension(dom)
     t = new_tag(d) # automatically generate a new (valid) tag
-    ParametricEntity(d, t, f, dom)
+    return ParametricEntity(d, t, f, dom)
 end
 
 function return_type(p::ParametricEntity)
@@ -49,11 +50,19 @@ function return_type(p::ParametricEntity)
     return T
 end
 
-ambient_dimension(p::ParametricEntity) = length(return_type(p))
+function ambient_dimension(p::ParametricEntity)
+    # HACK: evaluate the parametrization at the center of the domain to get the
+    # ambient dimension. This assume the parametrization is "correct" and always
+    # returns a vector of the same length
+    d = domain(p)
+    x = center(d)
+    f = parametrization(p)
+    return length(f(x))
+end
 
 function (par::ParametricEntity)(x)
-    @assert x in domain(par)
-    par.parametrization(x)
+    # @assert x in domain(par) "x=$x ∉ $(domain(par))"
+    return par.parametrization(x)
 end
 
 """
@@ -65,6 +74,6 @@ of [`ParametricEntity`](@ref).
 function line(a::SVector, b::SVector)
     f = (u) -> a + u[1] * (b - a)
     d = HyperRectangle(0.0, 1.0)
-    ParametricEntity(f, d)
+    return ParametricEntity(f, d)
 end
 line(a, b) = line(SVector(a), SVector(b))

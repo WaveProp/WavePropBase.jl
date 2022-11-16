@@ -10,7 +10,7 @@ abstract type AbstractEntity end
 
 The `(dim,tag)` pair used as a key to identify geometrical entities.
 """
-key(e::AbstractEntity) = geometric_dimension(e),tag(e)
+key(e::AbstractEntity) = geometric_dimension(e), tag(e)
 
 # reasonable defaults which assume the filds `tag` and `dim` and `boundary`
 # fields exist. Some
@@ -37,11 +37,11 @@ geometric_dimension(e::AbstractEntity) = e.dim
 
 boundary(e::AbstractEntity) = e.boundary
 
-function Base.show(io::IO,ent::AbstractEntity)
+function Base.show(io::IO, ent::AbstractEntity)
     T = typeof(ent)
     d = geometric_dimension(ent)
     t = tag(ent)
-    print(io,"$T with (dim,tag)=($d,$t)")
+    return print(io, "$T with (dim,tag)=($d,$t)")
 end
 
 """
@@ -58,19 +58,19 @@ define it (up to the sign of `tag`), and therefore global variables like
 have a new `(dim,tag)` identifier.
 """
 function Base.:(==)(Ω1::AbstractEntity, Ω2::AbstractEntity)
-    d1,t1 = geometric_dimension(Ω1),tag(Ω1)
-    d2,t2 = geometric_dimension(Ω2),tag(Ω2)
-    d1 == d2  || (return false)
+    d1, t1 = geometric_dimension(Ω1), tag(Ω1)
+    d2, t2 = geometric_dimension(Ω2), tag(Ω2)
+    d1 == d2 || (return false)
     abs(t1) == abs(t2) || (return false)
     # boundary(Ω1) == boundary(Ω2) || return false # this should not be needed
     return true
 end
-Base.hash(ent::AbstractEntity,h::UInt)= hash((geometric_dimension(ent),abs(tag(ent))),h)
+Base.hash(ent::AbstractEntity, h::UInt) = hash((geometric_dimension(ent), abs(tag(ent))), h)
 
 function normal(ent::AbstractEntity, u)
-    s = tag(ent) |> sign
+    s = sign(tag(ent))
     jac::SMatrix = jacobian(ent, u)
-    s*_normal(jac)
+    return s * _normal(jac)
 end
 
 """
@@ -83,13 +83,13 @@ function _normal(jac::SMatrix{N,M}) where {N,M}
     msg = "computing the normal vector requires the element to be of co-dimension one."
     @assert (N - M == 1) msg
     if M == 1 # a line in 2d
-        t = jac[:,1] # tangent vector
+        t = jac[:, 1] # tangent vector
         n = SVector(t[2], -t[1])
         return n / norm(n)
     elseif M == 2 # a surface in 3d
-        t₁ = jac[:,1]
-        t₂ = jac[:,2]
-        n  = cross(t₁, t₂)
+        t₁ = jac[:, 1]
+        t₂ = jac[:, 2]
+        n = cross(t₁, t₂)
         return n / norm(n)
     else
         notimplemented()
@@ -115,7 +115,7 @@ struct ElementaryEntity <: AbstractEntity
     function ElementaryEntity(d::Integer, t::Integer, boundary::Vector{<:AbstractEntity})
         msg = "an elementary entities in the boundary has the wrong dimension"
         for b in boundary
-            @assert geometric_dimension(b) == d-1 msg
+            @assert geometric_dimension(b) == d - 1 msg
         end
         ent = new(d, t, boundary)
         # every entity gets added to a global variable ENTITIES so that we can
@@ -131,21 +131,21 @@ end
 
 Construct an [`ElementaryEntity`](@ref) with an empty boundary .
 """
-function ElementaryEntity(dim,tag)
-    ElementaryEntity(dim,tag,ElementaryEntity[])
+function ElementaryEntity(dim, tag)
+    return ElementaryEntity(dim, tag, ElementaryEntity[])
 end
 
-ElementaryEntity(dim) = ElementaryEntity(dim,new_tag(dim))
+ElementaryEntity(dim) = ElementaryEntity(dim, new_tag(dim))
 
-function ElementaryEntity(;boundary,dim::Int=_compute_dim_from_boundary(boundary))
+function ElementaryEntity(; boundary, dim::Int=_compute_dim_from_boundary(boundary))
     t = new_tag(dim)
-    ElementaryEntity(UInt8(dim),t,boundary)
+    return ElementaryEntity(UInt8(dim), t, boundary)
 end
 
 function _compute_dim_from_boundary(boundary)
-    dmin,dmax = extrema(geometric_dimension,boundary)
+    dmin, dmax = extrema(geometric_dimension, boundary)
     @assert dmin == dmax "all entities in `boundary` must have the same dimension"
-    dim = dmin+1
+    return dim = dmin + 1
 end
 
 function flip_normal(e::ElementaryEntity)
@@ -153,7 +153,7 @@ function flip_normal(e::ElementaryEntity)
     d = geometric_dimension(e)
     t = tag(e)
     bnd = boundary(e)
-    ElementaryEntity(d,-t,bnd)
+    return ElementaryEntity(d, -t, bnd)
 end
 
 """
@@ -170,10 +170,10 @@ struct PointEntity <: AbstractEntity
 end
 
 coords(p::PointEntity) = p.coords
-tag(p::PointEntity)    = p.tag
+tag(p::PointEntity) = p.tag
 
 geometric_dimension(::PointEntity) = 0
-ambient_dimension(p::PointEntity)   = length(coords(p))
+ambient_dimension(p::PointEntity) = length(coords(p))
 
 #####################################################################
 
@@ -206,12 +206,12 @@ of *every* [`AbstractEntity`](@ref); see the constructor of
 [`ElementaryEntity`](@ref) for an example.
 """
 function global_add_entity!(ent::AbstractEntity)
-    d,t = geometric_dimension(ent), tag(ent)
-    _add_tag!(d,t) # add this tag to global list to make sure it is not used again
+    d, t = geometric_dimension(ent), tag(ent)
+    _add_tag!(d, t) # add this tag to global list to make sure it is not used again
     msg = "overwriting ENTITIES: value in key ($d,$t) will be replaced"
-    haskey(ENTITIES,(d,t)) && (@warn msg)
-    ENTITIES[(d,t)] = ent
-    return d,t
+    haskey(ENTITIES, (d, t)) && (@warn msg)
+    ENTITIES[(d, t)] = ent
+    return d, t
 end
 
 """
@@ -225,7 +225,7 @@ The implementation consists of adding one to the maximum value of `TAGS[dim]`
 
 """
 function new_tag(dim::Integer)
-    if !haskey(TAGS,dim)
+    if !haskey(TAGS, dim)
         return 1
     else
         tnew = maximum(TAGS[dim]) + 1
@@ -233,27 +233,27 @@ function new_tag(dim::Integer)
     end
 end
 
-function _add_tag!(dim,tag)
-    if is_new_tag(dim,tag)
+function _add_tag!(dim, tag)
+    if is_new_tag(dim, tag)
         # now add key
-        if haskey(TAGS,dim)
-            push!(TAGS[dim],tag)
+        if haskey(TAGS, dim)
+            push!(TAGS[dim], tag)
         else
-            TAGS[dim] = [tag,]
+            TAGS[dim] = [tag]
         end
     else
         # print warning but don't add duplicate tag
-        msg  = "entity of dimension $dim and tag $tag already exists in TAGS.
-        Creating a possibly duplicate entity."
+        msg = "entity of dimension $dim and tag $tag already exists in TAGS.
+       Creating a possibly duplicate entity."
         @warn msg
     end
     return TAGS
 end
 
-function is_new_tag(dim,tag)
-    if haskey(TAGS,dim)
+function is_new_tag(dim, tag)
+    if haskey(TAGS, dim)
         existing_tags = TAGS[dim]
-        if in(tag,existing_tags)
+        if in(tag, existing_tags)
             return false
         end
     end
@@ -271,5 +271,5 @@ created.
 function clear_entities!()
     empty!(TAGS)
     empty!(ENTITIES)
-    nothing
+    return nothing
 end

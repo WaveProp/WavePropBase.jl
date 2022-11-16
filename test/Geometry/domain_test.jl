@@ -24,7 +24,7 @@ surfaces = [s1, s2]
     @test WPB.boundary(l1) == points
     for e in vcat(points, lines, surfaces)
         for b in WPB.boundary(e)
-            @test WPB.geometric_dimension(e)-1 == WPB.geometric_dimension(b)
+            @test WPB.geometric_dimension(e) - 1 == WPB.geometric_dimension(b)
         end
     end
 end
@@ -32,21 +32,21 @@ end
 # Domains
 Ω1 = WPB.Domain(s1)
 Ω2 = WPB.Domain(s2)
-Ω  = WPB.Domain(surfaces)
+Ω = WPB.Domain(surfaces)
 
 @testset "Domain" begin
     @test WPB.entities(Ω) == surfaces
     @test length(Ω) == 2
     @test !isempty(Ω)
     @test Ω2 == setdiff(Ω, Ω1)
-    @test Ω  == union(Ω1, Ω2)
+    @test Ω == union(Ω1, Ω2)
     @test s1 in Ω
     @test l1 in Ω
     @test Ω[1] == s1
     @test Ω[end] == s2
     for ω in Ω
         for Γ in WPB.boundary(ω)
-            @test WPB.geometric_dimension(ω)-1 == WPB.geometric_dimension(Γ)
+            @test WPB.geometric_dimension(ω) - 1 == WPB.geometric_dimension(Γ)
         end
     end
     @test Ω1 == intersect(Ω1, Ω)
@@ -56,7 +56,7 @@ end
     @test union(WPB.Domain.(lines)...) == WPB.skeleton(Ω)
     @test WPB.Domain(l2) == WPB.internal_boundary(Ω)
     @test union(WPB.Domain(l1), WPB.Domain(l3)) == WPB.external_boundary(Ω)
-    @test keys(Ω, 1) == [(1,1), (1,2), (1,3)]
-    @test keys(Ω) == [(2,1), (2,2)]
-    @test WPB.Domain([s1,s2]) == WPB.Domain([s2,s1])
+    @test keys(Ω, 1) == [(1, 1), (1, 2), (1, 3)]
+    @test keys(Ω) == [(2, 1), (2, 2)]
+    @test WPB.Domain([s1, s2]) == WPB.Domain([s2, s1])
 end

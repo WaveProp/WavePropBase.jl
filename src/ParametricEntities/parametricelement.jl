@@ -18,16 +18,16 @@ domain(::ParametricElement{F,D,T}) where {F,D,T} = D()
 return_type(::ParametricElement{F,D,T}) where {F,D,T} = T
 
 geometric_dimension(p::ParametricElement) = geometric_dimension(domain(p))
-ambient_dimension(p::ParametricElement)   = length(return_type(p))
+ambient_dimension(p::ParametricElement) = length(return_type(p))
 
 # constructor which infers the return type of f. Warn if inferred type is not
 # bitstype
-function ParametricElement(f,d)
+function ParametricElement(f, d)
     x = center(d)
-    T = Base.promote_op(f,typeof(x))
+    T = Base.promote_op(f, typeof(x))
     isbitstype(T) || (@warn "non bitstype detected for ParametricElement")
-    D = domain(d) |> typeof
-    return ParametricElement{D,T}((x)->f(d(x)))
+    D = typeof(domain(d))
+    return ParametricElement{D,T}((x) -> f(d(x)))
 end
 
 function (el::ParametricElement)(u)

@@ -49,7 +49,6 @@ function vtk_mesh_file(mesh::GenericMesh, Ω::Domain, name::String)
     return vtk_grid(name * ".vtu", points, cells)
 end
 
-
 """
     _vtk_points(mesh::GenericMesh)
 
@@ -58,11 +57,10 @@ Creates the matrix of nodes in the format required by `WriteVTK`.
 function _vtk_points(mesh::GenericMesh)
     vtx = zeros(Float64, 3, length(nodes(mesh)))
     for (i, nd) in enumerate(nodes(mesh))
-        vtx[1:ambient_dimension(mesh),i] = nd
+        vtx[1:ambient_dimension(mesh), i] = nd
     end
     return vtx
 end
-
 
 """
     _vtk_cells(mesh::GenericMesh, E::DataType)
@@ -85,8 +83,8 @@ function _vtk_cells(mesh::GenericMesh, Ω::Domain)
         # Loop on `AbstractElement`
         for (E, ind) in ent2tags(mesh)[ω]
             # Subset corresponding to the `ElementaryEntity`
-            tags = elements(mesh)[E][:,ind]
-            append!(cells,  _vtk_cells(tags, E))
+            tags = elements(mesh)[E][:, ind]
+            append!(cells, _vtk_cells(tags, E))
         end
     end
     return cells
@@ -94,10 +92,10 @@ end
 function _vtk_cells(mesh::GenericMesh)
     cells = MeshCell[]
     # Loop on `AbstractElement`
-    for (E,tags) in elements(mesh)
+    for (E, tags) in elements(mesh)
         # Export only the cells of the largest geometrical dimension
         if domain_dimension(E) == ambient_dimension(mesh)
-            append!(cells,  _vtk_cells(tags, E))
+            append!(cells, _vtk_cells(tags, E))
         end
     end
     return cells
@@ -132,10 +130,13 @@ See VTK specification [Fig. 2] on
 - VTK_WEDGE (=13)
 - VTK_PYRAMID (=14)
 """
-const etype_to_vtk_cell_type = Dict(
-    SVector{3,Float64} => (VTKCellTypes.VTK_VERTEX, collect(1:1)),
-    LagrangeLine{2,SVector{3,Float64}} => (VTKCellTypes.VTK_LINE, collect(1:2)),
-    LagrangeTriangle{3,SVector{2,Float64}} => (VTKCellTypes.VTK_TRIANGLE, collect(1:3)),
-    LagrangeTriangle{3,SVector{3,Float64}} => (VTKCellTypes.VTK_TRIANGLE, collect(1:3)),
-    LagrangeTetrahedron{4,SVector{3,Float64}} => (VTKCellTypes.VTK_TETRA, collect(1:4)),
-)
+const etype_to_vtk_cell_type = Dict(SVector{3,Float64} => (VTKCellTypes.VTK_VERTEX,
+                                                           collect(1:1)),
+                                    LagrangeLine{2,SVector{3,Float64}} => (VTKCellTypes.VTK_LINE,
+                                                                           collect(1:2)),
+                                    LagrangeTriangle{3,SVector{2,Float64}} => (VTKCellTypes.VTK_TRIANGLE,
+                                                                               collect(1:3)),
+                                    LagrangeTriangle{3,SVector{3,Float64}} => (VTKCellTypes.VTK_TRIANGLE,
+                                                                               collect(1:3)),
+                                    LagrangeTetrahedron{4,SVector{3,Float64}} => (VTKCellTypes.VTK_TETRA,
+                                                                                  collect(1:4)))
