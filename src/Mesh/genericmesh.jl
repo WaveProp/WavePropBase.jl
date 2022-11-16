@@ -27,7 +27,31 @@ entities(m::GenericMesh) = collect(keys(ent2tags(m)))
 
 domain(m::GenericMesh) = Domain(entities(m))
 
-# implement the interface for ElementIterator of lagrange elements on a generic mesh
+# assume that by default the mesh stores a vector of elements of type E in
+# `elements`, so we can use that as the ElementIterator implement the
+# ElementIterator interface
+function Base.size(iter::ElementIterator{<:Any,<:GenericMesh})
+    E = eltype(iter)
+    M = mesh(iter)
+    els::Vector{E} = M.elements[E]
+    return (length(els),)
+end
+
+function Base.getindex(iter::ElementIterator{<:Any,<:GenericMesh}, i::Int)
+    E = eltype(iter)
+    M = mesh(iter)
+    els::Vector{E} = M.elements[E]
+    return els[i]
+end
+
+function Base.iterate(iter::ElementIterator{<:Any,<:GenericMesh}, state=1)
+    state > length(iter) && (return nothing)
+    return iter[state], state + 1
+end
+
+# implement the interface for ElementIterator of lagrange elements on a generic
+# mesh. The elements are constructed on the flight based on the global nodes and
+# the connectivity list stored
 function Base.size(iter::ElementIterator{<:LagrangeElement,<:GenericMesh})
     msh = mesh(iter)
     E = eltype(iter)

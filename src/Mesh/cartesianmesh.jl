@@ -14,6 +14,7 @@ end
 
 low_corner(g::UniformCartesianMesh) = low_corner(g.domain)
 high_corner(g::UniformCartesianMesh) = high_corner(g.domain)
+domain(g::UniformCartesianMesh) = g.domain
 
 Base.size(g::UniformCartesianMesh) = g.sz
 Base.size(g::UniformCartesianMesh, i) = g.sz[i]
@@ -43,6 +44,7 @@ function Base.step(m::UniformCartesianMesh{N}) where {N}
         return (hc[i] - lc[i]) / sz[i]
     end
 end
+Base.step(m::UniformCartesianMesh, i) = step(m)[i]
 
 """
     UniformCartesianMesh(domain::HyperRectangle,sz::NTuple)
@@ -179,4 +181,26 @@ end
 function Base.iterate(iter::NodeIterator{<:UniformCartesianMesh}, state=1)
     state > length(iter) && (return nothing)
     return iter[state], state + 1
+end
+
+"""
+    element_index_for_point(p::SVector,m::UniformCartesianMesh)
+
+Given a point `p`, return the index `I` of the element in `m` containing
+`p`.
+"""
+function element_index_for_point(s::SVector{N}, m::UniformCartesianMesh{N}) where {N}
+    els = ElementIterator(m)
+    sz = size(els)
+    Δs = step(m)
+    lc = low_corner(m)
+    uc = high_corner(m)
+    # assert that lc <= s <= uc?
+    @assert all(lc .<= s .<= uc) "Point $s is not inside $m"
+    I = ntuple(N) do n
+        q = (s[n] - lc[n]) / Δs[n]
+        i = ceil(Int, q)
+        return clamp(i, 1, sz[n])
+    end
+    return CartesianIndex(I)
 end

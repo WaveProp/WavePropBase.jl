@@ -15,7 +15,7 @@ See [Davis and Rabinowitz](https://www.elsevier.com/books/methods-of-numerical-i
 """
 struct IMT{A,P} <: AbstractSingularityHandler{ReferenceLine}
 end
-IMT(;a=1,p=1) = IMT{a,p}()
+IMT(; a=1, p=1) = IMT{a,p}()
 
 domain(::IMT) = ReferenceLine()
 
@@ -24,15 +24,15 @@ domain(::IMT) = ReferenceLine()
 
 The a function-like object `f: Ω → R`, return `R`.
 """
-image(::IMT)  = ReferenceLine()
+image(::IMT) = ReferenceLine()
 
 function (f::IMT{A,P})(x) where {A,P}
-    exp(A * (1 - 1 / x[1]^P))
+    return exp(A * (1 - 1 / x[1]^P))
 end
 
-derivative(f::IMT{A,P},x) where {A,P} = f(x) * A * P * 1 / x[1]^(P + 1)
+derivative(f::IMT{A,P}, x) where {A,P} = f(x) * A * P * 1 / x[1]^(P + 1)
 
-jacobian(f::IMT,x) = derivative(f, x) |> SMatrix{1,1}
+jacobian(f::IMT, x) = SMatrix{1,1}(derivative(f, x))
 
 """
     struct Kress{P} <: AbstractSingularityHandler{ReferenceLine}
@@ -42,10 +42,10 @@ Change of variables mapping `[0,1]` to `[0,1]` with the property that the first
 """
 struct Kress{P} <: AbstractSingularityHandler{ReferenceLine}
 end
-Kress(;order=5) = Kress{order}()
+Kress(; order=5) = Kress{order}()
 
 domain(k::Kress) = ReferenceLine()
-image(k::Kress)  = ReferenceLine()
+image(k::Kress) = ReferenceLine()
 
 # NOTE: fastmath is needed here to allow for various algebraic simplifications
 # which are not exact in floating arithmetic. Maybe reorder the operations *by
@@ -60,37 +60,39 @@ function derivative(f::Kress{P}, y) where {P}
     x = y[1]
     v = (x) -> (1 / P - 1 / 2) * ((1 - x))^3 + 1 / P * ((x - 1)) + 1 / 2
     vp = (x) -> -3 * (1 / P - 1 / 2) * ((1 - x))^2 + 1 / P
-    return 2 * (P * v(x)^(P - 1) * vp(x) * (v(x)^P + v(2 - x)^P) - (P * v(x)^(P - 1) * vp(x) - P * v(2 - x)^(P - 1) * vp(2 - x) ) * v(x)^P ) /
-        (v(x)^P + v(2 - x)^P)^2
+    return 2 * (P * v(x)^(P - 1) * vp(x) * (v(x)^P + v(2 - x)^P) -
+                (P * v(x)^(P - 1) * vp(x) - P * v(2 - x)^(P - 1) * vp(2 - x)) * v(x)^P) /
+           (v(x)^P + v(2 - x)^P)^2
 end
 
-jacobian(f::Kress,x) = derivative(f, x) |> SMatrix{1,1}
+jacobian(f::Kress, x) = SMatrix{1,1}(derivative(f, x))
 
 struct KressR{P} <: AbstractSingularityHandler{ReferenceLine}
 end
-KressR(;order=5) = KressR{order}()
+KressR(; order=5) = KressR{order}()
 
 domain(k::KressR) = ReferenceLine()
-image(k::KressR)  = ReferenceLine()
+image(k::KressR) = ReferenceLine()
 
 # NOTE: fastmath is needed here to allow for various algebraic simplifications
 # which are not exact in floating arithmetic. Maybe reorder the operations *by
 # hand* to avoid having to use fastmath? In any case, benchmark first.
 function (f::KressR{P})(y) where {P}
-    x = 1-y[1]
+    x = 1 - y[1]
     v = (x) -> (1 / P - 1 / 2) * ((1 - x))^3 + 1 / P * ((x - 1)) + 1 / 2
     return 1 - 2v(x)^P / (v(x)^P + v(2 - x)^P)
 end
 
 function derivative(f::KressR{P}, y) where {P}
-    x = 1-y[1]
+    x = 1 - y[1]
     v = (x) -> (1 / P - 1 / 2) * ((1 - x))^3 + 1 / P * ((x - 1)) + 1 / 2
     vp = (x) -> -3 * (1 / P - 1 / 2) * ((1 - x))^2 + 1 / P
-    return 2 * (P * v(x)^(P - 1) * vp(x) * (v(x)^P + v(2 - x)^P) - (P * v(x)^(P - 1) * vp(x) - P * v(2 - x)^(P - 1) * vp(2 - x) ) * v(x)^P ) /
-        (v(x)^P + v(2 - x)^P)^2
+    return 2 * (P * v(x)^(P - 1) * vp(x) * (v(x)^P + v(2 - x)^P) -
+                (P * v(x)^(P - 1) * vp(x) - P * v(2 - x)^(P - 1) * vp(2 - x)) * v(x)^P) /
+           (v(x)^P + v(2 - x)^P)^2
 end
 
-jacobian(f::KressR,x) = derivative(f, x) |> SMatrix{1,1}
+jacobian(f::KressR, x) = SMatrix{1,1}(derivative(f, x))
 
 """
     struct KressP{P} <: AbstractSingularityHandler{ReferenceLine}
@@ -113,10 +115,10 @@ as a quadrature rule for `f`.
 """
 struct KressP{P} <: AbstractSingularityHandler{ReferenceLine}
 end
-KressP(;order=5) = KressP{order}()
+KressP(; order=5) = KressP{order}()
 
 domain(k::KressP) = ReferenceLine()
-image(k::KressP)  = ReferenceLine()
+image(k::KressP) = ReferenceLine()
 
 @fastmath function (f::KressP{P})(y) where {P}
     x = y[1]
@@ -126,13 +128,14 @@ end
 
 @fastmath function derivative(f::KressP{P}, y) where {P}
     x = y[1]
-    v =  (x) -> (1 / P - 1 / 2) * ((1 - 2x))^3 + 1 / P * ((2x - 1)) + 1 / 2
+    v = (x) -> (1 / P - 1 / 2) * ((1 - 2x))^3 + 1 / P * ((2x - 1)) + 1 / 2
     vp = (x) -> -6 * (1 / P - 1 / 2) * ((1 - 2x))^2 + 2 / P
-    return (P * v(x)^(P - 1) * vp(x) * (v(x)^P + v(1 - x)^P) - (P * v(x)^(P - 1) * vp(x) - P * v(1 - x)^(P - 1) * vp(1 - x) ) * v(x)^P ) /
-        (v(x)^P + v(1 - x)^P)^2
+    return (P * v(x)^(P - 1) * vp(x) * (v(x)^P + v(1 - x)^P) -
+            (P * v(x)^(P - 1) * vp(x) - P * v(1 - x)^(P - 1) * vp(1 - x)) * v(x)^P) /
+           (v(x)^P + v(1 - x)^P)^2
 end
 
-jacobian(f::KressP,x) = derivative(f, x) |> SMatrix{1,1}
+jacobian(f::KressP, x) = SMatrix{1,1}(derivative(f, x))
 
 """
     struct Duffy <: AbstractSingularityHandler{RefereceTriangle}
@@ -146,14 +149,14 @@ reference triangle.
 struct Duffy <: AbstractSingularityHandler{ReferenceTriangle} end
 
 domain(::Duffy) = ReferenceSquare()
-image(::Duffy)  = ReferenceTriangle()
+image(::Duffy) = ReferenceTriangle()
 
 function (::Duffy)(u)
-    SVector(u[1], (1 - u[1]) * u[2])
+    return SVector(u[1], (1 - u[1]) * u[2])
 end
 
 function jacobian(::Duffy, u)
-    SMatrix{2,2,Float64}(1, 0, -u[2][1], (1 - u[1][1]))
+    return SMatrix{2,2,Float64}(1, 0, -u[2][1], (1 - u[1][1]))
 end
 
 # TODO: generalize to `N` dimensions
@@ -171,16 +174,18 @@ domain(::TensorProductSingularityHandler) = ReferenceSquare()
 image(::TensorProductSingularityHandler) = ReferenceSquare()
 
 function TensorProductSingularityHandler(q...)
-    TensorProductSingularityHandler(q)
+    return TensorProductSingularityHandler(q)
 end
 
-TensorProductSingularityHandler{Tuple{P,Q}}() where {P,Q} = TensorProductSingularityHandler(P(), Q())
+function TensorProductSingularityHandler{Tuple{P,Q}}() where {P,Q}
+    return TensorProductSingularityHandler(P(), Q())
+end
 
 function (f::TensorProductSingularityHandler)(x)
     shandler = f.shandler
     @assert length(shandler) == length(x)
     N = length(shandler)
-    svector(i -> shandler[i](x[i]), N)
+    return svector(i -> shandler[i](x[i]), N)
 end
 
 function jacobian(f::TensorProductSingularityHandler, x)

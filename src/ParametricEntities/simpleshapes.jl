@@ -1,6 +1,34 @@
 ####################################################################################
 # Two-dimensional shapes with parametric boundary
 ####################################################################################
+struct Ellipsis <: AbstractEntity
+    # dim = 2
+    tag::Int
+    center::SVector{2,Float64}
+    paxis::SVector{2,Float64}
+    boundary::Vector{ParametricEntity}
+    function Ellipsis(t, c, paxis, bnd)
+        ent = new(t, c, paxis, bnd)
+        global_add_entity!(ent)
+        return ent
+    end
+end
+function Ellipsis(; center=(0, 0), paxis=(1, 1), normal=:outside)
+    if normal == :outside
+        f = (s) -> center .+ paxis .* SVector(cospi(2 * s[1]), sinpi(2 * s[1]))
+    elseif normal == :inside
+        f = (s) -> center .+ paxis .* SVector(cospi(2 * s[1]), -sinpi(2 * s[1]))
+    else
+        error("value of `normal` must be `:outside` or `:inside`")
+    end
+    domain = HyperRectangle(0.0, 1.0)
+    ent = ParametricEntity(f, domain)
+    tag = new_tag(2) # generate a unique tag for entities of dimension 2
+    return Ellipsis(tag, center, paxis, [ent])
+end
+key(ent::Ellipsis) = (2, ent.tag)
+geometric_dimension(ent::Ellipsis) = 2
+ambient_dimension(ent::Ellipsis) = 2
 
 struct Disk <: AbstractEntity
     # dim = 2
@@ -108,7 +136,6 @@ geometric_dimension(ent::Boomerang) = 2
 # Three-dimensional shapes with parametric boundary
 ####################################################################################
 
-# TODO: rename to Ball?
 struct Ball <: AbstractEntity
     # dim = 3
     tag::Int

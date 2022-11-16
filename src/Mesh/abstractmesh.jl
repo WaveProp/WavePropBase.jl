@@ -55,6 +55,19 @@ ElementIterator(parent, E) = ElementIterator{E}(parent)
 # (like a dict)
 Base.getindex(m::AbstractMesh, E::DataType) = ElementIterator(m, E)
 
+# TODO: rename this to elements and warn against the fact that it returns a
+# possibly type unstable vector
+function all_elements(msh::AbstractMesh)
+    T = Union{keys(msh)...}
+    els = Vector{T}()
+    for E in keys(msh)
+        for el in msh[E]
+            push!(els, el)
+        end
+    end
+    return els
+end
+
 function Base.length(iter::ElementIterator)
     return prod(size(iter))
 end
@@ -72,3 +85,40 @@ mesh(iter::NodeIterator) = iter.mesh
 
 # nodes of `AbstractMesh{N,T}` should be points of type `SVector{N,T}`
 Base.eltype(::SType{NodeIterator{<:AbstractMesh{N,T}}}) where {N,T} = SVector{N,T}
+
+"""
+    near_interaction_list(X::AbstractMesh,Y::AbstractMesh; atol)
+
+For each element `el` of type `E` in `Y`, return the indices of the elements in
+`X` which have a center closer than `atol` to the `center` of `el`.
+
+This function returns a dictionary where e.g. `Dict[E][5] --> Vector{Int}` gives
+the indices of points in `X` which are closer than atol to the center of the
+fifth element of type `E`.
+"""
+function near_interaction_list(X, M::AbstractMesh{N,T}; atol) where {N,T}
+    elsX = all_elements(X)
+    elsY = all_elements(Y)
+    ballsX = map(HyperSphere, elsX)
+    ballsY = map(HyperSphere, elsY)
+    boxX = HyperRectangle(coords(s) for s in ballsX)
+    boxY = HyperRectangle(coords(s) for s in ballsX)
+    box = boxX ∪ boxY
+    lX = maximum(radius, ballsX)
+    lY = maximum(radius, ballsY)
+    dmax = 5 * (lX + lY)
+    for E in keys(M)
+        dict[E] = map(HyperSphere, M[E])
+    end
+    return dict
+end
+
+# function near_interaction_list(X, M::AbstractMesh; atol)
+#     dict = Dict{DataType,Vector{Vector{Int}}}()
+#     for E in keys(M)
+#         pts = [center(el) for el in M[E]]
+#         kdtree = KDTree(pts)
+#         push!(dict,E=>inrange(kdtree, X, atol))
+#     end
+#     return dict
+# end

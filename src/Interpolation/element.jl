@@ -48,6 +48,12 @@ function derivative(f, x)
     return first(jac)
 end
 
+function gradient(f, x)
+    jac = jacobian(f, x)
+    @assert size(jac, 2) == 1
+    return jac[:, 1]
+end
+
 """
     normal(el,x̂)
 
@@ -417,6 +423,13 @@ end
 end
 
 # P1 for ReferenceSquare
+function reference_nodes(::Type{LagrangeSquare{4}})
+    return SVector(SVector(0, 0),
+                   SVector(1, 0),
+                   SVector(1, 1),
+                   SVector(0, 1))
+end
+
 @fastmath function (el::LagrangeElement{ReferenceSquare,4})(u)
     @assert u ∈ domain(el)
     v = vals(el)

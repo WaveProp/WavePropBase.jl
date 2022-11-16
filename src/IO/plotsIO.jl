@@ -82,6 +82,18 @@ end
     end
 end
 
+@recipe function f(Q::NystromMesh)
+    @series begin
+        mesh(Q)
+    end
+    @series begin
+        aspect_ratio --> :equal
+        label := "Quadrature nodes"
+        seriestype := :scatter
+        PlotPoints(), collect(qcoords(Q))
+    end
+end
+
 @recipe function f(msh::GenericMesh)
     return msh, domain(msh)
 end

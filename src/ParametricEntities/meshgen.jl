@@ -116,23 +116,3 @@ function _integration_measure(jac::AbstractMatrix)
         sqrt(det(transpose(jac) * jac))
     end
 end
-
-# implement the ElementIterator interface
-function Base.size(iter::ElementIterator{<:ParametricElement,<:GenericMesh})
-    E = eltype(iter)
-    M = mesh(iter)
-    els::Vector{E} = M.elements[E]
-    return (length(els),)
-end
-
-function Base.getindex(iter::ElementIterator{<:ParametricElement,<:GenericMesh}, i::Int)
-    E = eltype(iter)
-    M = mesh(iter)
-    els::Vector{E} = M.elements[E]
-    return els[i]
-end
-
-function Base.iterate(iter::ElementIterator{<:ParametricElement,<:GenericMesh}, state=1)
-    state > length(iter) && (return nothing)
-    return iter[state], state + 1
-end

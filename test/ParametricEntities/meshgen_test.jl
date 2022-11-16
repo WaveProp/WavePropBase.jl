@@ -3,7 +3,7 @@ import WavePropBase as WPB
 
 @testset "Disk" begin
     disk = WPB.Disk() # abstract entity
-    Γ = WPB.Domain.(WPB.boundary(disk))
+    Γ = WPB.Domain(WPB.boundary(disk))
     M = WPB.meshgen(Γ, (10,))
     M = WPB.meshgen(Γ; meshsize=0.1)
     # plot(M,Γ)
@@ -13,7 +13,7 @@ end
 
 @testset "Box" begin
     box = WPB.Box() # abstract entity
-    Γ = WPB.Domain.(WPB.boundary(box))
+    Γ = WPB.Domain(WPB.boundary(box))
     M = WPB.meshgen(Γ, (10, 10))
     M = WPB.meshgen(Γ; meshsize=0.1)
     # plot(M,Γ)
@@ -23,7 +23,7 @@ end
 
 @testset "Ball" begin
     ball = WPB.Ball() # abstract entity
-    Γ = WPB.Domain.(WPB.boundary(ball))
+    Γ = WPB.Domain(WPB.boundary(ball))
     M = WPB.meshgen(Γ, (1, 1))
     M = WPB.meshgen(Γ; meshsize=0.1)
     # plot(M,Γ)

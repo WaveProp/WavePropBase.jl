@@ -37,10 +37,9 @@ end
 
 function Base.getindex(A::PseudoBlockMatrix{T}, i::Int, j::Int) where {T}
     p, q = size(T)
-    I = ((i - 1) + 1):i
-    J = ((j - 1) + 1):j
-    T(view(A.data, i, j))
-    return A.data[i, j]
+    I = ((i - 1) * p + 1):(i * p)
+    J = ((j - 1) * q + 1):(j * q)
+    return T(view(A.data, I, J))
 end
 
 function Base.setindex!(A::PseudoBlockMatrix{T}, v::T, i::Int, j::Int) where {T<:SMatrix}
@@ -55,15 +54,16 @@ end
 
 Convert a `Matrix{B}`, where `B<:SMatrix`, to the equivalent `Matrix{T}`, where `T = eltype(B)`
 """
-function blockmatrix_to_matrix(A::Matrix{B}) where {B<:SMatrix}
+function blockmatrix_to_matrix(A::AbstractMatrix{B}) where {B}
     T = eltype(B)
+    B <: Number && return A
     sblock = size(B)
     ss = size(A) .* sblock # matrix size when viewed as matrix over T
     Afull = Matrix{T}(undef, ss)
     blockmatrix_to_matrix!(Afull, A)
     return Afull
 end
-function blockmatrix_to_matrix!(Afull, A::Matrix{B}) where {B<:SMatrix}
+function blockmatrix_to_matrix!(Afull, A::AbstractMatrix{B}) where {B<:SMatrix}
     sblock = size(B)
     ss = size(A) .* sblock # matrix size when viewed as matrix over T
     @assert size(Afull) == ss
@@ -73,36 +73,6 @@ function blockmatrix_to_matrix!(Afull, A::Matrix{B}) where {B<:SMatrix}
         Afull[i, j] = A[bi, bj][ind_i, ind_j]
     end
     return Afull
-end
-
-"""
-    diagonalblockmatrix_to_matrix(A::Matrix{B}) where {B<:SMatrix}
-
-Convert a diagonal block matrix `A::AbstractVector{B}`, where `A` is the list of diagonal blocks
-and `B<:SMatrix`, to the equivalent `SparseMatrixCSC{T}`, where `T = eltype(B)`.
-"""
-function diagonalblockmatrix_to_matrix(A::AbstractVector{B}) where {B<:SMatrix}
-    T = eltype(B)
-    sblock = size(B)
-    ss = size(A) .* sblock  # matrix size when viewed as matrix over T
-    I = Int64[]
-    J = Int64[]
-    V = T[]
-    i_full, j_full = (1, 1)
-    for subA in A
-        i_tmp = i_full
-        for j in 1:sblock[2]
-            i_full = i_tmp
-            for i in 1:sblock[1]
-                push!(I, i_full)
-                push!(J, j_full)
-                push!(V, subA[i, j])
-                i_full += 1
-            end
-            j_full += 1
-        end
-    end
-    return sparse(I, J, V, ss[1], ss[2])
 end
 
 """
@@ -122,7 +92,8 @@ Convert a `Matrix{T}` to a `Matrix{B}`, where `B<:Type{SMatrix}`. The element
 type of `B` must match that of `A`, and the size of `A` must be divisible by the
 size of `B` along each dimension.
 """
-function matrix_to_blockmatrix(A::Matrix, B::Type{<:SMatrix})
+function matrix_to_blockmatrix(A::AbstractMatrix, B)
+    B <: Number && return A
     @assert eltype(A) == eltype(B)
     @assert sum(size(A) .% size(B)) == 0 "block size $(size(B)) not compatible with size of A=$(size(A))"
     sblock = size(B)
@@ -427,4 +398,40 @@ function decrement_index(I::CartesianIndex, dim::Integer, nb::Integer=1)
     N = length(I)
     @assert 1 ≤ dim ≤ length(I)
     return I + CartesianIndex(ntuple(i -> i == dim ? -nb : 0, N))
+end
+
+"""
+    uniform_points_circle(N,r,c)
+
+Return `N` points uniformly distributed on a circle of radius `r` centered at `c`.
+"""
+function uniform_points_circle(N, r, c)
+    pts = Point2D[]
+    for i in 0:(N - 1)
+        x = r * Point2D(cos(2π * i / N), sin(2π * i / N)) + c
+        push!(pts, x)
+    end
+    return pts
+end
+
+# https://stackoverflow.com/questions/9600801/evenly-distributing-n-points-on-a-sphere
+"""
+    fibonnaci_points_sphere(N,r,c)
+
+Return `N` points distributed (roughly) in a uniform manner on the sphere of
+radius `r` centered at `c`.
+"""
+function fibonnaci_points_sphere(N, r, center)
+    pts = Vector{Point3D}(undef, N)
+    phi = π * (3 - sqrt(5)) # golden angle in radians
+    for i in 1:N
+        ytmp = 1 - ((i - 1) / (N - 1)) * 2
+        radius = sqrt(1 - ytmp^2)
+        theta = phi * i
+        x = cos(theta) * radius * r + center[1]
+        y = ytmp * r + center[2]
+        z = sin(theta) * radius * r + center[3]
+        pts[i] = SVector(x, y, z)
+    end
+    return pts
 end

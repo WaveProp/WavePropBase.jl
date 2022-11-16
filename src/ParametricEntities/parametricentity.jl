@@ -50,10 +50,18 @@ function return_type(p::ParametricEntity)
     return T
 end
 
-ambient_dimension(p::ParametricEntity) = length(return_type(p))
+function ambient_dimension(p::ParametricEntity)
+    # HACK: evaluate the parametrization at the center of the domain to get the
+    # ambient dimension. This assume the parametrization is "correct" and always
+    # returns a vector of the same length
+    d = domain(p)
+    x = center(d)
+    f = parametrization(p)
+    return length(f(x))
+end
 
 function (par::ParametricEntity)(x)
-    @assert x in domain(par)
+    # @assert x in domain(par) "x=$x ∉ $(domain(par))"
     return par.parametrization(x)
 end
 

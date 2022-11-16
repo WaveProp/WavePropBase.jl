@@ -118,7 +118,7 @@ end
 @testset "Mix ParametricEntities and GmshEntity" begin
     WPB.clear_entities!()
     ball = WPB.Ball(; center=(-1, 0, 0), radius=1) # abstract entity
-    Γ = WPB.Domain.(WPB.boundary(ball))
+    Γ = WPB.Domain(WPB.boundary(ball))
     M = WPB.meshgen(Γ; meshsize=0.4)
     Ω = WPB.@gmsh begin
         gmsh.model.occ.addSphere(0, 0, 0, 1)
