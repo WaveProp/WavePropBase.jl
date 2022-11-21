@@ -27,11 +27,11 @@ function image(f)
 end
 
 """
-    qnodes(Y)
+    qcoords(Y)
 
-Return the quadrature nodes associated with `Y`.
+Return the coordinate of the quadrature nodes associated with `Y`.
 """
-qnodes(q::AbstractQuadratureRule) = q()[1]
+qcoords(q::AbstractQuadratureRule) = q()[1]
 
 """
     qweights(Y)
@@ -147,6 +147,19 @@ end
 
 `N`-point Fejer's first quadrature rule for integrating a function over `[0,1]`.
 Exactly integrates all polynomials of degree `≤ N-1`.
+
+```jldoctest
+import WavePropBase as WPB
+
+q = WPB.Fejer(;order=10)
+
+WPB.integrate(cos,q) ≈ sin(1) - sin(0)
+
+#output
+
+true
+```
+
 """
 struct Fejer{N} <: AbstractQuadratureRule{ReferenceLine} end
 
@@ -157,7 +170,7 @@ Fejer(; order::Int) = Fejer(order + 1)
 # N point fejer quadrature integrates all polynomials up to degree N-1
 order(::Fejer{N}) where {N} = N - 1
 
-function (q::Fejer{N})() where {N}
+@generated function (q::Fejer{N})() where {N}
     theta = [(2j - 1) * π / (2 * N) for j in 1:N]
     x = -cos.(theta)
     w = zero(x)
@@ -195,6 +208,84 @@ function integrate_fejer1d(f,
 end
 
 """
+    struct GaussLegendre{N}
+
+`N`-point Gauss-Legendre quadrature rule for integrating a function over `[0,1]`.
+Exactly integrates all polynomials of degree `≤ 2N-1`.
+"""
+struct GaussLegendre{N} <: AbstractQuadratureRule{ReferenceLine} end
+
+"""
+    GaussLegendre(;order)
+
+Construct a `GaussLegendre` of the desired order over the `[0,1]` interval.
+"""
+function GaussLegendre(;order=p)
+    N  = ceil(Int,(order + 1) /  2)
+    GaussLegendre{N}()
+end
+
+GaussLegendre(n::Int) = GaussLegendre{n}()
+
+# N point Gauss quadrature integrates all polynomials up to degree 2N-1, yielding
+# an error of order 2N
+order(q::GaussLegendre{N}) where {N} = 2*N-1
+
+# NOTE: the following code uses a Newton-Raphson method to find the roots of the
+# Legendre polynomial of degree N. For low order, this is OK, but should not be
+# used to high order. Better to rely on e.g. FastTranforms.jl for that matter.
+@generated function (q::GaussLegendre{n})() where {n}
+    # generate the nodes and weights on [-1,1]
+    x = zeros(n)
+    w = zeros(n)
+    m = (n + 1) ÷ 2
+    for i in 1:m
+        z = cos(π * (i - 0.25) / (n + 0.5))
+        z1 = z + 1
+        pp = 0.0
+        while abs(z - z1) > eps()
+            p1 = 1.0
+            p2 = 0.0
+            for j in 1:n
+                p3 = p2
+                p2 = p1
+                p1 = ((2 * j - 1) * z * p2 - (j - 1) * p3) / j
+            end
+            pp = n * (z * p1 - p2) / (z^2 - 1)
+            z1 = z
+            z = z1 - p1 / pp
+        end
+        x[i] = -z
+        x[n + 1 - i] = z
+        w[i] = 2 / ((1 - z^2) * pp^2)
+        w[n + 1 - i] = w[i]
+    end
+    # shift them to [0,1] and transform into a static vector
+    xs   = svector(i -> SVector(0.5 * (x[i] + 1)), n)
+    ws   = svector(i -> w[i] / 2, n)
+    return xs,ws
+end
+
+"""
+    struct Kronrod{N} <: AbstractQuadratureRule{ReferenceLine}
+
+`N`-point Kronrod quadrature rule on the interval `[0,1]`.
+"""
+struct Kronrod{N} <: AbstractQuadratureRule{ReferenceLine} end
+
+Kronrod(n::Int) = Kronrod{n}()
+
+# for some orders, we have tabulated results. Otherwise get the result from e.g. quadgk?
+@generated function (q::Kronrod{N})() where {N}
+    if N == 15
+        return SEGMENT_K15
+    else
+        return notimplemented()
+    end
+end
+
+
+"""
     struct Gauss{D,N} <: AbstractQuadratureRule{D}
 
 Tabulated `N`-point symmetric Gauss quadrature rule for integration over `D`.
@@ -230,8 +321,94 @@ function order(q::Gauss{ReferenceTetrahedron,N}) where {N}
 end
 
 @generated function (q::Gauss{D,N})() where {D,N}
-    x, w = _get_gauss_qnodes_and_qweights(D, N)
+    x, w = _get_gauss_qcoords_and_qweights(D, N)
     return :($x, $w)
+end
+
+"""
+    struct Radon5 <: AbstractQuadratureRule{ReferenceTriangle}
+
+Radon's 7 point quadrature rule of degree 5. Taken from
+https://people.sc.fsu.edu/~jburkardt/datasets/quadrature_rules_tri/quadrature_rules_tri.html
+"""
+struct Radon5 <: AbstractQuadratureRule{ReferenceTriangle} end
+
+(q::Radon5)() = TRIANGLE_R5N7
+
+order(q::Radon5) = 5
+
+"""
+    struct Radon5 <: AbstractQuadratureRule{ReferenceTriangle}
+
+Laurie's 19 point quadrature rule of degree 8. Taken from
+https://people.sc.fsu.edu/~jburkardt/datasets/quadrature_rules_tri/quadrature_rules_tri.html
+"""
+struct Laurie8 <: AbstractQuadratureRule{ReferenceTriangle} end
+
+(q::Laurie8)() = TRIANGLE_L8N19
+
+order(q::Laurie8) = 8
+
+struct EmbeddedQuadratureRule{Q1,Q2,D} <: AbstractQuadratureRule{D}
+    quad_low::Q1
+    quad_high::Q2
+    function EmbeddedQuadratureRule(q1::Q1, q2::Q2) where {Q1,Q2}
+        # check that domain is the same
+        @assert domain(q1) == domain(q2)
+        D = typeof(domain(q1))
+        # check that the nodes of q1 are the first nodes of q2
+        msg = "not a valid pair for embedded quadrature"
+        x1, _ = q1()
+        x2, _ = q2()
+        for i in 1:length(x1)
+            x1[i] ≈ x2[i] || error(msg)
+        end
+        return new{Q1,Q2,D}(q1, q2)
+    end
+end
+function EmbeddedQuadratureRule{Q1,Q2,D}() where {Q1,Q2,D}
+    return EmbeddedQuadratureRule(Q1(), Q2())
+end
+
+function (q::EmbeddedQuadratureRule)()
+    return q.quad_high()
+end
+
+integrate(f, q::EmbeddedQuadratureRule) = integrate(f, q.quad_high)
+
+function integrate_with_error(f, q::EmbeddedQuadratureRule)
+    x1, w1 = q.quad_low()
+    x2, w2 = q.quad_high()
+    # S1 = Base.promote_op(f,eltype(x1))
+    # S2 = Base.promote_op(f,eltype(x2))
+    # isbitstype(S1) || (@warn "non bitstype detected")
+    # isbitstype(S2) || (@warn "non bitstype detected")
+    I1 = f(first(x2)) * first(w1)
+    I2 = f(first(x2)) * first(w2)
+    # assuming that nodes in quad_high are ordered so that the overlapping nodes
+    # come first, add them up
+    for i in 2:length(x1)
+        v = f(x2[i])
+        I1 += v * w1[i]
+        I2 += v * w2[i]
+    end
+    # now compute the rest of the high order quadrature
+    for i in (length(x1) + 1):length(x2)
+        v = f(x2[i])
+        I2 += v * w2[i]
+    end
+    return I2, norm(I2 - I1, Inf)
+end
+function integrate_with_error(f, el::AbstractElement, q::EmbeddedQuadratureRule)
+    g = (s) -> f(el(s)) * integration_measure(el, s)
+    I, E = integrate_with_error(g, q)
+    return I, E
+end
+function integrate_with_error(f, el, q::EmbeddedQuadratureRule)
+    g = (s) -> f(el(s))
+    μ = integration_measure(el, (0, 0))
+    I, E = integrate_with_error(g, q)
+    return μ * I, μ * E
 end
 
 """
@@ -304,20 +481,48 @@ end
 """
 struct CustomQuadratureRule{D<:AbstractReferenceShape,N,T<:SVector} <:
        AbstractQuadratureRule{D}
-    qnodes::SVector{N,T}
+    qcoords::SVector{N,T}
     qweights::SVector{N,Float64}
 end
 
-function CustomQuadratureRule{D}(; qnodes, qweights) where {D}
-    return CustomQuadratureRule{D,length(qnodes),eltype(qnodes)}(qnodes, qweights)
+function CustomQuadratureRule{D}(; qcoords, qweights) where {D}
+    return CustomQuadratureRule{D,length(qcoords),eltype(qcoords)}(qcoords, qweights)
 end
-function CustomQuadratureRule(; domain::AbstractReferenceShape, qnodes, qweights)
-    return CustomQuadratureRule{typeof(domain)}(; qnodes, qweights)
+function CustomQuadratureRule(; domain::AbstractReferenceShape, qcoords, qweights)
+    return CustomQuadratureRule{typeof(domain)}(; qcoords, qweights)
 end
 
-(q::CustomQuadratureRule)() = q.qnodes, q.qweights
+(q::CustomQuadratureRule)() = q.qcoords, q.qweights
 
 const CustomLineQuadratureRule = CustomQuadratureRule{ReferenceLine}
 const CustomTriangleQuadratureRule = CustomQuadratureRule{ReferenceTriangle}
 const CustomSquareQuadratureRule = CustomQuadratureRule{ReferenceSquare}
 const CustomTetrahedronQuadratureRule = CustomQuadratureRule{ReferenceTetrahedron}
+
+function lagrange_basis(q::AbstractQuadratureRule{ReferenceLine})
+    nodes = qcoords(q)
+    w = barycentric_lagrange_weights(q)
+    N = length(w)
+    # for some reason, I must pass a Val(N) to a function barrier so that the
+    # anonymous function created is type stable and does not allocate
+    return _lagrange_basis(nodes,w,Val(N))
+end
+
+@noinline function _lagrange_basis(nodes,w,::Val{N}) where {N}
+    (x) -> begin
+        l = prod(xi->x[1]-xi[1],nodes)
+        svector(N) do j
+            xj = nodes[j]
+            l*w[j]/(x[1]-xj[1])
+        end
+    end
+end
+
+function barycentric_lagrange_weights(q::AbstractQuadratureRule{ReferenceLine})
+    # transform nodes to a vector
+    nodes = [x[1] for x in qcoords(q)] |> Vector
+    # comptue weights as a vector
+    w = barycentric_lagrange_weights(nodes)
+    ws = SVector{length(w)}(w)
+    return ws
+end

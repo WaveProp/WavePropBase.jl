@@ -195,12 +195,22 @@ function element_index_for_point(s::SVector{N}, m::UniformCartesianMesh{N}) wher
     Δs = step(m)
     lc = low_corner(m)
     uc = high_corner(m)
-    # assert that lc <= s <= uc?
-    @assert all(lc .<= s .<= uc) "Point $s is not inside $m"
+    all(lc .<= s .<= uc) || (return nothing) # point not in mesh
     I = ntuple(N) do n
         q = (s[n] - lc[n]) / Δs[n]
         i = ceil(Int, q)
         return clamp(i, 1, sz[n])
     end
     return CartesianIndex(I)
+end
+
+function sort_in_cartesian_mesh(X,msh)
+    dict = Dict{CartesianIndex,Vector{Int}}()
+    for (i,pt) in enumerate(X)
+        I = element_index_for_point(coords(pt),msh)
+        isnothing(I) && continue
+        idxs = get!(dict,I,Int[])
+        push!(idxs,i)
+    end
+    return dict
 end

@@ -45,6 +45,8 @@ number_of_nodes(::ReferenceTriangle) = 3
 
 vertices(::ReferenceTriangle) = SVector(0, 0), SVector(1, 0), SVector(0, 1)
 
+center(::SType{ReferenceTriangle})  = svector(i -> 1/3, 3)
+
 """
     struct ReferenceHyperCube{N}
 

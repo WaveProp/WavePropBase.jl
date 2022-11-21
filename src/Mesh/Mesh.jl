@@ -6,7 +6,7 @@ generic representations and the possibility of handling curved meshes.
 =#
 
 include("abstractmesh.jl")
-include("genericmesh.jl")
 include("cartesianmesh.jl")
+include("genericmesh.jl")
 include("submesh.jl")
 include("decompose.jl")

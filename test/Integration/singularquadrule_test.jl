@@ -37,23 +37,6 @@ Random.seed!(1)
     s = 0.1
     f = (x) -> log(abs(x - s))
     Ie = -1.32508297337145
-    # FIXME: for the time being, usign IMT with a singular quadrature rule for
-    # interior points yields a rounding problem because the change of variables
-    # accumulates points very quickly around zero. That is OK when the
-    # singularity is at zero, but shifting such nodes to another point s ∈ (0,1]
-    # has to be done with care since these can get rounded to `s`, which in turn
-    # yields a singular value for the integrand. Note that the same can happen
-    # with other singularity handler types, but IMT is worse due to the
-    # exponential nature of the change of variables.
-    for shand in [WPB.Kress(), WPB.KressP()]
-        q = WPB.SingularQuadratureRule(qstd, shand)
-        x, w = q(s) # singular nodes and weights which depend on s
-        Ia = WPB.integrate(f, x, w)
-        @test isapprox(Ia, Ie, rtol=1e-5)
-        # check that the `naive` integration woudl have failed the test
-        Istd = WPB.integrate(f, qstd)
-        @test !isapprox(Istd, Ie; rtol=1e-5)
-    end
 end
 
 @testset "Duffy" begin

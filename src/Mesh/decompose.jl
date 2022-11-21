@@ -14,6 +14,7 @@ function decompose(ln::ReferenceLine, x::Float64)
     a, b = vertices(ln)
     return LagrangeLine(x, a), LagrangeLine(x, b)
 end
+decompose(ln::ReferenceLine, x::SVector{1,<:Real}) = decompose(ln, x[1])
 
 function decompose(tri::ReferenceTriangle, x)
     @assert x ∈ tri

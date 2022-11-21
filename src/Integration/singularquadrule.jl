@@ -1,5 +1,5 @@
 """
-    SingularQuadratureRule{D,Q,S} <: AbstractQuadratureRule{D}
+    struct SingularQuadratureRule{D,Q,S} <: AbstractQuadratureRule{D}
 
 A quadrature rule over `D` intended to integrate functions which are singular at
 a known point `s ∈ D`.
@@ -9,6 +9,21 @@ A singular quadrature is rule is composed of a *regular* quadrature rule (e.g.
 quadrature. The regular quadrature rule generates nodes and weights on the
 `domain(sing_handler)`, and those are mapped into an appropriate quadrature over
 `D = range(sing_handler)` using the singularity handler.
+
+```jldoctest
+import WavePropBase as WPB
+q = WPB.Fejer(20)
+shand = WPB.Kress()
+qsing = WPB.SingularQuadratureRule(q, shand)
+
+# check that we can accurately integrate the singular function `log(x)`
+WPB.integrate(log,qsing) ≈ -1
+
+# output
+
+true
+```
+
 """
 struct SingularQuadratureRule{D,Q,S} <: AbstractQuadratureRule{D}
     qrule::Q
@@ -39,21 +54,6 @@ image(qs::SingularQuadratureRule) = image(singularity_handler(qs))
         return μ * prod(ŵ)
     end
     return :($x, $w)
-end
-
-function (qs::SingularQuadratureRule{ReferenceLine})(s)
-    @assert s ∈ image(qs)
-    x̂, ŵ = qs()
-    # left domain
-    x1 = @. s[1] * (1 - x̂)
-    w1 = @. ŵ * s[1]
-    # right domain
-    x2 = @. s[1] + x̂ * (1 - s[1])
-    w2 = @. ŵ * (1 - s[1])
-    # combine the nodes and weights
-    x = vcat(x1, x2)
-    w = vcat(w1, w2)
-    return x, w
 end
 
 """
@@ -91,7 +91,7 @@ end
 
 function singular_weights(k, qreg::AbstractQuadratureRule, qsin::SingularQuadratureRule, s)
     xq, wq = qsin(s)
-    xi = qnodes(qreg)
+    xi = qcoords(qreg)
     lag_basis = lagrange_basis(xi)
     map(lag_basis) do l
         integrate(xq, wq) do x
@@ -99,4 +99,21 @@ function singular_weights(k, qreg::AbstractQuadratureRule, qsin::SingularQuadrat
         end
     end
     # return transpose(L)*w
+end
+
+function singular_quadrature_suite(qreg::AbstractQuadratureRule{ReferenceLine},qsing::AbstractQuadratureRule{ReferenceLine})
+    τ̂ = domain(qreg)
+    @assert τ̂ == domain(qsing)
+    xq = qcoords(qreg)
+    nq = length(xq)
+    nodes   = [SVector{1,Float64}[] for _ in 1:nq]
+    weights = [Float64[] for _ in 1:nq]
+    for (i,xi) in enumerate(xq)
+        for el in decompose(τ̂,xi)
+            xseg, wseg = qsing(el)
+            append!(nodes[i], Vector(xseg))
+            append!(weights[i], Vector(wseg))
+        end
+    end
+    return nodes,weights
 end

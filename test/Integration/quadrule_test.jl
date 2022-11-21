@@ -93,10 +93,10 @@ end
     q1 = WPB.qrule_for_reference_shape(D, order)
     q2 = WPB.CustomQuadratureRule(;
                                   domain=D,
-                                  qnodes=WPB.qnodes(q1),
+                                  qcoords=WPB.qcoords(q1),
                                   qweights=WPB.qweights(q1))
     q3 = WPB.CustomTriangleQuadratureRule(;
-                                          qnodes=WPB.qnodes(q1),
+                                          qcoords=WPB.qcoords(q1),
                                           qweights=WPB.qweights(q1))
     @test q1() == q2()
     @test q2 == q3
