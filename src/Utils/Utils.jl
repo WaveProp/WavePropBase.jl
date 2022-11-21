@@ -435,3 +435,17 @@ function fibonnaci_points_sphere(N, r, center)
     end
     return pts
 end
+
+"""
+    return_type(f[,args...])
+
+The type returned by `f(args...)`, where `args` is a tuple of types. Falls back
+to `Base.promote_op` by default.
+
+A functors of type `T` with a knonw return type should extend
+`return_type(::T,args...)` to avoid relying on `promote_op`.
+"""
+function return_type(f, args...)
+    @warn "using `Base.promote_op` to infer return type. Consider defining `return_type(::typeof($f),args...)`."
+    return Base.promote_op(f, args...)
+end
