@@ -460,7 +460,7 @@ an appropiate quadrature rule.
 """
 function qrule_for_reference_shape(ref, order)
     if ref isa ReferenceLine
-        return Fejer(; order)
+        return GaussLegendre(; order)
     elseif ref isa ReferenceSquare
         qx = qrule_for_reference_shape(ReferenceLine(), order)
         qy = qx

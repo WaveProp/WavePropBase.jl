@@ -40,6 +40,20 @@ end
     end
 end
 
+@testset "Gauss-Legendre quadrature" begin
+    N = 5
+    q = WPB.GaussLegendre{N}()
+    x, w = q()
+    D = WPB.domain(q)
+    @test D == WPB.ReferenceLine()
+    @test all(qnode ∈ D for qnode in x)
+    @test sum(w) ≈ 1
+    # integrate all polynomial of degree 2N-1 exactly
+    for n in 1:(2N - 1)
+        @test WPB.integrate(x -> x[1]^n, q) ≈ 1 / (n + 1)
+    end
+end
+
 @testset "Gauss quad on triangle" begin
     d = WPB.ReferenceTriangle()
     # exact value for x^a*y^b integrate over reference triangle
