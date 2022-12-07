@@ -399,17 +399,6 @@ function integrate_with_error(f, q::EmbeddedQuadratureRule)
     end
     return I2, norm(I2 - I1, Inf)
 end
-function integrate_with_error(f, el::AbstractElement, q::EmbeddedQuadratureRule)
-    g = (s) -> f(el(s)) * integration_measure(el, s)
-    I, E = integrate_with_error(g, q)
-    return I, E
-end
-function integrate_with_error(f, el, q::EmbeddedQuadratureRule)
-    g = (s) -> f(el(s))
-    μ = integration_measure(el, (0, 0))
-    I, E = integrate_with_error(g, q)
-    return μ * I, μ * E
-end
 
 """
     TensorProductQuadrature{Q}
@@ -465,6 +454,10 @@ function qrule_for_reference_shape(ref, order)
         qx = qrule_for_reference_shape(ReferenceLine(), order)
         qy = qx
         return TensorProductQuadrature(qx, qy)
+    elseif ref isa ReferenceCube
+        qx = qrule_for_reference_shape(ReferenceLine(), order)
+        qy = qz = qx
+        return TensorProductQuadrature(qx, qy, qz)
     elseif ref isa ReferenceTriangle
         return Gauss(; domain=ref, order=order)
     elseif ref isa ReferenceTetrahedron
@@ -513,7 +506,9 @@ end
         l = prod(xi->x[1]-xi[1],nodes)
         svector(N) do j
             xj = nodes[j]
-            l*w[j]/(x[1]-xj[1])
+            num = l*w[j]
+            den = x[1]-xj[1]
+            ifelse(den==0,one(num),num/den)
         end
     end
 end

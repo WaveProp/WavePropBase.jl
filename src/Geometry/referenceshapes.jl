@@ -76,6 +76,13 @@ Singleton type representing the square with vertices `(0,0),(0,1),(1,1),(1,0)`
 """
 const ReferenceSquare = ReferenceHyperCube{2}
 
+"""
+    const ReferenceCube = ReferenceHyperCube{3}
+
+Singleton type representing the unit cube `[0,1]³`.
+"""
+const ReferenceCube = ReferenceHyperCube{3}
+
 vertices(sq::ReferenceSquare) = SVector(0, 0), SVector(1, 0), SVector(1, 1), SVector(0, 1)
 
 """

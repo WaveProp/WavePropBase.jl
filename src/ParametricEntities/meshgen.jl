@@ -116,3 +116,16 @@ function _integration_measure(jac::AbstractMatrix)
         sqrt(det(transpose(jac) * jac))
     end
 end
+
+# one argument version when the jacobian is constant
+function integration_measure(el::LagrangeElement{ReferenceLine,2,T}) where {T}
+    return integration_measure(el, zero(T))
+end
+
+function integration_measure(el::LagrangeElement{ReferenceTriangle,3,T}) where {T}
+    return integration_measure(el, zero(T))
+end
+
+function integration_measure(el::LagrangeElement{ReferenceSquare,4,T}) where {T}
+    return integration_measure(el, zero(T))
+end

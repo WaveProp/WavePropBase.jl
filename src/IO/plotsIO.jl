@@ -190,7 +190,7 @@ end
     label --> ""
     if D isa ReferenceLine
         s = LinRange(0, 1, npts)
-        pts = [el(v) for v in s]
+        pts = [el(SVector(v)) for v in s]
         x = [pt[1] for pt in pts]
         y = [pt[2] for pt in pts]
         x, y
@@ -198,7 +198,7 @@ end
         seriestype := :surface
         xrange = LinRange(0, 1, npts)
         yrange = LinRange(0, 1, npts)
-        pts = [el((x, y)) for x in xrange, y in yrange]
+        pts = [el(SVector(x, y)) for x in xrange, y in yrange]
         x = [pt[1] for pt in pts]
         y = [pt[2] for pt in pts]
         z = [pt[3] for pt in pts]

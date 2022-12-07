@@ -65,7 +65,6 @@ end
 
 ## implement the AbstractElement interface for convenience
 function (el::AbstractHyperRectangle)(u)
-    @assert u in domain(el)
     lc = low_corner(el)
     hc = high_corner(el)
     # map from reference domain to
@@ -74,7 +73,6 @@ function (el::AbstractHyperRectangle)(u)
 end
 
 function jacobian(el::AbstractHyperRectangle, u)
-    @assert u in domain(el)
     lc = low_corner(el)
     hc = high_corner(el)
     return SDiagonal(hc - lc)
@@ -252,4 +250,10 @@ at the `ax` dimension.
 function section(rec::HyperRectangle{D}, ax::Integer) where {D}
     @assert 1 ≤ ax ≤ D
     return HyperRectangle(deleteat(low_corner(rec), ax), deleteat(high_corner(rec), ax))
+end
+
+function HyperRectangle(::SType{ReferenceHyperCube{N}}, T::DataType=Float64) where {N}
+    lc = svector(i -> zero(T), N)
+    uc = svector(i -> one(T), N)
+    return HyperRectangle(lc, uc)
 end

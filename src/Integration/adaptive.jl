@@ -6,6 +6,10 @@ Base.@kwdef struct AdaptiveQuadrature{D,Q<:EmbeddedQuadratureRule} <:
     maxsplit::Int = 100 # reasonable?
 end
 
+function (::AdaptiveQuadrature)()
+    return error("calling `q()` for an adaptive quadrature `q` is not allowed. Use `integrate(f,q)` instead.")
+end
+
 function integrate(f, q::AdaptiveQuadrature, args...; kwargs...)
     return integrate_with_error(f, q, args...; kwargs...)[1]
 end
@@ -26,11 +30,6 @@ function integrate_with_error(f::F, q::AdaptiveQuadrature,
     I, E = _integrate_with_error!(f, heap, I, E, nsplit, q)
     return I, E
 end
-function integrate_with_error(f, el::AbstractElement, q::AdaptiveQuadrature,
-                              heap=allocate_buffer(f, el, q))
-    g = (s) -> f(el(s)) * integration_measure(el, s)
-    return integrate_with_error(g, q, heap)
-end
 function _integrate_with_error!(f::F, heap, I, E, nsplit, q) where {F}
     while E > q.atol && E > q.rtol * norm(I) && nsplit < q.maxsplit
         t, (Ic, Ec) = pop!(heap)
@@ -38,16 +37,17 @@ function _integrate_with_error!(f::F, heap, I, E, nsplit, q) where {F}
         E -= Ec
         for child in split(t, q)
             # since the jacobian is constant, factor it out of the integration
-            g = (s) -> f(child(s))
             μ = integration_measure(child)
-            Inew, Enew = μ .* integrate_with_error(g, q.qrule)
+            g = (s) -> f(child(s))
+            v = integrate_with_error(g, q.qrule)
+            Inew, Enew = μ .* v
             I += Inew
             E += Enew
             push!(heap, child => (Inew, Enew))
         end
         nsplit += 1
     end
-    nsplit >= q.maxsplit && @warn "maximum number of steps reached"
+    nsplit >= q.maxsplit && @warn "maximum number of steps reached: $I, $E"
     return I, E
 end
 
@@ -73,7 +73,7 @@ function allocate_buffer(f, q::AdaptiveQuadrature)
     heap = BinaryHeap{Pair{D,Tuple{TS,T}}}(ord)
     return heap
 end
-allocate_buffer(f, el, q) = allocate_buffer(s -> f(el(s)), q)
+
 
 # some specific adaptive quadratures
 const CubTri = AdaptiveQuadrature{ReferenceTriangle,

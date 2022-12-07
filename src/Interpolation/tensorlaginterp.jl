@@ -10,15 +10,19 @@ one-dimensional `nodes` and an `Array{N,T}` of the function `vals` at the tensor
 product grid formed by the one-dimensional `nodes`.
 
 # Examples:
-```julia
+```jldoctest
+using WavePropBase: TensorLagInterp
 nx = 10
 ny = 12
 x   = [0.5+0.5cos((2k-1)*π/2nx) for k in 1:nx] # Chebyshev nodes
 y   = [0.5+0.5cos((2k-1)*π/2ny) for k in 1:ny] # Chebyshev nodes
 f   = (x) -> cos(x[1]*x[2])
 vals = [f((x,y)) for x in x, y in y]
-p   = TensorLagInterp(SVector(x,y),vals)
+p   = TensorLagInterp(vals,(x,y))
 p((0.1,0.2)) ≈ f((0.1,0.2))
+
+# output
+true
 ```
 """
 mutable struct TensorLagInterp{N,Td,T}
@@ -85,7 +89,7 @@ end
             ci = vals[i1 + (i - 1)]
             wi = W[i]
             x_m_xi = xd - X[i]
-            if x_m_xi == 0
+            if iszero(x_m_xi)
                 return ci
             end
             num += (wi / x_m_xi) * ci
@@ -100,7 +104,7 @@ end
             ci = bclag_interp(x, vals, nodes, weights, dim′, i1 + (i - 1) * Δi, Δi)
             wi = W[i]
             x_m_xi = xd - X[i]
-            if x_m_xi == 0
+            if iszero(x_m_xi)
                 return ci
             end
             num += wi / x_m_xi * ci

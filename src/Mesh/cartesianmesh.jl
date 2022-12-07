@@ -78,7 +78,8 @@ function UniformCartesianMesh(domain::HyperRectangle{N}; step) where {N}
     lc = low_corner(domain)
     hc = high_corner(domain)
     sz = ntuple(N) do i
-        return Int(ceil((hc[i] - lc[i]) / step[i]))
+        # take the max with 1 in case step = Inf
+        max(Int(ceil((hc[i] - lc[i]) / step[i])),1)
     end
     return UniformCartesianMesh(domain, sz)
 end
@@ -182,6 +183,8 @@ function Base.iterate(iter::NodeIterator{<:UniformCartesianMesh}, state=1)
     state > length(iter) && (return nothing)
     return iter[state], state + 1
 end
+
+nodes(m::UniformCartesianMesh) = NodeIterator(m)
 
 """
     element_index_for_point(p::SVector,m::UniformCartesianMesh)

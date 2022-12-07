@@ -31,7 +31,6 @@ function ParametricElement(f, d)
 end
 
 function (el::ParametricElement)(u)
-    @assert u ∈ domain(el)
     f = parametrization(el)
     return f(u)
 end

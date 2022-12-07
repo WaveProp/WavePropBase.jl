@@ -120,10 +120,9 @@ default_density_eltype(::Laplace) = Float64
 
 parameters(::Laplace) = nothing
 
-function (SL::SingleLayerKernel{T,Laplace{N}})(target, source)::T where {N,T}
-    x = coords(target)
-    y = coords(source)
-    r = x - y
+function (SL::SingleLayerKernel{T,Laplace{N}})(target, source,
+                                               r=coords(target) - coords(source))::T where {N,
+                                                                                            T}
     d = norm(r)
     filter = !(d == 0)
     if N == 2
@@ -135,11 +134,10 @@ function (SL::SingleLayerKernel{T,Laplace{N}})(target, source)::T where {N,T}
     end
 end
 
-function (DL::DoubleLayerKernel{T,Laplace{N}})(target, source)::T where {N,T}
-    x = coords(target)
-    y = coords(source)
+function (DL::DoubleLayerKernel{T,Laplace{N}})(target, source,
+                                               r=coords(target) - coords(source))::T where {N,
+                                                                                            T}
     ny = normal(source)
-    r = x - y
     d = norm(r)
     filter = !(d == 0)
     if N == 2
@@ -151,11 +149,10 @@ function (DL::DoubleLayerKernel{T,Laplace{N}})(target, source)::T where {N,T}
     end
 end
 
-function (ADL::AdjointDoubleLayerKernel{T,Laplace{N}})(target, source)::T where {N,T}
-    x = coords(target)
-    y = coords(source)
+function (ADL::AdjointDoubleLayerKernel{T,Laplace{N}})(target, source,
+                                                       r=coords(target) - coords(source))::T where {N,
+                                                                                                    T}
     nx = normal(target)
-    r = x - y
     d = norm(r)
     filter = !(d == 0)
     if N == 2
@@ -165,12 +162,11 @@ function (ADL::AdjointDoubleLayerKernel{T,Laplace{N}})(target, source)::T where 
     end
 end
 
-function (HS::HyperSingularKernel{T,Laplace{N}})(target, source)::T where {N,T}
-    x = coords(target)
-    y = coords(source)
+function (HS::HyperSingularKernel{T,Laplace{N}})(target, source,
+                                                 r=coords(target) - coords(source))::T where {N,
+                                                                                              T}
     nx = normal(target)
     ny = normal(source)
-    r = x - y
     d = norm(r)
     d == 0 && (return zero(T))
     if N == 2

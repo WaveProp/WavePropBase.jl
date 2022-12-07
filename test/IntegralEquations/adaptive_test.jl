@@ -15,7 +15,7 @@ WPB.clear_entities!()
 ent = N == 2 ? WPB.Disk() : WPB.Ball()
 Ω = WPB.Domain(ent)
 Γ = WPB.boundary(Ω)
-meshsize = 0.1
+meshsize = 0.01
 qorder = 3
 M = WPB.meshgen(Γ; meshsize)
 mesh = WPB.NystromMesh(view(M, Γ); qorder)
@@ -37,12 +37,20 @@ e0 = norm(Smat * γ₁u - Dmat * γ₀u - σ * γ₀u, Inf) / γ₀u_norm
 δS, δD = WPB.dim_correction(pde, mesh, mesh, Smat, Dmat)
 Sdim, Ddim = Smat + δS, Dmat + δD
 e1 = norm(Sdim * γ₁u - Ddim * γ₀u - σ * γ₀u, Inf) / γ₀u_norm
+@show e1
 
 qreg = WPB.etype2qrule(mesh,first(keys(mesh)))
-qsing = WPB.SingularQuadratureRule(WPB.Fejer(2*qorder),WPB.Kress(;order=2))
-# qsing = WPB.Fejer(40)
-δS = WPB.singularquadrule_correction(S, qsing; tol=10*meshsize)
-δD = WPB.singularquadrule_correction(D, qsing; tol=10*meshsize)
+qsing = WPB.SingularQuadratureRule(WPB.GaussLegendre(5*qorder),WPB.Kress(;order=3))
+
+qsing = WPB.SingularQuadratureRule(WPB.G7K15(;atol=1e-6),WPB.Kress(;order=1))
+
+qsing_dict = Dict(E=>qsing for E in keys(mesh))
+
+# qsing = WPB.GaussLegendre(10)
+tol = 3*meshsize
+δS = WPB.singularquadrule_correction(S, qsing_dict; tol)
+δD = WPB.singularquadrule_correction(D, qsing_dict; tol)
 
 Sa, Da = Smat + δS, Dmat + δD
-e1 = norm(Sa * γ₁u - Da * γ₀u - σ * γ₀u, Inf) / γ₀u_norm
+e2 = norm(Sa * γ₁u - Da * γ₀u - σ * γ₀u, Inf) / γ₀u_norm
+@show e2

@@ -41,8 +41,12 @@ Change of variables mapping `[0,1]` to `[0,1]` with the property that the first
 `P-1` derivatives of the transformation vanish at `x=0`.
 """
 struct Kress{P} <: AbstractSingularityHandler{ReferenceLine}
+    function Kress{P}() where {P}
+        @assert (isinteger(P)  && P > 1) "P must be and integer > 1"
+        return new{P}()
+    end
 end
-Kress(; order=5) = Kress{order}()
+Kress(; order=5) = Kress{order+1}()
 
 domain(k::Kress) = ReferenceLine()
 image(k::Kress) = ReferenceLine()
