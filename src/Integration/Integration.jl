@@ -7,6 +7,4 @@ singular integration routines useful for (weakly) singular integrands.
 
 include("quadrulestables.jl")
 include("quadrule.jl")
-include("adaptive.jl")
 include("singularityhandler.jl")
-include("singularquadrule.jl")

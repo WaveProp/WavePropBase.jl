@@ -20,6 +20,8 @@ return_type(::ParametricElement{F,D,T}) where {F,D,T} = T
 geometric_dimension(p::ParametricElement) = geometric_dimension(domain(p))
 ambient_dimension(p::ParametricElement) = length(return_type(p))
 
+geometric_dimension(::Type{ParametricElement{F,D,T}}) where {F,D,T} = geometric_dimension(D())
+
 # constructor which infers the return type of f. Warn if inferred type is not
 # bitstype
 function ParametricElement(f, d)

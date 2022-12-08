@@ -117,14 +117,3 @@ function singular_quadrature_suite(qreg::AbstractQuadratureRule{ReferenceLine},q
     end
     return nodes,weights
 end
-
-function integrate(f,qs::SingularQuadratureRule{<:Any,<:AdaptiveQuadrature,<:Any},args...;kwargs...)
-    integrate_with_error(f,qs,args...;kwargs...)[1]
-end
-
-function integrate_with_error(f,qs::SingularQuadratureRule{<:Any,<:AdaptiveQuadrature,<:Any},args...)
-    shand = singularity_handler(qs)
-    q = qrule(qs)
-    g = (x) -> f(shand(x))*integration_measure(shand,x)
-    integrate_with_error(g,q,args...)
-end

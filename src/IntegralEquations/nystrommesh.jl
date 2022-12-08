@@ -102,11 +102,11 @@ end
     istart = length(qnodes(msh)) + 1
     for el in iter
         # and all qnodes for that element
-        for i in 1:num_nodes
-            x = el(x̂[i])
-            jac = jacobian(el, x̂[i])
+        for (x̂i,ŵi) in zip(x̂,ŵ)
+            x = el(x̂i)
+            jac = jacobian(el, x̂i)
             μ = _integration_measure(jac)
-            w = μ * ŵ[i]
+            w = μ * ŵi
             ν = N - M == 1 ? _normal(jac) : nothing
             qnode = QuadratureNode(x, w, ν)
             push!(qnodes(msh), qnode)

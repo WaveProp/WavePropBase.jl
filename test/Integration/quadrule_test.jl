@@ -115,3 +115,41 @@ end
     @test q1() == q2()
     @test q2 == q3
 end
+
+
+@testset "Lagrange interpolant" begin
+    N, M = 3, 2
+    qx = WPB.Fejer(N)
+
+    # test lagrange basis in 1d
+    L = WPB.lagrange_basis(qx)
+    x, w = qx()
+    n = length(x)
+    for i in 1:n
+        v = L(x[i])
+        for k in 1:n
+            if k == i
+                @test v[k] ≈ 1
+            else
+                @test v[k] ≈ 0
+            end
+        end
+    end
+
+    # test lagrange basis in 2d
+    qy = WPB.Fejer(M)
+    q = WPB.TensorProductQuadrature(qx, qy)
+    L = WPB.lagrange_basis(q)
+    x, w = q()
+    n = length(x)
+    for (i,xi) in enumerate(x)
+        v = L(xi)
+        for k in 1:n
+            if k == i
+                @test v[k] ≈ 1
+            else
+                @test v[k] ≈ 0
+            end
+        end
+    end
+end

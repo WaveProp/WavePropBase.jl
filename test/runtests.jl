@@ -24,6 +24,10 @@ end
     include("Trees/runtests.jl")
 end
 
+@safetestset "IntegralEquations" begin
+    include("IntegralEquations/runtests.jl")
+end
+
 @safetestset "IO" begin
     include("IO/runtests.jl")
 end

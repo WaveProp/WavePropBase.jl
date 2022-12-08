@@ -267,25 +267,6 @@ order(q::GaussLegendre{N}) where {N} = 2*N-1
 end
 
 """
-    struct Kronrod{N} <: AbstractQuadratureRule{ReferenceLine}
-
-`N`-point Kronrod quadrature rule on the interval `[0,1]`.
-"""
-struct Kronrod{N} <: AbstractQuadratureRule{ReferenceLine} end
-
-Kronrod(n::Int) = Kronrod{n}()
-
-# for some orders, we have tabulated results. Otherwise get the result from e.g. quadgk?
-@generated function (q::Kronrod{N})() where {N}
-    if N == 15
-        return SEGMENT_K15
-    else
-        return notimplemented()
-    end
-end
-
-
-"""
     struct Gauss{D,N} <: AbstractQuadratureRule{D}
 
 Tabulated `N`-point symmetric Gauss quadrature rule for integration over `D`.
@@ -326,85 +307,9 @@ end
 end
 
 """
-    struct Radon5 <: AbstractQuadratureRule{ReferenceTriangle}
+    TensorProductQuadrature{N,Q}
 
-Radon's 7 point quadrature rule of degree 5. Taken from
-https://people.sc.fsu.edu/~jburkardt/datasets/quadrature_rules_tri/quadrature_rules_tri.html
-"""
-struct Radon5 <: AbstractQuadratureRule{ReferenceTriangle} end
-
-(q::Radon5)() = TRIANGLE_R5N7
-
-order(q::Radon5) = 5
-
-"""
-    struct Radon5 <: AbstractQuadratureRule{ReferenceTriangle}
-
-Laurie's 19 point quadrature rule of degree 8. Taken from
-https://people.sc.fsu.edu/~jburkardt/datasets/quadrature_rules_tri/quadrature_rules_tri.html
-"""
-struct Laurie8 <: AbstractQuadratureRule{ReferenceTriangle} end
-
-(q::Laurie8)() = TRIANGLE_L8N19
-
-order(q::Laurie8) = 8
-
-struct EmbeddedQuadratureRule{Q1,Q2,D} <: AbstractQuadratureRule{D}
-    quad_low::Q1
-    quad_high::Q2
-    function EmbeddedQuadratureRule(q1::Q1, q2::Q2) where {Q1,Q2}
-        # check that domain is the same
-        @assert domain(q1) == domain(q2)
-        D = typeof(domain(q1))
-        # check that the nodes of q1 are the first nodes of q2
-        msg = "not a valid pair for embedded quadrature"
-        x1, _ = q1()
-        x2, _ = q2()
-        for i in 1:length(x1)
-            x1[i] ≈ x2[i] || error(msg)
-        end
-        return new{Q1,Q2,D}(q1, q2)
-    end
-end
-function EmbeddedQuadratureRule{Q1,Q2,D}() where {Q1,Q2,D}
-    return EmbeddedQuadratureRule(Q1(), Q2())
-end
-
-function (q::EmbeddedQuadratureRule)()
-    return q.quad_high()
-end
-
-integrate(f, q::EmbeddedQuadratureRule) = integrate(f, q.quad_high)
-
-function integrate_with_error(f, q::EmbeddedQuadratureRule)
-    x1, w1 = q.quad_low()
-    x2, w2 = q.quad_high()
-    # S1 = Base.promote_op(f,eltype(x1))
-    # S2 = Base.promote_op(f,eltype(x2))
-    # isbitstype(S1) || (@warn "non bitstype detected")
-    # isbitstype(S2) || (@warn "non bitstype detected")
-    I1 = f(first(x2)) * first(w1)
-    I2 = f(first(x2)) * first(w2)
-    # assuming that nodes in quad_high are ordered so that the overlapping nodes
-    # come first, add them up
-    for i in 2:length(x1)
-        v = f(x2[i])
-        I1 += v * w1[i]
-        I2 += v * w2[i]
-    end
-    # now compute the rest of the high order quadrature
-    for i in (length(x1) + 1):length(x2)
-        v = f(x2[i])
-        I2 += v * w2[i]
-    end
-    return I2, norm(I2 - I1, Inf)
-end
-
-"""
-    TensorProductQuadrature{Q}
-
-A tensor-product of one-dimension quadrature rules. Integrates over `[0,1]^d`,
-where `d=length(quad)`.
+A tensor-product of one-dimension quadrature rules. Integrates over `[0,1]^N`.
 
 # Examples
 ```julia
@@ -413,32 +318,25 @@ qy = TrapezoidalOpen(15)
 q  = TensorProductQuadrature(qx,qy)
 ```
 """
-struct TensorProductQuadrature{Q} <: AbstractQuadratureRule{ReferenceSquare}
-    quad::Q
-end
-
-# FIXME: this is a workaround the need to easily construct a tensor quadrature
-# based only on the the types of the quadratures. Useful in generated functions,
-# but there is probably a better way
-function TensorProductQuadrature{Tuple{Q1,Q2}}() where {Q1,Q2}
-    return TensorProductQuadrature(Q1(), Q2())
+struct TensorProductQuadrature{N,Q} <: AbstractQuadratureRule{ReferenceHyperCube{N}}
+    quads1d::Q
 end
 
 function TensorProductQuadrature(q...)
-    return TensorProductQuadrature(q)
+    N = length(q)
+    Q = typeof(q)
+    return TensorProductQuadrature{N,Q}(q)
 end
 
-# FIXME: the current implementation is rather obscure. How should we handle the
-# product quadrature rules in general? Also make this into a generated function.
-function (q::TensorProductQuadrature)()
-    N = length(q.quad)
-    nodes = map(q -> q()[1], q.quad)
-    weights = map(q -> q()[2], q.quad)
-    nodes_iter = Iterators.product(nodes...)
-    weights_iter = Iterators.product(weights...)
-    x = map(x -> vcat(x...), nodes_iter)
-    w = map(w -> prod(w), weights_iter)
-    return SArray(x), w
+function (q::TensorProductQuadrature{N})() where {N}
+    nodes1d = ntuple(N) do i
+        x1d,_ = q.quads1d[i]()
+         map(x -> x[1], x1d) # convert the `SVector{1,T}` to just `T`
+    end
+    weights1d = map(q -> q()[2], q.quads1d)
+    nodes_iter   = (SVector(x) for x in Iterators.product(nodes1d...))
+    weights_iter = (prod(w) for w in Iterators.product(weights1d...))
+    return nodes_iter, weights_iter
 end
 
 """
@@ -492,16 +390,17 @@ const CustomTriangleQuadratureRule = CustomQuadratureRule{ReferenceTriangle}
 const CustomSquareQuadratureRule = CustomQuadratureRule{ReferenceSquare}
 const CustomTetrahedronQuadratureRule = CustomQuadratureRule{ReferenceTetrahedron}
 
+# in the one-dimensional case
 function lagrange_basis(q::AbstractQuadratureRule{ReferenceLine})
     nodes = qcoords(q)
     w = barycentric_lagrange_weights(q)
     N = length(w)
     # for some reason, I must pass a Val(N) to a function barrier so that the
     # anonymous function created is type stable and does not allocate
-    return _lagrange_basis(nodes,w,Val(N))
+    return _lagrange_basis_1d(nodes,w,Val(N))
 end
 
-@noinline function _lagrange_basis(nodes,w,::Val{N}) where {N}
+@noinline function _lagrange_basis_1d(nodes,w,::Val{N}) where {N}
     (x) -> begin
         l = prod(xi->x[1]-xi[1],nodes)
         svector(N) do j
@@ -520,4 +419,19 @@ function barycentric_lagrange_weights(q::AbstractQuadratureRule{ReferenceLine})
     w = barycentric_lagrange_weights(nodes)
     ws = SVector{length(w)}(w)
     return ws
+end
+
+# in the two-dimensional case
+function lagrange_basis(q::TensorProductQuadrature{2,<:Any})
+    lx = lagrange_basis(q.quads1d[1])
+    ly = lagrange_basis(q.quads1d[2])
+    _lagrange_basis2d(lx,ly)
+end
+
+@noinline function _lagrange_basis2d(lx,ly)
+    (x) -> begin
+        vx = lx(SVector(x[1]))
+        vy = ly(SVector(x[2]))
+        vx*transpose(vy)
+    end
 end

@@ -92,7 +92,7 @@ Base.eltype(::SType{NodeIterator{<:AbstractMesh{N,T}}}) where {N,T} = SVector{N,
 For each element `el` of type `E` in `Y`, return the indices of the points in `X` which
 are closer than `tol` to the `center` of `el`.
 
-This function returns a dictionary where e.g. `Dict[E][5] --> Vector{Int}` gives
+This function returns a dictionary where e.g. `dict[E][5] --> Vector{Int}` gives
 the indices of points in `X` which are closer than `tol` to the center of the
 fifth element of type `E`.
 """

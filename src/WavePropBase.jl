@@ -13,6 +13,7 @@ using Requires
 using Printf
 using Statistics: median
 using SpecialFunctions
+using HCubature
 
 include("Utils/Utils.jl")
 include("Geometry/Geometry.jl")
