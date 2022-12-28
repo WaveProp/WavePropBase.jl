@@ -24,8 +24,8 @@ for t in (:interior, :exterior)
                 c = rand(T)
                 u = (qnode) -> WPB.SingleLayerKernel(pde)(qnode, xs) * c
                 dudn = (qnode) -> WPB.AdjointDoubleLayerKernel(pde)(qnode, xs) * c
-                γ₀u = WPB.Density(u, mesh)
-                γ₁u = WPB.Density(dudn, mesh)
+                γ₀u = WPB.NystromDensity(u, mesh)
+                γ₁u = WPB.NystromDensity(dudn, mesh)
                 γ₀u_norm = norm(norm.(γ₀u, Inf), Inf)
                 γ₁u_norm = norm(norm.(γ₁u, Inf), Inf)
                 # single and double layer

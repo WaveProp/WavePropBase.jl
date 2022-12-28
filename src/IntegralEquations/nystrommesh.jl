@@ -27,11 +27,11 @@ quadrature rule for integration over elements of that type (the value).
 The degrees of freedom in a `NystromMesh` are associated to nodal values at the
 quadrature nodes, and are represented using [`QuadratureNode`](@ref)s.
 """
-struct NystromMesh{N,T} <: AbstractMesh{N,T}
-    mesh::AbstractMesh{N,T}
-    etype2qrule::Dict{DataType,AbstractQuadratureRule}
-    qnodes::Vector{QuadratureNode{N,T}}
-    etype2qtags::Dict{DataType,Matrix{Int}}
+Base.@kwdef struct NystromMesh{N,T} <: AbstractMesh{N,T}
+    mesh::AbstractMesh{N,T} = GenericMesh{N,T}()
+    etype2qrule::Dict{DataType,AbstractQuadratureRule} = Dict{DataType,AbstractQuadratureRule}()
+    qnodes::Vector{QuadratureNode{N,T}} = Vector{QuadratureNode{N,T}}()
+    etype2qtags::Dict{DataType,Matrix{Int}} = Dict{DataType,Matrix{Int}}()
 end
 
 # getters
@@ -42,6 +42,8 @@ etype2qrule(m::NystromMesh, E) = m.etype2qrule[E]
 etype2qtags(m::NystromMesh, E::DataType) = m.etype2qtags[E]
 Base.keys(m::NystromMesh) = keys(mesh(m))
 Base.getindex(m::NystromMesh, E::DataType) = mesh(m)[E]
+
+Base.isempty(m::NystromMesh) = isempty(qnodes(m))
 
 # generators for iterating over fields of dofs
 qcoords(m::NystromMesh) = (coords(q) for q in qnodes(m))
@@ -117,4 +119,18 @@ end
     @assert !haskey(msh.etype2qtags, E)
     msh.etype2qtags[E] = reshape(collect(istart:iend), num_nodes, :)
     return msh
+end
+
+"""
+    NystromMesh(Ω;meshsize,qorder)
+
+Create a `NystromMesh` with elements of size `meshsize` and quadrature order
+`qorder`.
+
+A mesh is first generated using [`meshgen`](@ref), and then a `NystromMesh` is
+created on top of it with the quadrature information.
+"""
+function NystromMesh(Ω::Domain;meshsize,qorder)
+    msh = meshgen(Ω;meshsize)
+    NystromMesh(msh; qorder)
 end

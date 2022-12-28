@@ -4,7 +4,7 @@ Base.@kwdef struct DimParameters
 end
 
 """
-    dim_correction(pde,X,Y,S,D[;location,p,derivative])
+    dim_correction(pde,X,Y,S,D[;location,p,derivative,tol])
 
 Given a `pde` and a (possibly innacurate) discretizations of its single and
 double-layer operators `S` and `D` with domain `Y` and range `X`, compute
@@ -19,16 +19,23 @@ The following optional keyword arguments are available:
   hypersingular operators instead. In this case, `S` and `D` should contain a
   discretization of adjoint double-layer and hypersingular operators,
   respectively.
+- `tol`: distance beyond which interactions are considered sufficiently far so
+  that no correction is needed.
 """
 function dim_correction(pde, X, Y, S, D; location=:onsurface, p=DimParameters(),
-                        derivative=false)
+                        derivative=false,tol=Inf)
     T = eltype(S)
-    isvectorial = T <: SMatrix
+    Xnodes = qnodes(X)
+    Ynodes = qnodes(Y)
+    m,n = length(Xnodes), length(Ynodes)
+    if m == 0 || n == 0
+        return zeros(T, m, n), zeros(T, m, n)
+    end
     msg = "unrecognized value for kw `location`: received $location.
     Valid options are `:onsurface`, `:inside` and `:outside`."
     σ = location === :onsurface ? -0.5 :
         location === :inside ? -1 : location === :outside ? 0 : error(msg)
-    dict_near = nearest_point_to_element(X, Y)
+    dict_near = nearest_point_to_element(X, Y; tol)
     # find first an appropriate set of source points to center the monopoles
     qmax = sum(size(etype2qtags(Y, E), 1) for E in keys(Y))
     ns = ceil(Int, p.sources_oversample_factor * qmax)
@@ -44,8 +51,6 @@ function dim_correction(pde, X, Y, S, D; location=:onsurface, p=DimParameters(),
         notimplemented()
     end
     # compute traces of monopoles on the source mesh
-    Xnodes = qnodes(X)
-    Ynodes = qnodes(Y)
     G = SingleLayerKernel(pde, T)
     γ₁G = AdjointDoubleLayerKernel(pde, T)
     γ₀B = Matrix{T}(undef, length(Ynodes), ns)
@@ -101,8 +106,8 @@ function dim_correction(pde, X, Y, S, D; location=:onsurface, p=DimParameters(),
             end
         end
     end
-    δS = sparse(Is, Js, Ss)
-    δD = sparse(Is, Js, Ds)
+    δS = sparse(Is, Js, Ss, m, n)
+    δD = sparse(Is, Js, Ds, m, n)
     return δS, δD
 end
 
@@ -136,7 +141,7 @@ function nearest_point_to_element(X, Y::NystromMesh; tol=Inf)
     end
     return etype2nearlist
 end
-function nearest_point_to_element(X::NystromMesh, Y::NystromMesh)
+function nearest_point_to_element(X::NystromMesh, Y::NystromMesh; tol=Inf)
     if X === Y
         # when both surfaces are the same, the "near points" of an element are
         # simply its own quadrature points

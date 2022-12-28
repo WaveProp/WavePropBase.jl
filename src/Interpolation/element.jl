@@ -31,12 +31,11 @@ performance and/or precision is required.
 Note: both `x` and `f(x)` are expected to be of `SVector` type.
 """
 function jacobian(f, x)
-    T = eltype(x)
     N = length(x)
     h = (eps())^(1 / 3)
     partials = svector(N) do d
-        xp = SVector(ntuple(i -> i == d ? x[i] + h : x[i], N))
-        xm = SVector(ntuple(i -> i == d ? x[i] - h : x[i], N))
+        xp = svector(i -> i == d ? x[i] + h : x[i], N)
+        xm = svector(i -> i == d ? x[i] - h : x[i], N)
         return (f(xp) - f(xm)) / (2h)
     end
     return hcat(partials...)
@@ -50,8 +49,8 @@ end
 
 function gradient(f, x)
     jac = jacobian(f, x)
-    @assert size(jac, 2) == 1
-    return jac[:, 1]
+    @assert size(jac, 1) == 1 ""
+    return jac[1, :]
 end
 
 """
