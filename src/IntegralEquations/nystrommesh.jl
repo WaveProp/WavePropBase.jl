@@ -1,7 +1,10 @@
 """
     QuadratureNode{N,T<:Real}
 
-A point in `ℝᴺ` with a `weight` and possibly a normal vector associated with it.
+A point in `ℝᴺ` with a `weight` for performing numerical integration.
+
+A `QuadratureNode` can optionally store a `normal` vector and a `curvature`
+scalar, given by the divergence of the normal vector.
 """
 struct QuadratureNode{N,T<:Real}
     coords::SVector{N,T}
@@ -13,6 +16,7 @@ end
 coords(q::QuadratureNode) = q.coords
 weight(q::QuadratureNode) = q.weight
 normal(q::QuadratureNode) = q.normal
+curvature(q::QuadratureNode) = q.curvature
 
 """
     struct NystromMesh{N,T} <: AbstractMesh{N,T}
@@ -111,7 +115,8 @@ end
             μ = _integration_measure(jac)
             w = μ * ŵi
             ν = N - M == 1 ? _normal(jac) : nothing
-            qnode = QuadratureNode(x, w, ν)
+            curvature = nothing
+            qnode = QuadratureNode(x, w, ν, curvature)
             push!(qnodes(msh), qnode)
         end
     end
