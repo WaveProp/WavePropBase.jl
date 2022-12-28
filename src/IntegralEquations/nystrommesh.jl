@@ -7,6 +7,7 @@ struct QuadratureNode{N,T<:Real}
     coords::SVector{N,T}
     weight::T
     normal::Union{Nothing,SVector{N,T}}
+    curvature::Union{Nothing,T}
 end
 
 coords(q::QuadratureNode) = q.coords
