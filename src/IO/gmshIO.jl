@@ -106,9 +106,9 @@ function gmsh_import_mesh(Ω::Domain; dim=3)
 end
 
 """
-    meshgen!(msh,Ω)
+    gmsh_import_mesh!(msh,Ω)
 
-Similar to [`meshgen`](@ref), but append information to `msh` instead of
+Similar to [`gmsh_import_mesh`](@ref), but append information to `msh` instead of
 creating a new mesh.
 
 !!! danger
@@ -237,7 +237,7 @@ function _ent_to_mesh!(elements, ent2tag, ω::GmshEntity, shift)
         else
             etag = collect(1:size(ntags, 2))
         end
-        push!(elements, etype => ntags)
+        push!(elements, etype => Int.(ntags))
         push!(etypes_to_etags, etype => etag)
     end
     push!(ent2tag, ω => etypes_to_etags)
