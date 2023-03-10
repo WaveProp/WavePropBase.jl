@@ -31,14 +31,15 @@ performance and/or precision is required.
 Note: both `x` and `f(x)` are expected to be of `SVector` type.
 """
 function jacobian(f, x)
-    N = length(x)
-    h = (eps())^(1 / 3)
-    partials = svector(N) do d
-        xp = svector(i -> i == d ? x[i] + h : x[i], N)
-        xm = svector(i -> i == d ? x[i] - h : x[i], N)
-        return (f(xp) - f(xm)) / (2h)
-    end
-    return hcat(partials...)
+    abstractmethod(f)
+    # N = length(x)
+    # h = (eps())^(1 / 3)
+    # partials = svector(N) do d
+    #     xp = svector(i -> i == d ? x[i] + h : x[i], N)
+    #     xm = svector(i -> i == d ? x[i] - h : x[i], N)
+    #     return (f(xp) - f(xm)) / (2h)
+    # end
+    # return hcat(partials...)
 end
 
 function derivative(f, x)
@@ -63,6 +64,20 @@ function normal(el::AbstractElement, u)
     @assert u ∈ domain(el)
     jac = jacobian(el, u)
     return _normal(jac)
+end
+
+@doc raw"""
+    curvature(el, x̂)
+
+The curvature of `el` at the parametric coordinate `x̂`, given by the following
+formula
+
+```math
+\kappa = \nabla\cdot\frac{\nabla p}{|\nabla p|} = \frac{\Delta p}{|\nabla p|} + \frac{\nabla^\perp p\nabla^2 p\nabla p}{|\nabla p|^3}
+```
+"""
+function curvature(el::AbstractElement,u)
+    abstractmethod(el)
 end
 
 domain(::SType{<:AbstractElement{D}}) where {D<:AbstractReferenceShape} = D()
