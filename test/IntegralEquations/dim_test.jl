@@ -10,7 +10,7 @@ rtol = 5e-2
 for t in (:interior, :exterior)
     σ = t == :interior ? 1 / 2 : -1 / 2
     for N in (2, 3)
-        ops = (WPB.Laplace(; dim=N), WPB.Helmholtz(; k=1.2, dim=N))
+        ops = (WPB.Laplace(; dim=N), WPB.Yukawa(;λ=1.3,dim=N), WPB.Helmholtz(; k=1.2, dim=N))
         for pde in ops
             @testset "Greens identity ($t) $(N)d $pde" begin
                 WPB.clear_entities!()
@@ -42,6 +42,7 @@ for t in (:interior, :exterior)
                     @test norm(e1, Inf) < rtol
                 end
                 # adjoint double-layer and hypersingular
+                pde isa WPB.Yukawa && continue
                 K = WPB.AdjointDoubleLayerOperator(pde, mesh)
                 Kmat = Matrix(K)
                 H = WPB.HyperSingularOperator(pde, mesh)
