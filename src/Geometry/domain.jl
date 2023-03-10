@@ -9,6 +9,12 @@ struct Domain
     entities::Vector{AbstractEntity}
 end
 
+function ambient_dimension(Ω::Domain)
+    l, u = extrema(ambient_dimension(ent) for ent in entities(Ω))
+    @assert l == u "ambient dimension of entities in a domain not equal"
+    return u
+end
+
 """
     entities(Ω::Domain)
 
@@ -112,8 +118,10 @@ function Base.union(Ω1::Domain, Ωs::Domain...)
 end
 Base.union(Ω::Domain) = Domain(unique(entities(Ω)))
 
-Base.append!(Ω1, Ω2) = (append!(entities(Ω1), entities(Ω2));
+Base.append!(Ω1::Domain, Ω2::Domain) = (append!(entities(Ω1), entities(Ω2));
                         Ω1)
+Base.append!(Ω1::Domain, ent::AbstractEntity) = (push!(entities(Ω1), ent); Ω1)
+Base.append!(Ω1::Domain, ents::Vector{<:AbstractEntity}) = (append!(entities(Ω1), ents); Ω1)
 
 """
     assertequaldim(Ω1::Domain,Ω2::Domain)
@@ -210,4 +218,13 @@ function Base.keys(Ω::Domain, dims::Vector{T}) where {T<:Integer}
         push!(tgs, keys(Ω, d)...)
     end
     return tgs
+end
+
+"""
+    flip_normal(Γ::Domain)
+
+Reverse the orientation of the normal vector in the entities of a domain.
+"""
+function flip_normal(Γ::Domain)
+    Domain(flip_normal.(entities(Γ)))
 end
