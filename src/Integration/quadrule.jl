@@ -155,7 +155,7 @@ q = WPB.Fejer(;order=10)
 
 WPB.integrate(cos,q) ≈ sin(1) - sin(0)
 
-#output
+# output
 
 true
 ```

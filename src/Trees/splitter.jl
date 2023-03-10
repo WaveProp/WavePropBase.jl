@@ -77,7 +77,7 @@ end
 """
     struct DyadicMinimalSplitter <: AbstractSplitter
 
-Similar to [`DiadicSplitter`](@ref), but the boundin boxes are shrank to the
+Similar to [`DyadicSplitter`](@ref), but the boundin boxes are shrank to the
 minimal axis-aligned boxes at the end.
 
 ## See also: [`AbstractSplitter`](@ref)

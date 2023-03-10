@@ -42,6 +42,11 @@ end
 # getters
 mesh(m::NystromMesh) = m.mesh
 
+"""
+    qnodes(Q::NystromMesh)
+
+Return a vector of [`QuadratureNode`](@ref)s associated to the mesh `Q`.
+"""
 qnodes(m::NystromMesh) = m.qnodes
 etype2qrule(m::NystromMesh, E) = m.etype2qrule[E]
 etype2qtags(m::NystromMesh, E::DataType) = m.etype2qtags[E]
