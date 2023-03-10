@@ -100,7 +100,7 @@ function _length_per_dimension(ent)
             x = svector(i -> i == dim ? s[1] : 0.5, N)
             ent(x)
         end
-        return integrate_fejer1d(s -> integration_measure(f, s), xl[dim], xu[dim])
+        return hcubature(s -> integration_measure(f, s), (xl[dim],), (xu[dim],))[1]
     end
 end
 
@@ -113,7 +113,10 @@ function _integration_measure(jac::AbstractMatrix)
     if M == N
         abs(det(jac)) # cheaper when `M=N`
     else
-        sqrt(det(transpose(jac) * jac))
+        g = det(transpose(jac) * jac)
+        g < -sqrt(eps()) && (@warn "negative integration measure g=$g")
+        g = max(g,0)
+        sqrt(g)
     end
 end
 

@@ -30,9 +30,14 @@ tag(p::ParametricEntity) = p.tag
 boundary(p::ParametricEntity) = p.boundary
 
 function flip_normal(ent::ParametricEntity)
-    @assert ambient_dimension(ent) == geometric_dimension(ent) + 1
-    return ParametricEntity(geometric_dimension(ent), -tag(ent), parametrization(ent),
-                            domain(ent))
+    msg = "flip_normal only works for entities of co-dimension one."
+    @assert ambient_dimension(ent) == geometric_dimension(ent) + 1 msg
+    f = _flip_parametrization(parametrization(ent))
+    ParametricEntity(geometric_dimension(ent),-tag(ent),f,domain(ent))
+end
+@noinline function _flip_parametrization(f)
+    g = (s) -> f(1 .- s)
+    return g
 end
 
 function ParametricEntity(f, dom)
