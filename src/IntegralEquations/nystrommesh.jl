@@ -17,6 +17,7 @@ coords(q::QuadratureNode) = q.coords
 weight(q::QuadratureNode) = q.weight
 normal(q::QuadratureNode) = q.normal
 curvature(q::QuadratureNode) = q.curvature
+center(q::QuadratureNode) = q.coords
 
 """
     struct NystromMesh{N,T} <: AbstractMesh{N,T}
@@ -44,7 +45,7 @@ mesh(m::NystromMesh) = m.mesh
 qnodes(m::NystromMesh) = m.qnodes
 etype2qrule(m::NystromMesh, E) = m.etype2qrule[E]
 etype2qtags(m::NystromMesh, E::DataType) = m.etype2qtags[E]
-Base.keys(m::NystromMesh) = keys(mesh(m))
+Base.keys(m::NystromMesh) = keys(m.etype2qtags)
 Base.getindex(m::NystromMesh, E::DataType) = mesh(m)[E]
 
 Base.isempty(m::NystromMesh) = isempty(qnodes(m))
@@ -79,7 +80,7 @@ Construct a `NystromMesh` with the quadrature `q = e2qrule[E]` applied to each
 element type `E` in msh. If an `order` keyword is passed, a default quadrature
 of the desired order is used for each element type.
 """
-function NystromMesh(msh::AbstractMesh{N,T}, e2qrule::Dict) where {N,T}
+function NystromMesh(msh::AbstractMesh{N,T}, e2qrule::Dict; curvature=false) where {N,T}
     # initialize mesh with empty fields
     nys_msh = NystromMesh{N,T}(msh,
                                e2qrule,
@@ -90,17 +91,17 @@ function NystromMesh(msh::AbstractMesh{N,T}, e2qrule::Dict) where {N,T}
         iter = msh[E]
         qrule = e2qrule[E]
         # dispatch to type-stable method
-        _build_nystrom_mesh!(nys_msh, iter, qrule)
+        _build_nystrom_mesh!(nys_msh, iter, qrule, curvature)
     end
     return nys_msh
 end
 
-function NystromMesh(msh::AbstractMesh; qorder)
+function NystromMesh(msh::AbstractMesh; qorder, curvature=false)
     e2qrule = Dict(E => qrule_for_reference_shape(domain(E), qorder) for E in keys(msh))
-    return NystromMesh(msh, e2qrule)
+    return NystromMesh(msh, e2qrule; curvature)
 end
 
-@noinline function _build_nystrom_mesh!(msh, iter, qrule::AbstractQuadratureRule)
+@noinline function _build_nystrom_mesh!(msh, iter, qrule::AbstractQuadratureRule, curvature_)
     N = ambient_dimension(msh)
     E = eltype(iter)
     x̂, ŵ = qrule() #nodes and weights on reference element
@@ -111,12 +112,11 @@ end
         # and all qnodes for that element
         for (x̂i,ŵi) in zip(x̂,ŵ)
             x = el(x̂i)
-            jac = jacobian(el, x̂i)
-            μ = _integration_measure(jac)
+            μ = integration_measure(el, x̂i)
             w = μ * ŵi
-            ν = N - M == 1 ? _normal(jac) : nothing
-            curvature = nothing
-            qnode = QuadratureNode(x, w, ν, curvature)
+            ν = N - M == 1 ? normal(el,x̂i) : nothing
+            κ = curvature_ ? curvature(el,x̂i) : nothing
+            qnode = QuadratureNode(x, w, ν, κ)
             push!(qnodes(msh), qnode)
         end
     end
@@ -135,7 +135,8 @@ Create a `NystromMesh` with elements of size `meshsize` and quadrature order
 A mesh is first generated using [`meshgen`](@ref), and then a `NystromMesh` is
 created on top of it with the quadrature information.
 """
-function NystromMesh(Ω::Domain;meshsize,qorder)
+function NystromMesh(Ω::Domain;meshsize,qorder,curvature=false)
     msh = meshgen(Ω;meshsize)
-    NystromMesh(msh; qorder)
+    NystromMesh(msh; qorder, curvature)
 end
+NystromMesh(ent::AbstractEntity;kwargs...) = NystromMesh(Domain(ent);kwargs...)
