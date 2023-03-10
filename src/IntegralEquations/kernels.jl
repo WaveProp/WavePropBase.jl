@@ -195,7 +195,7 @@ Helmholtz(; k, dim=3) = Helmholtz{dim,typeof(k)}(k)
 
 function Base.show(io::IO, ::Helmholtz)
     # k = parameters(pde)
-    return print(io, "Δu + k u = 0")
+    return print(io, "Δu + k² u = 0")
 end
 
 parameters(pde::Helmholtz) = pde.k
@@ -251,6 +251,107 @@ end
 
 # Hypersingular kernel
 function (HS::HyperSingularKernel{T,S})(target, source)::T where {T,S<:Helmholtz}
+    x, y, nx, ny = coords(target), coords(source), normal(target), normal(source)
+    N = ambient_dimension(pde(HS))
+    k = parameters(pde(HS))
+    r = x - y
+    d = norm(r)
+    filter = !(d == 0)
+    if N == 2
+        RRT = r * transpose(r) # r ⊗ rᵗ
+        # TODO: rewrite the operation below in a more clear/efficient way
+        val = transpose(nx) * ((-im * k^2 / 4 / d^2 * hankelh1(2, k * d) * RRT +
+                                im * k / 4 / d * hankelh1(1, k * d) * I) * ny)
+        return filter * val
+    elseif N == 3
+        RRT = r * transpose(r) # r ⊗ rᵗ
+        term1 = 1 / (4π) / d^2 * exp(im * k * d) * (-im * k + 1 / d) * I
+        term2 = RRT / d * exp(im * k * d) / (4 * π * d^4) *
+                (3 * (d * im * k - 1) + d^2 * k^2)
+        val = transpose(nx) * (term1 + term2) * ny
+        return filter * val
+    end
+end
+
+################################################################################
+################################# Yukawa #######################################
+################################################################################
+
+"""
+    struct Yukawa{N,T}
+
+Yukawa equation in `N` dimensions: Δu - λ²u = 0.
+
+This is the same as the Helmholtz equation with `k = iλ`, but more efficient
+functions are used to compute the kernels of the integral operators when `λ` is
+real (the default).
+"""
+struct Yukawa{N,K} <: AbstractPDE{N}
+    λ::K
+end
+
+Yukawa(; λ, dim=3) = Yukawa{dim,typeof(λ)}(λ)
+
+function Base.show(io::IO, ::Yukawa)
+    # k = parameters(pde)
+    return print(io, "Δu - λ² u = 0")
+end
+
+parameters(pde::Yukawa) = pde.λ
+
+default_kernel_eltype(::Yukawa) = Float64
+default_density_eltype(::Yukawa) = Float64
+
+function (SL::SingleLayerKernel{T,<:Yukawa{N}})(target, source)::T where {N,T}
+    x = coords(target)
+    y = coords(source)
+    λ = parameters(SL)
+    r = x - y
+    d = norm(r)
+    filter = !(d == 0)
+    if N == 2
+        return filter * (1 / 2π * besselk(0, λ * d))
+    elseif N == 3
+        # TODO: test
+        return filter * (1 / (4π) / d * exp(- λ * d))
+    end
+end
+
+# Double Layer Kernel
+function (DL::DoubleLayerKernel{T,<:Yukawa{N}})(target, source)::T where {N,T}
+    x, y, ny = coords(target), coords(source), normal(source)
+    λ = parameters(DL)
+    r = x - y
+    d = norm(r)
+    filter = !(d == 0)
+    if N == 2
+        val = λ/(2π*d) * besselk(1, λ * d) .* dot(r, ny)
+        return filter * val
+    elseif N == 3
+        # TODO: test
+        val = 1 / (4π) / d^2 * exp(-λ * d) * (λ + 1 / d) * dot(r, ny)
+        return filter * val
+    end
+end
+
+# Adjoint double Layer Kernel
+function (ADL::AdjointDoubleLayerKernel{T,<:Yukawa{N}})(target, source)::T where {N,T}
+    x, y, nx = coords(target), coords(source), normal(target)
+    λ = parameters(ADL)
+    r = x - y
+    d = norm(r)
+    filter = !(d == 0)
+    if N == 2
+        val = -λ/(2π*d) * besselk(1, λ * d) .* dot(r, nx)
+        return filter * val
+    elseif N == 3
+        val = -1 / (4π) / d^2 * exp(-λ * d) * (λ + 1 / d) * dot(r, nx)
+        return filter * val
+    end
+end
+
+# Hypersingular kernel
+function (HS::HyperSingularKernel{T,S})(target, source)::T where {T,S<:Yukawa}
     x, y, nx, ny = coords(target), coords(source), normal(target), normal(source)
     N = ambient_dimension(pde(HS))
     k = parameters(pde(HS))
@@ -334,3 +435,127 @@ function (ADL::AdjointDoubleLayerKernel{T,<:Stokes{N}})(target, source)::T where
 end
 
 # TODO: Stokes hypersingular kernel
+
+################################################################################
+################################# Elastostatic #################################
+################################################################################
+
+"""
+    struct Elastostatic{N,T} <: AbstractPDE{N}
+
+Elastostatic equation in `N` dimensions: μΔu + (μ+λ)∇(∇⋅u) = 0. Note that the
+displacement u is a vector of length `N` since this is a vectorial problem.
+"""
+struct Elastostatic{N,T} <: AbstractPDE{N}
+    μ::T
+    λ::T
+end
+Elastostatic(;μ,λ,dim=3)               = Elastostatic{dim}(promote(μ,λ)...)
+Elastostatic{N}(μ::T,λ::T) where {N,T} = Elastostatic{N,T}(μ,λ)
+
+function Base.show(io::IO,pde::Elastostatic)
+    print(io,"μΔu + (μ+λ)∇(∇⋅u) = 0")
+end
+
+parameters(pde::Elastostatic) = pde.μ, pde.λ
+
+default_kernel_eltype(::Elastostatic{N}) where {N}  = SMatrix{N,N,Float64,N*N}
+default_density_eltype(::Elastostatic{N}) where {N} = SVector{N,Float64}
+
+function (SL::SingleLayerKernel{T,S})(target,source)::T  where {T,S<:Elastostatic}
+    N   = ambient_dimension(pde(SL))
+    μ,λ = parameters(pde(SL))
+    ν = λ/(2*(μ+λ))
+    x = coords(target)
+    y = coords(source)
+    r = x .- y
+    d = norm(r)
+    d == 0 && return zero(T)
+    RRT = r*transpose(r) # r ⊗ rᵗ
+    if N==2
+        ID = SMatrix{2,2,Float64,4}(1,0,0,1)
+        return 1/(8π*μ*(1-ν))*(-(3-4*ν)*log(d)*ID + RRT/d^2)
+        # return (λ + 3μ)/(4*π*(N-1)*μ*(λ+2μ))* (-log(d)*ID + (λ+μ)/(λ+3μ)*RRT/d^2)
+    elseif N==3
+        ID = SMatrix{3,3,Float64,9}(1,0,0,0,1,0,0,0,1)
+        return 1/(16π*μ*(1-ν)*d)*((3-4*ν)*ID + RRT/d^2)
+    end
+end
+
+function (DL::DoubleLayerKernel{T,S})(target,source)::T where {T,S<:Elastostatic}
+    N = ambient_dimension(pde(DL))
+    μ,λ = parameters(pde(DL))
+    ν = λ/(2*(μ+λ))
+    x = coords(target)
+    y = coords(source)
+    ny = normal(source)
+    ν = λ/(2*(μ+λ))
+    r = x .- y
+    d = norm(r)
+    d == 0 && return zero(T)
+    RRT = r*transpose(r) # r ⊗ rᵗ
+    drdn = -dot(r,ny)/d
+    if N==2
+        ID = SMatrix{2,2,Float64,4}(1,0,0,1)
+        return -1/(4π*(1-ν)*d)*(drdn*((1-2ν)*ID + 2*RRT/d^2) + (1-2ν)/d*(r*transpose(ny) - ny*transpose(r)))
+    elseif N==3
+        ID = SMatrix{3,3,Float64,9}(1,0,0,0,1,0,0,0,1)
+        return -1/(8π*(1-ν)*d^2)*(drdn * ((1-2*ν)*ID + 3*RRT/d^2) + (1-2*ν)/d*(r*transpose(ny) - ny*transpose(r)))
+    end
+end
+
+function (ADL::AdjointDoubleLayerKernel{T,S})(target,source)::T where {T,S<:Elastostatic}
+    # DL = DoubleLayerKernel{T}(pde(ADL))
+    # return -DL(x,y,nx) |> transpose
+    N   = ambient_dimension(pde(ADL))
+    μ,λ = parameters(pde(ADL))
+    ν = λ/(2*(μ+λ))
+    x = coords(target)
+    nx = normal(target)
+    y = coords(source)
+    ν = λ/(2*(μ+λ))
+    r = x .- y
+    d = norm(r)
+    d == 0 && return zero(T)
+    RRT = r*transpose(r) # r ⊗ rᵗ
+    drdn = -dot(r,nx)/d
+    if N==2
+        ID = SMatrix{2,2,Float64,4}(1,0,0,1)
+        out = -1/(4π*(1-ν)*d)*(drdn*((1-2ν)*ID + 2*RRT/d^2) + (1-2ν)/d*(r*transpose(nx) - nx*transpose(r)))
+        return -transpose(out)
+    elseif N==3
+        ID = SMatrix{3,3,Float64,9}(1,0,0,0,1,0,0,0,1)
+        out =  -1/(8π*(1-ν)*d^2)*(drdn * ((1-2*ν)*ID + 3*RRT/d^2) + (1-2*ν)/d*(r*transpose(nx) - nx*transpose(r)))
+        return -transpose(out)
+    end
+end
+
+function (HS::HyperSingularKernel{T,S})(target,source)::T where {T,S<:Elastostatic}
+    N = ambient_dimension(pde(HS))
+    μ,λ = parameters(pde(HS))
+    ν = λ/(2*(μ+λ))
+    x = coords(target)
+    nx = normal(target)
+    y = coords(source)
+    ny = normal(source)
+    r = x .- y
+    d = norm(r)
+    d == 0 && return zero(T)
+    RRT   = r*transpose(r) # r ⊗ rᵗ
+    drdn  = dot(r,ny)/d
+    if N==2
+        ID = SMatrix{2,2,Float64,4}(1,0,0,1)
+        return μ/(2π*(1-ν)*d^2)* (2*drdn/d*( (1-2ν)*nx*transpose(r) + ν*(dot(r,nx)*ID + r*transpose(nx)) - 4*dot(r,nx)*RRT/d^2 ) +
+                                  2*ν/d^2*(dot(r,nx)*ny*transpose(r) + dot(nx,ny)*RRT) +
+                                  (1-2*ν)*(2/d^2*dot(r,nx)*r*transpose(ny) + dot(nx,ny)*ID + ny*transpose(nx)) -
+                                  (1-4ν)*nx*transpose(ny)
+                                  )
+    elseif N==3
+        ID = SMatrix{3,3,Float64,9}(1,0,0,0,1,0,0,0,1)
+        return μ/(4π*(1-ν)*d^3)* (3*drdn/d*( (1-2ν)*nx*transpose(r) + ν*(dot(r,nx)*ID + r*transpose(nx)) - 5*dot(r,nx)*RRT/d^2 ) +
+                                  3*ν/d^2*(dot(r,nx)*ny*transpose(r) + dot(nx,ny)*RRT) +
+                                  (1-2*ν)*(3/d^2*dot(r,nx)*r*transpose(ny) + dot(nx,ny)*ID + ny*transpose(nx)) -
+                                  (1-4ν)*nx*transpose(ny)
+                                  )
+    end
+end
