@@ -84,12 +84,13 @@ end
 
 @recipe function f(Q::NystromMesh)
     @series begin
+        aspect_ratio --> :equal
         mesh(Q)
     end
     @series begin
-        aspect_ratio --> :equal
-        label := "Quadrature nodes"
+        label --> "Quadrature nodes"
         seriestype := :scatter
+        aspect_ratio --> :equal
         PlotPoints(), collect(qcoords(Q))
     end
 end
@@ -183,7 +184,7 @@ end
     end
 end
 
-@recipe function f(el::ParametricElement; npts=2)
+@recipe function f(el::AbstractElement; npts=10)
     D = domain(el)
     grid --> false
     aspect_ratio --> :equal

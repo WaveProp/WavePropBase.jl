@@ -207,6 +207,13 @@ function element_index_for_point(s::SVector{N}, m::UniformCartesianMesh{N}) wher
     return CartesianIndex(I)
 end
 
+"""
+    sort_in_cartesian_mesh(X,msh)
+
+Given a collection of points `X` and a mesh `msh`, return a dictionary mapping
+the keys of the mesh elements, given as a `CartesianIndex`, to the indices of
+points inside that element.
+"""
 function sort_in_cartesian_mesh(X,msh)
     dict = Dict{CartesianIndex,Vector{Int}}()
     for (i,pt) in enumerate(X)

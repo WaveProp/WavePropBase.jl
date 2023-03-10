@@ -94,9 +94,9 @@ function _vtk_cells(mesh::GenericMesh)
     # Loop on `AbstractElement`
     for (E, tags) in elements(mesh)
         # Export only the cells of the largest geometrical dimension
-        # if domain_dimension(E) == ambient_dimension(mesh)
+        if domain_dimension(E) == ambient_dimension(mesh)
             append!(cells, _vtk_cells(tags, E))
-        # end
+        end
     end
     return cells
 end
