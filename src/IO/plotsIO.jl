@@ -84,12 +84,13 @@ end
 
 @recipe function f(Q::NystromMesh)
     @series begin
+        aspect_ratio --> :equal
         mesh(Q)
     end
     @series begin
-        aspect_ratio --> :equal
-        label := "Quadrature nodes"
+        label --> "Quadrature nodes"
         seriestype := :scatter
+        aspect_ratio --> :equal
         PlotPoints(), collect(qcoords(Q))
     end
 end
@@ -183,14 +184,14 @@ end
     end
 end
 
-@recipe function f(el::ParametricElement; npts=2)
+@recipe function f(el::AbstractElement; npts=10)
     D = domain(el)
     grid --> false
     aspect_ratio --> :equal
     label --> ""
     if D isa ReferenceLine
         s = LinRange(0, 1, npts)
-        pts = [el(v) for v in s]
+        pts = [el(SVector(v)) for v in s]
         x = [pt[1] for pt in pts]
         y = [pt[2] for pt in pts]
         x, y
@@ -198,7 +199,7 @@ end
         seriestype := :surface
         xrange = LinRange(0, 1, npts)
         yrange = LinRange(0, 1, npts)
-        pts = [el((x, y)) for x in xrange, y in yrange]
+        pts = [el(SVector(x, y)) for x in xrange, y in yrange]
         x = [pt[1] for pt in pts]
         y = [pt[2] for pt in pts]
         z = [pt[3] for pt in pts]

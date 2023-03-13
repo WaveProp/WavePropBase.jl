@@ -1,6 +1,7 @@
 using Test
 import WavePropBase as WPB
 using StaticArrays
+using ForwardDiff
 
 @testset "Intersection and composite surfaces" begin
     WPB.clear_entities!()

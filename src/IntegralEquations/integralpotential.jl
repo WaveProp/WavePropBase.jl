@@ -1,4 +1,19 @@
-# FIXME: document this
+"""
+    struct IntegralPotential
+
+Represent a potential given by a `kernel` and a `source_mesh` over which
+integration is performed.
+
+`IntegralPotential`s are created using `IntegralPotential(kernel, source_mesh)`.
+
+Evaluating an integral potential requires a density `σ` (defined over the
+quadrature nodes of the source mesh) and a point `x` at which to evaluate the
+integral
+```math
+\\int_{\\Gamma} K(\boldsymbol{x},\boldsymbol{y})\\sigma(y) ds_y, x \\not \\in \\Gamma
+```
+
+"""
 struct IntegralPotential
     kernel::AbstractKernel
     source_mesh::AbstractMesh
@@ -7,18 +22,20 @@ end
 kernel(pot::IntegralPotential) = pot.kernel
 source_mesh(pot::IntegralPotential) = pot.source_mesh
 
-function (pot::IntegralPotential)(σ::AbstractVector, x)
-    f = kernel(pot)
-    Γ = source_mesh(pot)
-    iter = zip(qnodes(Γ), σ)
-    out = sum(iter) do (source, σ)
-        w = weight(source)
-        return f(x, source) * σ * w
+function Base.getindex(pot::IntegralPotential, σ::AbstractVector)
+    K = kernel(pot)
+    Q = qnodes(source_mesh(pot))
+    return (x) -> _evaluate_potential(K, σ, x, Q)
+end
+
+@noinline function _evaluate_potential(K, σ, x, Q)
+    iter = zip(Q, σ)
+    out = sum(iter) do (qi, σi)
+        wi = weight(qi)
+        return K(x, qi) * σi * wi
     end
     return out
 end
-
-Base.getindex(pot::IntegralPotential, σ::AbstractVector) = (x) -> pot(σ, x)
 
 function SingleLayerPotential(op::AbstractPDE, source)
     return IntegralPotential(SingleLayerKernel(op), source)

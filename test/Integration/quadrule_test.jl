@@ -40,6 +40,20 @@ end
     end
 end
 
+@testset "Gauss-Legendre quadrature" begin
+    N = 5
+    q = WPB.GaussLegendre{N}()
+    x, w = q()
+    D = WPB.domain(q)
+    @test D == WPB.ReferenceLine()
+    @test all(qnode ∈ D for qnode in x)
+    @test sum(w) ≈ 1
+    # integrate all polynomial of degree 2N-1 exactly
+    for n in 1:(2N - 1)
+        @test WPB.integrate(x -> x[1]^n, q) ≈ 1 / (n + 1)
+    end
+end
+
 @testset "Gauss quad on triangle" begin
     d = WPB.ReferenceTriangle()
     # exact value for x^a*y^b integrate over reference triangle
@@ -93,11 +107,48 @@ end
     q1 = WPB.qrule_for_reference_shape(D, order)
     q2 = WPB.CustomQuadratureRule(;
                                   domain=D,
-                                  qnodes=WPB.qnodes(q1),
+                                  qcoords=WPB.qcoords(q1),
                                   qweights=WPB.qweights(q1))
     q3 = WPB.CustomTriangleQuadratureRule(;
-                                          qnodes=WPB.qnodes(q1),
+                                          qcoords=WPB.qcoords(q1),
                                           qweights=WPB.qweights(q1))
     @test q1() == q2()
     @test q2 == q3
+end
+
+@testset "Lagrange interpolant" begin
+    N, M = 3, 2
+    qx = WPB.Fejer(N)
+
+    # test lagrange basis in 1d
+    L = WPB.lagrange_basis(qx)
+    x, w = qx()
+    n = length(x)
+    for i in 1:n
+        v = L(x[i])
+        for k in 1:n
+            if k == i
+                @test v[k] ≈ 1
+            else
+                @test v[k] ≈ 0
+            end
+        end
+    end
+
+    # test lagrange basis in 2d
+    qy = WPB.Fejer(M)
+    q = WPB.TensorProductQuadrature(qx, qy)
+    L = WPB.lagrange_basis(q)
+    x, w = q()
+    n = length(x)
+    for (i, xi) in enumerate(x)
+        v = L(xi)
+        for k in 1:n
+            if k == i
+                @test v[k] ≈ 1
+            else
+                @test v[k] ≈ 0
+            end
+        end
+    end
 end

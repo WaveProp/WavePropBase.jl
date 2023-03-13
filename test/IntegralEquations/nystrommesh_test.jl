@@ -10,7 +10,7 @@ import WavePropBase as WPB
             WPB.clear_entities!()
             (lx, ly, lz) = widths = (1.0, 1.0, 2.0)
             n = 2
-            Ω = WPB.Domain.(WPB.Box(; widths))
+            Ω = WPB.Domain(WPB.Box(; widths))
             Γ = WPB.boundary(Ω)
             M = WPB.meshgen(Γ, (n, n))
             msh = WPB.NystromMesh(M; qorder=1)
@@ -21,7 +21,7 @@ import WavePropBase as WPB
             WPB.clear_entities!()
             r = 0.5
             n = 4
-            Ω = WPB.Domain.(WPB.Ball(; radius=r))
+            Ω = WPB.Domain(WPB.Ball(; radius=r))
             Γ = WPB.boundary(Ω)
             M = WPB.meshgen(Γ, (n, n))
             msh = WPB.NystromMesh(M; qorder=4)
@@ -32,7 +32,7 @@ import WavePropBase as WPB
             WPB.clear_entities!()
             r = rx = ry = 0.5
             n = 4
-            Ω = WPB.Domain.(WPB.Disk(; radius=r))
+            Ω = WPB.Domain(WPB.Disk(; radius=r))
             Γ = WPB.boundary(Ω)
             M = WPB.meshgen(Γ, n)
             msh = WPB.NystromMesh(M; qorder=4)

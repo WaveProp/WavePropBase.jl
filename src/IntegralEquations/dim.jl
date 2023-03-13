@@ -1,10 +1,10 @@
 Base.@kwdef struct DimParameters
     sources_oversample_factor::Float64 = 3
-    sources_radius_multiplier::Float64 = 5
+    sources_radius_multiplier::Float64 = 1.5
 end
 
 """
-    dim_correction(pde,X,Y,S,D[;location,p,derivative])
+    dim_correction(pde,X,Y,S,D[;location,p,derivative,tol])
 
 Given a `pde` and a (possibly innacurate) discretizations of its single and
 double-layer operators `S` and `D` with domain `Y` and range `X`, compute
@@ -12,23 +12,31 @@ corrections `δS` and `δD` such that `S + δS` and `D + δD` are more accurate
 approximations of the underlying integral operators.
 
 The following optional keyword arguments are available:
-- `location`: whether the target `X` lies on, inside, or outside the domain `Y`.
 - `p::DimParameters`: parameters associated with the density interpolation
   method
 - `derivative`: if true, compute the correction to the adjoint double-layer and
   hypersingular operators instead. In this case, `S` and `D` should contain a
   discretization of adjoint double-layer and hypersingular operators,
   respectively.
+- `tol`: distance beyond which interactions are considered sufficiently far so
+  that no correction is needed.
 """
 function dim_correction(pde, X, Y, S, D; location=:onsurface, p=DimParameters(),
-                        derivative=false)
+                        derivative=false, tol=Inf)
+    max_cond = -Inf # maximum condition numbered encoutered in coeffs matrix
     T = eltype(S)
-    isvectorial = T <: SMatrix
+    Xnodes = qnodes(X)
+    Ynodes = qnodes(Y)
+    m, n = length(Xnodes), length(Ynodes)
+    if m == 0 || n == 0
+        return zeros(T, m, n), zeros(T, m, n)
+    end
     msg = "unrecognized value for kw `location`: received $location.
-    Valid options are `:onsurface`, `:inside` and `:outside`."
+    Valid options are `:onsurface`, `:inside` and `:outside`, or the actual value of the multiplier"
     σ = location === :onsurface ? -0.5 :
-        location === :inside ? -1 : location === :outside ? 0 : error(msg)
-    dict_near = nearest_point_to_element(X, Y)
+        location === :inside ? -1 :
+        location === :outside ? 0 : location isa Number ? location : error(msg)
+    dict_near = nearest_point_to_element(X, Y; tol)
     # find first an appropriate set of source points to center the monopoles
     qmax = sum(size(etype2qtags(Y, E), 1) for E in keys(Y))
     ns = ceil(Int, p.sources_oversample_factor * qmax)
@@ -44,8 +52,6 @@ function dim_correction(pde, X, Y, S, D; location=:onsurface, p=DimParameters(),
         notimplemented()
     end
     # compute traces of monopoles on the source mesh
-    Xnodes = qnodes(X)
-    Ynodes = qnodes(Y)
     G = SingleLayerKernel(pde, T)
     γ₁G = AdjointDoubleLayerKernel(pde, T)
     γ₀B = Matrix{T}(undef, length(Ynodes), ns)
@@ -68,7 +74,9 @@ function dim_correction(pde, X, Y, S, D; location=:onsurface, p=DimParameters(),
             end
         end
     end
+    @debug "Norm of correction: " norm(Θ)
     # finally compute the corrected weights as sparse matrices
+    @debug "precomputation finished"
     Is, Js, Ss, Ds = Int[], Int[], T[], T[]
     dict_near = nearest_point_to_element(X, Y)
     for E in keys(Y)
@@ -88,6 +96,7 @@ function dim_correction(pde, X, Y, S, D; location=:onsurface, p=DimParameters(),
             copy!(view(M, 1:nq, :), M0)
             copy!(view(M, (nq + 1):(2nq), :), M1)
             F = qr!(blockmatrix_to_matrix(M))
+            max_cond = max(cond(F.R), max_cond)
             for i in near_list[n]
                 Θi = @view Θ[i:i, :]
                 W_ = (blockmatrix_to_matrix(Θi) / F.R) * adjoint(F.Q)
@@ -101,8 +110,9 @@ function dim_correction(pde, X, Y, S, D; location=:onsurface, p=DimParameters(),
             end
         end
     end
-    δS = sparse(Is, Js, Ss)
-    δD = sparse(Is, Js, Ds)
+    @debug "Maximum condition number of linear system: " max_cond
+    δS = sparse(Is, Js, Ss, m, n)
+    δD = sparse(Is, Js, Ds, m, n)
     return δS, δD
 end
 
@@ -113,6 +123,21 @@ For each element `el`, return a list with the indices of all points in `X` for
 which `el` is the nearest element. Ignore indices for which the distance exceeds `tol`.
 """
 function nearest_point_to_element(X, Y::NystromMesh; tol=Inf)
+    if X === Y
+        # when both surfaces are the same, the "near points" of an element are
+        # simply its own quadrature points
+        dict = Dict{DataType,Vector{Vector{Int}}}()
+        for E in keys(Y)
+            idx_dofs = etype2qtags(Y, E)
+            dict[E] = map(i -> collect(i), eachcol(idx_dofs))
+        end
+    else
+        dict = _nearest_point_to_element(collect(qcoords(X)), Y, tol)
+    end
+    return dict
+end
+
+function _nearest_point_to_element(X, Y::NystromMesh, tol=Inf)
     y = collect(qcoords(Y))
     kdtree = KDTree(y)
     dict = Dict(j => Int[] for j in 1:length(y))
@@ -135,18 +160,4 @@ function nearest_point_to_element(X, Y::NystromMesh; tol=Inf)
         end
     end
     return etype2nearlist
-end
-function nearest_point_to_element(X::NystromMesh, Y::NystromMesh)
-    if X === Y
-        # when both surfaces are the same, the "near points" of an element are
-        # simply its own quadrature points
-        dict = Dict{DataType,Vector{Vector{Int}}}()
-        for E in keys(Y)
-            idx_dofs = etype2qtags(Y, E)
-            dict[E] = map(i -> collect(i), eachcol(idx_dofs))
-        end
-    else
-        dict = nearest_point_to_element(collect(qcoords(X)), Y)
-    end
-    return dict
 end

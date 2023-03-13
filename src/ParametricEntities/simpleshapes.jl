@@ -132,6 +132,34 @@ function Boomerang(; radius=1, center=(0, 0))
 end
 geometric_dimension(ent::Boomerang) = 2
 
+struct Polygon <: AbstractEntity
+    # dim = 2
+    tag::Int
+    boundary::Vector{ParametricEntity}
+    function Polygon(t, bnd)
+        ent = new(t, bnd)
+        global_add_entity!(ent)
+        return ent
+    end
+end
+
+function Polygon(; vertices::Vector{T}) where {T}
+    if T != SVector{2,Float64}
+        vertices = Point2D.(vertices)
+    end
+    # create the lines
+    npts = length(vertices)
+    bnd = ParametricEntity[]
+    for i in 1:npts
+        j = i % npts + 1
+        l = line(vertices[i], vertices[j])
+        push!(bnd, l)
+    end
+    t = new_tag(2)
+    return Polygon(t, bnd)
+end
+geometric_dimension(ent::Polygon) = 2
+
 ####################################################################################
 # Three-dimensional shapes with parametric boundary
 ####################################################################################

@@ -1,5 +1,6 @@
 using Test
 import WavePropBase as WPB
+using ForwardDiff
 
 @testset "Disk" begin
     disk = WPB.Disk() # abstract entity

@@ -49,8 +49,8 @@ end
 
 Two entities are considered equal
 `geometric_dimension(Ω1)==geometric_dimension(Ω2)` and
-`abs(tag(Ω1))=abs(tag(Ω2))`. For entities of co-dimension one, the sign of
-`tag(Ω)` is used to determine the orientation of the normal vector.
+`abs(tag(Ω1))=abs(tag(Ω2))`. For `ElementaryEntity` of co-dimension one, the
+sign of `tag(Ω)` is used to determine the orientation of the normal vector.
 
 Notice that this implies `dim` and `tag` of an elementary entity should uniquely
 define it (up to the sign of `tag`), and therefore global variables like
@@ -68,9 +68,8 @@ end
 Base.hash(ent::AbstractEntity, h::UInt) = hash((geometric_dimension(ent), abs(tag(ent))), h)
 
 function normal(ent::AbstractEntity, u)
-    s = sign(tag(ent))
     jac::SMatrix = jacobian(ent, u)
-    return s * _normal(jac)
+    return _normal(jac)
 end
 
 """
@@ -149,11 +148,18 @@ function _compute_dim_from_boundary(boundary)
 end
 
 function flip_normal(e::ElementaryEntity)
-    @assert ambient_dimension(ent) == geometric_dimension(ent) + 1
+    msg = "flip_normal only works for entities of co-dimension one."
+    @assert ambient_dimension(ent) == geometric_dimension(ent) + 1 msg
     d = geometric_dimension(e)
     t = tag(e)
     bnd = boundary(e)
     return ElementaryEntity(d, -t, bnd)
+end
+
+function normal(ent::ElementaryEntity, u)
+    s = sign(tag(ent))
+    jac::SMatrix = jacobian(ent, u)
+    return s * _normal(jac)
 end
 
 """

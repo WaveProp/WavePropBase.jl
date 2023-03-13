@@ -78,7 +78,8 @@ function UniformCartesianMesh(domain::HyperRectangle{N}; step) where {N}
     lc = low_corner(domain)
     hc = high_corner(domain)
     sz = ntuple(N) do i
-        return Int(ceil((hc[i] - lc[i]) / step[i]))
+        # take the max with 1 in case step = Inf
+        return max(Int(ceil((hc[i] - lc[i]) / step[i])), 1)
     end
     return UniformCartesianMesh(domain, sz)
 end
@@ -183,6 +184,8 @@ function Base.iterate(iter::NodeIterator{<:UniformCartesianMesh}, state=1)
     return iter[state], state + 1
 end
 
+nodes(m::UniformCartesianMesh) = NodeIterator(m)
+
 """
     element_index_for_point(p::SVector,m::UniformCartesianMesh)
 
@@ -195,12 +198,29 @@ function element_index_for_point(s::SVector{N}, m::UniformCartesianMesh{N}) wher
     Δs = step(m)
     lc = low_corner(m)
     uc = high_corner(m)
-    # assert that lc <= s <= uc?
-    @assert all(lc .<= s .<= uc) "Point $s is not inside $m"
+    all(lc .<= s .<= uc) || (return nothing) # point not in mesh
     I = ntuple(N) do n
         q = (s[n] - lc[n]) / Δs[n]
         i = ceil(Int, q)
         return clamp(i, 1, sz[n])
     end
     return CartesianIndex(I)
+end
+
+"""
+    sort_in_cartesian_mesh(X,msh)
+
+Given a collection of points `X` and a mesh `msh`, return a dictionary mapping
+the keys of the mesh elements, given as a `CartesianIndex`, to the indices of
+points inside that element.
+"""
+function sort_in_cartesian_mesh(X, msh)
+    dict = Dict{CartesianIndex,Vector{Int}}()
+    for (i, pt) in enumerate(X)
+        I = element_index_for_point(coords(pt), msh)
+        isnothing(I) && continue
+        idxs = get!(dict, I, Int[])
+        push!(idxs, i)
+    end
+    return dict
 end

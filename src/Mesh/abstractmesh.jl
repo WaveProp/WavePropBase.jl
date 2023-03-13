@@ -87,38 +87,57 @@ mesh(iter::NodeIterator) = iter.mesh
 Base.eltype(::SType{NodeIterator{<:AbstractMesh{N,T}}}) where {N,T} = SVector{N,T}
 
 """
-    near_interaction_list(X::AbstractMesh,Y::AbstractMesh; atol)
+    near_interaction_list(X,Y::AbstractMesh; tol)
 
-For each element `el` of type `E` in `Y`, return the indices of the elements in
-`X` which have a center closer than `atol` to the `center` of `el`.
+For each element `el` of type `E` in `Y`, return the indices of the points in `X` which
+are closer than `tol` to the `center` of `el`.
 
-This function returns a dictionary where e.g. `Dict[E][5] --> Vector{Int}` gives
-the indices of points in `X` which are closer than atol to the center of the
+This function returns a dictionary where e.g. `dict[E][5] --> Vector{Int}` gives
+the indices of points in `X` which are closer than `tol` to the center of the
 fifth element of type `E`.
 """
-function near_interaction_list(X, M::AbstractMesh{N,T}; atol) where {N,T}
-    elsX = all_elements(X)
-    elsY = all_elements(Y)
-    ballsX = map(HyperSphere, elsX)
-    ballsY = map(HyperSphere, elsY)
-    boxX = HyperRectangle(coords(s) for s in ballsX)
-    boxY = HyperRectangle(coords(s) for s in ballsX)
-    box = boxX ∪ boxY
-    lX = maximum(radius, ballsX)
-    lY = maximum(radius, ballsY)
-    dmax = 5 * (lX + lY)
-    for E in keys(M)
-        dict[E] = map(HyperSphere, M[E])
+function near_interaction_list(X, Y::AbstractMesh{N}; tol) where {N}
+    # bounding box for target elements with a layer of width `tol` so that
+    # points which are not in the bounding box but are farther than `tol` from
+    # any target point
+    @assert tol > 0
+    bbox = HyperRectangle(X)
+    bbox = HyperRectangle(low_corner(bbox) .- tol, high_corner(bbox) .+ tol)
+    # a cartesian mesh to sort the points
+    msh = UniformCartesianMesh(bbox; step=tol)
+    sz = size(msh)
+    targets_in_element = sort_in_cartesian_mesh(X, msh)
+    # for each element type, build the list of targets close to a given element
+    dict = Dict{DataType,Vector{Vector{Int}}}()
+    for E in keys(Y)
+        nel = length(Y[E])
+        dict[E] = idxs = [Int[] for _ in 1:nel]
+        # TODO: function barrier needed
+        for (n, el) in enumerate(Y[E])
+            y = center(el)
+            I = element_index_for_point(y, msh)
+            isnothing(I) && continue
+            It = Tuple(I)
+            # index of neighboring boxes
+            neighbors = CartesianIndices(ntuple(N) do d
+                                             return max(It[d] - 1, 1):min(It[d] + 1, sz[d])
+                                         end)
+            # append targets to idxs of current element
+            for J in neighbors
+                haskey(targets_in_element, J) || continue
+                append!(idxs[n], targets_in_element[J])
+            end
+        end
     end
     return dict
 end
 
-# function near_interaction_list(X, M::AbstractMesh; atol)
+# function near_interaction_list(X, M::AbstractMesh; tol)
 #     dict = Dict{DataType,Vector{Vector{Int}}}()
 #     for E in keys(M)
 #         pts = [center(el) for el in M[E]]
 #         kdtree = KDTree(pts)
-#         push!(dict,E=>inrange(kdtree, X, atol))
+#         push!(dict,E=>inrange(kdtree, X, tol))
 #     end
 #     return dict
 # end

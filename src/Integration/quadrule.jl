@@ -27,11 +27,11 @@ function image(f)
 end
 
 """
-    qnodes(Y)
+    qcoords(Y)
 
-Return the quadrature nodes associated with `Y`.
+Return the coordinate of the quadrature nodes associated with `Y`.
 """
-qnodes(q::AbstractQuadratureRule) = q()[1]
+qcoords(q::AbstractQuadratureRule) = q()[1]
 
 """
     qweights(Y)
@@ -147,6 +147,19 @@ end
 
 `N`-point Fejer's first quadrature rule for integrating a function over `[0,1]`.
 Exactly integrates all polynomials of degree `≤ N-1`.
+
+```jldoctest
+import WavePropBase as WPB
+
+q = WPB.Fejer(;order=10)
+
+WPB.integrate(cos,q) ≈ sin(1) - sin(0)
+
+# output
+
+true
+```
+
 """
 struct Fejer{N} <: AbstractQuadratureRule{ReferenceLine} end
 
@@ -157,7 +170,7 @@ Fejer(; order::Int) = Fejer(order + 1)
 # N point fejer quadrature integrates all polynomials up to degree N-1
 order(::Fejer{N}) where {N} = N - 1
 
-function (q::Fejer{N})() where {N}
+@generated function (q::Fejer{N})() where {N}
     theta = [(2j - 1) * π / (2 * N) for j in 1:N]
     x = -cos.(theta)
     w = zero(x)
@@ -192,6 +205,65 @@ function integrate_fejer1d(f,
         n > 100 && error("did not converge quickly enough")
     end
     return I2
+end
+
+"""
+    struct GaussLegendre{N}
+
+`N`-point Gauss-Legendre quadrature rule for integrating a function over `[0,1]`.
+Exactly integrates all polynomials of degree `≤ 2N-1`.
+"""
+struct GaussLegendre{N} <: AbstractQuadratureRule{ReferenceLine} end
+
+"""
+    GaussLegendre(;order)
+
+Construct a `GaussLegendre` of the desired order over the `[0,1]` interval.
+"""
+function GaussLegendre(; order=p)
+    N = ceil(Int, (order + 1) / 2)
+    return GaussLegendre{N}()
+end
+
+GaussLegendre(n::Int) = GaussLegendre{n}()
+
+# N point Gauss quadrature integrates all polynomials up to degree 2N-1, yielding
+# an error of order 2N
+order(q::GaussLegendre{N}) where {N} = 2 * N - 1
+
+# NOTE: the following code uses a Newton-Raphson method to find the roots of the
+# Legendre polynomial of degree N. For low order, this is OK, but should not be
+# used to high order. Better to rely on e.g. FastTranforms.jl for that matter.
+@generated function (q::GaussLegendre{n})() where {n}
+    # generate the nodes and weights on [-1,1]
+    x = zeros(n)
+    w = zeros(n)
+    m = (n + 1) ÷ 2
+    for i in 1:m
+        z = cos(π * (i - 0.25) / (n + 0.5))
+        z1 = z + 1
+        pp = 0.0
+        while abs(z - z1) > eps()
+            p1 = 1.0
+            p2 = 0.0
+            for j in 1:n
+                p3 = p2
+                p2 = p1
+                p1 = ((2 * j - 1) * z * p2 - (j - 1) * p3) / j
+            end
+            pp = n * (z * p1 - p2) / (z^2 - 1)
+            z1 = z
+            z = z1 - p1 / pp
+        end
+        x[i] = -z
+        x[n + 1 - i] = z
+        w[i] = 2 / ((1 - z^2) * pp^2)
+        w[n + 1 - i] = w[i]
+    end
+    # shift them to [0,1] and transform into a static vector
+    xs = svector(i -> SVector(0.5 * (x[i] + 1)), n)
+    ws = svector(i -> w[i] / 2, n)
+    return xs, ws
 end
 
 """
@@ -230,15 +302,14 @@ function order(q::Gauss{ReferenceTetrahedron,N}) where {N}
 end
 
 @generated function (q::Gauss{D,N})() where {D,N}
-    x, w = _get_gauss_qnodes_and_qweights(D, N)
+    x, w = _get_gauss_qcoords_and_qweights(D, N)
     return :($x, $w)
 end
 
 """
-    TensorProductQuadrature{Q}
+    TensorProductQuadrature{N,Q}
 
-A tensor-product of one-dimension quadrature rules. Integrates over `[0,1]^d`,
-where `d=length(quad)`.
+A tensor-product of one-dimension quadrature rules. Integrates over `[0,1]^N`.
 
 # Examples
 ```julia
@@ -247,32 +318,25 @@ qy = TrapezoidalOpen(15)
 q  = TensorProductQuadrature(qx,qy)
 ```
 """
-struct TensorProductQuadrature{Q} <: AbstractQuadratureRule{ReferenceSquare}
-    quad::Q
-end
-
-# FIXME: this is a workaround the need to easily construct a tensor quadrature
-# based only on the the types of the quadratures. Useful in generated functions,
-# but there is probably a better way
-function TensorProductQuadrature{Tuple{Q1,Q2}}() where {Q1,Q2}
-    return TensorProductQuadrature(Q1(), Q2())
+struct TensorProductQuadrature{N,Q} <: AbstractQuadratureRule{ReferenceHyperCube{N}}
+    quads1d::Q
 end
 
 function TensorProductQuadrature(q...)
-    return TensorProductQuadrature(q)
+    N = length(q)
+    Q = typeof(q)
+    return TensorProductQuadrature{N,Q}(q)
 end
 
-# FIXME: the current implementation is rather obscure. How should we handle the
-# product quadrature rules in general? Also make this into a generated function.
-function (q::TensorProductQuadrature)()
-    N = length(q.quad)
-    nodes = map(q -> q()[1], q.quad)
-    weights = map(q -> q()[2], q.quad)
-    nodes_iter = Iterators.product(nodes...)
-    weights_iter = Iterators.product(weights...)
-    x = map(x -> vcat(x...), nodes_iter)
-    w = map(w -> prod(w), weights_iter)
-    return SArray(x), w
+function (q::TensorProductQuadrature{N})() where {N}
+    nodes1d = ntuple(N) do i
+        x1d, _ = q.quads1d[i]()
+        return map(x -> x[1], x1d) # convert the `SVector{1,T}` to just `T`
+    end
+    weights1d = map(q -> q()[2], q.quads1d)
+    nodes_iter = (SVector(x) for x in Iterators.product(nodes1d...))
+    weights_iter = (prod(w) for w in Iterators.product(weights1d...))
+    return nodes_iter, weights_iter
 end
 
 """
@@ -283,11 +347,16 @@ an appropiate quadrature rule.
 """
 function qrule_for_reference_shape(ref, order)
     if ref isa ReferenceLine
-        return Fejer(; order)
+        return GaussLegendre(; order)
+        # return Fejer(; order)
     elseif ref isa ReferenceSquare
         qx = qrule_for_reference_shape(ReferenceLine(), order)
         qy = qx
         return TensorProductQuadrature(qx, qy)
+    elseif ref isa ReferenceCube
+        qx = qrule_for_reference_shape(ReferenceLine(), order)
+        qy = qz = qx
+        return TensorProductQuadrature(qx, qy, qz)
     elseif ref isa ReferenceTriangle
         return Gauss(; domain=ref, order=order)
     elseif ref isa ReferenceTetrahedron
@@ -304,20 +373,66 @@ end
 """
 struct CustomQuadratureRule{D<:AbstractReferenceShape,N,T<:SVector} <:
        AbstractQuadratureRule{D}
-    qnodes::SVector{N,T}
+    qcoords::SVector{N,T}
     qweights::SVector{N,Float64}
 end
 
-function CustomQuadratureRule{D}(; qnodes, qweights) where {D}
-    return CustomQuadratureRule{D,length(qnodes),eltype(qnodes)}(qnodes, qweights)
+function CustomQuadratureRule{D}(; qcoords, qweights) where {D}
+    return CustomQuadratureRule{D,length(qcoords),eltype(qcoords)}(qcoords, qweights)
 end
-function CustomQuadratureRule(; domain::AbstractReferenceShape, qnodes, qweights)
-    return CustomQuadratureRule{typeof(domain)}(; qnodes, qweights)
+function CustomQuadratureRule(; domain::AbstractReferenceShape, qcoords, qweights)
+    return CustomQuadratureRule{typeof(domain)}(; qcoords, qweights)
 end
 
-(q::CustomQuadratureRule)() = q.qnodes, q.qweights
+(q::CustomQuadratureRule)() = q.qcoords, q.qweights
 
 const CustomLineQuadratureRule = CustomQuadratureRule{ReferenceLine}
 const CustomTriangleQuadratureRule = CustomQuadratureRule{ReferenceTriangle}
 const CustomSquareQuadratureRule = CustomQuadratureRule{ReferenceSquare}
 const CustomTetrahedronQuadratureRule = CustomQuadratureRule{ReferenceTetrahedron}
+
+# in the one-dimensional case
+function lagrange_basis(q::AbstractQuadratureRule{ReferenceLine})
+    nodes = qcoords(q)
+    w = barycentric_lagrange_weights(q)
+    N = length(w)
+    # for some reason, I must pass a Val(N) to a function barrier so that the
+    # anonymous function created is type stable and does not allocate
+    return _lagrange_basis_1d(nodes, w, Val(N))
+end
+
+@noinline function _lagrange_basis_1d(nodes, w, ::Val{N}) where {N}
+    (x) -> begin
+        l = prod(xi -> x[1] - xi[1], nodes)
+        svector(N) do j
+            xj = nodes[j]
+            num = l * w[j]
+            den = x[1] - xj[1]
+            return ifelse(den == 0, one(num), num / den)
+        end
+    end
+end
+
+function barycentric_lagrange_weights(q::AbstractQuadratureRule{ReferenceLine})
+    # transform nodes to a vector
+    nodes = Vector([x[1] for x in qcoords(q)])
+    # comptue weights as a vector
+    w = barycentric_lagrange_weights(nodes)
+    ws = SVector{length(w)}(w)
+    return ws
+end
+
+# in the two-dimensional case
+function lagrange_basis(q::TensorProductQuadrature{2,<:Any})
+    lx = lagrange_basis(q.quads1d[1])
+    ly = lagrange_basis(q.quads1d[2])
+    return _lagrange_basis2d(lx, ly)
+end
+
+@noinline function _lagrange_basis2d(lx, ly)
+    return (x) -> begin
+        vx = lx(SVector(x[1]))
+        vy = ly(SVector(x[2]))
+        vx * transpose(vy)
+    end
+end

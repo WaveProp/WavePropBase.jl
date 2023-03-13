@@ -29,6 +29,13 @@ struct PseudoBlockMatrix{T,S} <: AbstractMatrix{T}
     end
 end
 
+function PseudoBlockMatrix{T}(::UndefInitializer, m, n) where {T}
+    S = eltype(T)
+    p, q = size(T)
+    data = Matrix{S}(undef, m * p, n * q)
+    return PseudoBlockMatrix{T}(data)
+end
+
 block_size(::PseudoBlockMatrix{T}) where {T} = size(T)
 
 function Base.size(A::PseudoBlockMatrix)
@@ -99,6 +106,11 @@ function matrix_to_blockmatrix(A::AbstractMatrix, B)
     sblock = size(B)
     nblock = div.(size(A), sblock)
     Ablock = Matrix{B}(undef, nblock)
+    return matrix_to_blockmatrix!(Ablock, A, B)
+end
+function matrix_to_blockmatrix!(Ablock, A::AbstractMatrix, B)
+    sblock = size(B)
+    nblock = div.(size(A), sblock)
     for i in 1:nblock[1]
         istart = (i - 1) * sblock[1] + 1
         iend = i * sblock[1]
@@ -159,12 +171,12 @@ function assert_concrete_type(T::DataType)
 end
 
 """
-    enable_debug(mname)
+    enable_debug(mod)
 
-Activate debugging messages.
+Activate debugging messages in module `mod`.
 """
-function enable_debug()
-    return ENV["JULIA_DEBUG"] = WavePropBase
+function enable_debug(mod="WavePropBase")
+    return ENV["JULIA_DEBUG"] = mod
 end
 
 struct ConcreteInferenceError <: Exception
@@ -434,4 +446,18 @@ function fibonnaci_points_sphere(N, r, center)
         pts[i] = SVector(x, y, z)
     end
     return pts
+end
+
+"""
+    return_type(f[,args...])
+
+The type returned by `f(args...)`, where `args` is a tuple of types. Falls back
+to `Base.promote_op` by default.
+
+A functors of type `T` with a knonw return type should extend
+`return_type(::T,args...)` to avoid relying on `promote_op`.
+"""
+function return_type(f, args...)
+    @debug "using `Base.promote_op` to infer return type. Consider defining `return_type(::typeof($f),args...)`."
+    return Base.promote_op(f, args...)
 end

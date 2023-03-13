@@ -62,7 +62,7 @@ const GAUSS_QRULES = Dict(ReferenceTriangle => TRIANGLE_GAUSS_QRULES,
 
 Returns the `N`-point symmetric gaussian qnodes and qweights `(x, w)` for integration over `R`.
 """
-function _get_gauss_qnodes_and_qweights(R::Type{<:AbstractReferenceShape{D}}, N) where {D}
+function _get_gauss_qcoords_and_qweights(R::Type{<:AbstractReferenceShape{D}}, N) where {D}
     if !haskey(GAUSS_QRULES, R) || !haskey(GAUSS_QRULES[R], N)
         error("quadrature rule not found")
     end
