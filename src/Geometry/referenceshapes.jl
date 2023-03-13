@@ -67,7 +67,7 @@ Singleton type representing the `[0,1]` segment.
 """
 const ReferenceLine = ReferenceHyperCube{1}
 
-Base.show(io::IO,::SType{ReferenceLine}) = print(io,"ReferenceLine")
+Base.show(io::IO, ::SType{ReferenceLine}) = print(io, "ReferenceLine")
 
 vertices(ln::ReferenceLine) = SVector(0), SVector(1)
 
@@ -85,7 +85,7 @@ Singleton type representing the unit cube `[0,1]³`.
 """
 const ReferenceCube = ReferenceHyperCube{3}
 
-Base.show(io::IO,::SType{ReferenceSquare}) = print(io,"ReferenceSquare")
+Base.show(io::IO, ::SType{ReferenceSquare}) = print(io, "ReferenceSquare")
 
 vertices(sq::ReferenceSquare) = SVector(0, 0), SVector(1, 0), SVector(1, 1), SVector(0, 1)
 
