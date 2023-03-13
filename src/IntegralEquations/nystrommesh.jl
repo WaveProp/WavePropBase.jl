@@ -34,7 +34,8 @@ quadrature nodes, and are represented using [`QuadratureNode`](@ref)s.
 """
 Base.@kwdef struct NystromMesh{N,T} <: AbstractMesh{N,T}
     mesh::AbstractMesh{N,T} = GenericMesh{N,T}()
-    etype2qrule::Dict{DataType,AbstractQuadratureRule} = Dict{DataType,AbstractQuadratureRule}()
+    etype2qrule::Dict{DataType,AbstractQuadratureRule} = Dict{DataType,
+                                                              AbstractQuadratureRule}()
     qnodes::Vector{QuadratureNode{N,T}} = Vector{QuadratureNode{N,T}}()
     etype2qtags::Dict{DataType,Matrix{Int}} = Dict{DataType,Matrix{Int}}()
 end
@@ -106,7 +107,8 @@ function NystromMesh(msh::AbstractMesh; qorder, curvature=false)
     return NystromMesh(msh, e2qrule; curvature)
 end
 
-@noinline function _build_nystrom_mesh!(msh, iter, qrule::AbstractQuadratureRule, curvature_)
+@noinline function _build_nystrom_mesh!(msh, iter, qrule::AbstractQuadratureRule,
+                                        curvature_)
     N = ambient_dimension(msh)
     E = eltype(iter)
     x̂, ŵ = qrule() #nodes and weights on reference element
@@ -115,12 +117,12 @@ end
     istart = length(qnodes(msh)) + 1
     for el in iter
         # and all qnodes for that element
-        for (x̂i,ŵi) in zip(x̂,ŵ)
+        for (x̂i, ŵi) in zip(x̂, ŵ)
             x = el(x̂i)
             μ = integration_measure(el, x̂i)
             w = μ * ŵi
-            ν = N - M == 1 ? normal(el,x̂i) : nothing
-            κ = curvature_ ? curvature(el,x̂i) : nothing
+            ν = N - M == 1 ? normal(el, x̂i) : nothing
+            κ = curvature_ ? curvature(el, x̂i) : nothing
             qnode = QuadratureNode(x, w, ν, κ)
             push!(qnodes(msh), qnode)
         end
@@ -140,8 +142,8 @@ Create a `NystromMesh` with elements of size `meshsize` and quadrature order
 A mesh is first generated using [`meshgen`](@ref), and then a `NystromMesh` is
 created on top of it with the quadrature information.
 """
-function NystromMesh(Ω::Domain;meshsize,qorder,curvature=false)
-    msh = meshgen(Ω;meshsize)
-    NystromMesh(msh; qorder, curvature)
+function NystromMesh(Ω::Domain; meshsize, qorder, curvature=false)
+    msh = meshgen(Ω; meshsize)
+    return NystromMesh(msh; qorder, curvature)
 end
-NystromMesh(ent::AbstractEntity;kwargs...) = NystromMesh(Domain(ent);kwargs...)
+NystromMesh(ent::AbstractEntity; kwargs...) = NystromMesh(Domain(ent); kwargs...)

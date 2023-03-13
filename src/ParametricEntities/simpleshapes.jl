@@ -149,17 +149,16 @@ function Polygon(; vertices::Vector{T}) where {T}
     end
     # create the lines
     npts = length(vertices)
-    bnd  = ParametricEntity[]
+    bnd = ParametricEntity[]
     for i in 1:npts
         j = i % npts + 1
         l = line(vertices[i], vertices[j])
-        push!(bnd,l)
+        push!(bnd, l)
     end
     t = new_tag(2)
-    return Polygon(t,bnd)
+    return Polygon(t, bnd)
 end
 geometric_dimension(ent::Polygon) = 2
-
 
 ####################################################################################
 # Three-dimensional shapes with parametric boundary

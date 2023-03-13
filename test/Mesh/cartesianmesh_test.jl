@@ -59,10 +59,10 @@ end
         @test el ≈ SVector((i - 1) * 0.1, (j - 1) * 0.05)
     end
 
-    pts = rand(WPB.Point2D,100)
-    dict = WPB.sort_in_cartesian_mesh(pts,mesh)
-    for (i,pt) in enumerate(pts)
-        I = WPB.element_index_for_point(pt,mesh)
+    pts = rand(WPB.Point2D, 100)
+    dict = WPB.sort_in_cartesian_mesh(pts, mesh)
+    for (i, pt) in enumerate(pts)
+        I = WPB.element_index_for_point(pt, mesh)
         @test i ∈ dict[I]
     end
 end

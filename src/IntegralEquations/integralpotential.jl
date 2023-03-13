@@ -24,7 +24,7 @@ source_mesh(pot::IntegralPotential) = pot.source_mesh
 
 function Base.getindex(pot::IntegralPotential, σ::AbstractVector)
     K = kernel(pot)
-    Q = source_mesh(pot) |> qnodes
+    Q = qnodes(source_mesh(pot))
     return (x) -> _evaluate_potential(K, σ, x, Q)
 end
 
@@ -32,7 +32,7 @@ end
     iter = zip(Q, σ)
     out = sum(iter) do (qi, σi)
         wi = weight(qi)
-        return K(x,qi) * σi * wi
+        return K(x, qi) * σi * wi
     end
     return out
 end

@@ -29,11 +29,11 @@ struct PseudoBlockMatrix{T,S} <: AbstractMatrix{T}
     end
 end
 
-function PseudoBlockMatrix{T}(::UndefInitializer,m,n) where {T}
+function PseudoBlockMatrix{T}(::UndefInitializer, m, n) where {T}
     S = eltype(T)
-    p,q = size(T)
-    data = Matrix{S}(undef, m*p, n*q)
-    PseudoBlockMatrix{T}(data)
+    p, q = size(T)
+    data = Matrix{S}(undef, m * p, n * q)
+    return PseudoBlockMatrix{T}(data)
 end
 
 block_size(::PseudoBlockMatrix{T}) where {T} = size(T)
@@ -106,9 +106,9 @@ function matrix_to_blockmatrix(A::AbstractMatrix, B)
     sblock = size(B)
     nblock = div.(size(A), sblock)
     Ablock = Matrix{B}(undef, nblock)
-    matrix_to_blockmatrix!(Ablock, A, B)
+    return matrix_to_blockmatrix!(Ablock, A, B)
 end
-function matrix_to_blockmatrix!(Ablock,A::AbstractMatrix,B)
+function matrix_to_blockmatrix!(Ablock, A::AbstractMatrix, B)
     sblock = size(B)
     nblock = div.(size(A), sblock)
     for i in 1:nblock[1]

@@ -220,16 +220,16 @@ struct GaussLegendre{N} <: AbstractQuadratureRule{ReferenceLine} end
 
 Construct a `GaussLegendre` of the desired order over the `[0,1]` interval.
 """
-function GaussLegendre(;order=p)
-    N  = ceil(Int,(order + 1) /  2)
-    GaussLegendre{N}()
+function GaussLegendre(; order=p)
+    N = ceil(Int, (order + 1) / 2)
+    return GaussLegendre{N}()
 end
 
 GaussLegendre(n::Int) = GaussLegendre{n}()
 
 # N point Gauss quadrature integrates all polynomials up to degree 2N-1, yielding
 # an error of order 2N
-order(q::GaussLegendre{N}) where {N} = 2*N-1
+order(q::GaussLegendre{N}) where {N} = 2 * N - 1
 
 # NOTE: the following code uses a Newton-Raphson method to find the roots of the
 # Legendre polynomial of degree N. For low order, this is OK, but should not be
@@ -261,9 +261,9 @@ order(q::GaussLegendre{N}) where {N} = 2*N-1
         w[n + 1 - i] = w[i]
     end
     # shift them to [0,1] and transform into a static vector
-    xs   = svector(i -> SVector(0.5 * (x[i] + 1)), n)
-    ws   = svector(i -> w[i] / 2, n)
-    return xs,ws
+    xs = svector(i -> SVector(0.5 * (x[i] + 1)), n)
+    ws = svector(i -> w[i] / 2, n)
+    return xs, ws
 end
 
 """
@@ -330,11 +330,11 @@ end
 
 function (q::TensorProductQuadrature{N})() where {N}
     nodes1d = ntuple(N) do i
-        x1d,_ = q.quads1d[i]()
-         map(x -> x[1], x1d) # convert the `SVector{1,T}` to just `T`
+        x1d, _ = q.quads1d[i]()
+        return map(x -> x[1], x1d) # convert the `SVector{1,T}` to just `T`
     end
     weights1d = map(q -> q()[2], q.quads1d)
-    nodes_iter   = (SVector(x) for x in Iterators.product(nodes1d...))
+    nodes_iter = (SVector(x) for x in Iterators.product(nodes1d...))
     weights_iter = (prod(w) for w in Iterators.product(weights1d...))
     return nodes_iter, weights_iter
 end
@@ -398,24 +398,24 @@ function lagrange_basis(q::AbstractQuadratureRule{ReferenceLine})
     N = length(w)
     # for some reason, I must pass a Val(N) to a function barrier so that the
     # anonymous function created is type stable and does not allocate
-    return _lagrange_basis_1d(nodes,w,Val(N))
+    return _lagrange_basis_1d(nodes, w, Val(N))
 end
 
-@noinline function _lagrange_basis_1d(nodes,w,::Val{N}) where {N}
+@noinline function _lagrange_basis_1d(nodes, w, ::Val{N}) where {N}
     (x) -> begin
-        l = prod(xi->x[1]-xi[1],nodes)
+        l = prod(xi -> x[1] - xi[1], nodes)
         svector(N) do j
             xj = nodes[j]
-            num = l*w[j]
-            den = x[1]-xj[1]
-            ifelse(den==0,one(num),num/den)
+            num = l * w[j]
+            den = x[1] - xj[1]
+            return ifelse(den == 0, one(num), num / den)
         end
     end
 end
 
 function barycentric_lagrange_weights(q::AbstractQuadratureRule{ReferenceLine})
     # transform nodes to a vector
-    nodes = [x[1] for x in qcoords(q)] |> Vector
+    nodes = Vector([x[1] for x in qcoords(q)])
     # comptue weights as a vector
     w = barycentric_lagrange_weights(nodes)
     ws = SVector{length(w)}(w)
@@ -426,13 +426,13 @@ end
 function lagrange_basis(q::TensorProductQuadrature{2,<:Any})
     lx = lagrange_basis(q.quads1d[1])
     ly = lagrange_basis(q.quads1d[2])
-    _lagrange_basis2d(lx,ly)
+    return _lagrange_basis2d(lx, ly)
 end
 
-@noinline function _lagrange_basis2d(lx,ly)
-    (x) -> begin
+@noinline function _lagrange_basis2d(lx, ly)
+    return (x) -> begin
         vx = lx(SVector(x[1]))
         vy = ly(SVector(x[2]))
-        vx*transpose(vy)
+        vx * transpose(vy)
     end
 end

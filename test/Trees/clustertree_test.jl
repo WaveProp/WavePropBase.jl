@@ -112,11 +112,11 @@ end
 end
 
 @testset "QuadratureNode" begin
-    Ω = WPB.Ball() |> WPB.Domain
+    Ω = WPB.Domain(WPB.Ball())
     Γ = WPB.boundary(Ω)
-    msh = WPB.NystromMesh(Γ;meshsize=0.1,qorder=3)
+    msh = WPB.NystromMesh(Γ; meshsize=0.1, qorder=3)
     qnodes = WPB.qnodes(msh)
-    pts = WPB.qcoords(msh) |> collect
+    pts = collect(WPB.qcoords(msh))
     splitter = WPB.DyadicSplitter(; nmax=32)
     clt1 = WPB.ClusterTree(qnodes, splitter; threads=false)
     clt2 = WPB.ClusterTree(pts, splitter; threads=false)

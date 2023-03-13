@@ -79,7 +79,7 @@ function UniformCartesianMesh(domain::HyperRectangle{N}; step) where {N}
     hc = high_corner(domain)
     sz = ntuple(N) do i
         # take the max with 1 in case step = Inf
-        max(Int(ceil((hc[i] - lc[i]) / step[i])),1)
+        return max(Int(ceil((hc[i] - lc[i]) / step[i])), 1)
     end
     return UniformCartesianMesh(domain, sz)
 end
@@ -214,13 +214,13 @@ Given a collection of points `X` and a mesh `msh`, return a dictionary mapping
 the keys of the mesh elements, given as a `CartesianIndex`, to the indices of
 points inside that element.
 """
-function sort_in_cartesian_mesh(X,msh)
+function sort_in_cartesian_mesh(X, msh)
     dict = Dict{CartesianIndex,Vector{Int}}()
-    for (i,pt) in enumerate(X)
-        I = element_index_for_point(coords(pt),msh)
+    for (i, pt) in enumerate(X)
+        I = element_index_for_point(coords(pt), msh)
         isnothing(I) && continue
-        idxs = get!(dict,I,Int[])
-        push!(idxs,i)
+        idxs = get!(dict, I, Int[])
+        push!(idxs, i)
     end
     return dict
 end

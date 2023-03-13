@@ -2,7 +2,7 @@ using Test
 import WavePropBase as WPB
 using StaticArrays
 
-@test WPB.svector(i->i^2,3) == SVector(ntuple(i->i^2, 3))
+@test WPB.svector(i -> i^2, 3) == SVector(ntuple(i -> i^2, 3))
 
 T = SMatrix{2,2,Float64,4}
 

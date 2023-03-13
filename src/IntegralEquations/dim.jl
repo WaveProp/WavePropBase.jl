@@ -22,19 +22,20 @@ The following optional keyword arguments are available:
   that no correction is needed.
 """
 function dim_correction(pde, X, Y, S, D; location=:onsurface, p=DimParameters(),
-                        derivative=false,tol=Inf)
+                        derivative=false, tol=Inf)
     max_cond = -Inf # maximum condition numbered encoutered in coeffs matrix
     T = eltype(S)
     Xnodes = qnodes(X)
     Ynodes = qnodes(Y)
-    m,n = length(Xnodes), length(Ynodes)
+    m, n = length(Xnodes), length(Ynodes)
     if m == 0 || n == 0
         return zeros(T, m, n), zeros(T, m, n)
     end
     msg = "unrecognized value for kw `location`: received $location.
     Valid options are `:onsurface`, `:inside` and `:outside`, or the actual value of the multiplier"
     σ = location === :onsurface ? -0.5 :
-        location === :inside ? -1 : location === :outside ? 0 : location isa Number ? location : error(msg)
+        location === :inside ? -1 :
+        location === :outside ? 0 : location isa Number ? location : error(msg)
     dict_near = nearest_point_to_element(X, Y; tol)
     # find first an appropriate set of source points to center the monopoles
     qmax = sum(size(etype2qtags(Y, E), 1) for E in keys(Y))
@@ -95,11 +96,11 @@ function dim_correction(pde, X, Y, S, D; location=:onsurface, p=DimParameters(),
             copy!(view(M, 1:nq, :), M0)
             copy!(view(M, (nq + 1):(2nq), :), M1)
             F = qr!(blockmatrix_to_matrix(M))
-            max_cond = max(cond(F.R),max_cond)
+            max_cond = max(cond(F.R), max_cond)
             for i in near_list[n]
                 Θi = @view Θ[i:i, :]
                 W_ = (blockmatrix_to_matrix(Θi) / F.R) * adjoint(F.Q)
-                W =  matrix_to_blockmatrix(W_, T)
+                W = matrix_to_blockmatrix(W_, T)
                 for k in 1:nq
                     push!(Is, i)
                     push!(Js, jglob[k])

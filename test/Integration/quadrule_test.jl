@@ -116,7 +116,6 @@ end
     @test q2 == q3
 end
 
-
 @testset "Lagrange interpolant" begin
     N, M = 3, 2
     qx = WPB.Fejer(N)
@@ -142,7 +141,7 @@ end
     L = WPB.lagrange_basis(q)
     x, w = q()
     n = length(x)
-    for (i,xi) in enumerate(x)
+    for (i, xi) in enumerate(x)
         v = L(xi)
         for k in 1:n
             if k == i

@@ -119,7 +119,7 @@ end
 Base.union(Ω::Domain) = Domain(unique(entities(Ω)))
 
 Base.append!(Ω1::Domain, Ω2::Domain) = (append!(entities(Ω1), entities(Ω2));
-                        Ω1)
+                                        Ω1)
 Base.append!(Ω1::Domain, ent::AbstractEntity) = (push!(entities(Ω1), ent); Ω1)
 Base.append!(Ω1::Domain, ents::Vector{<:AbstractEntity}) = (append!(entities(Ω1), ents); Ω1)
 
@@ -226,5 +226,5 @@ end
 Reverse the orientation of the normal vector in the entities of a domain.
 """
 function flip_normal(Γ::Domain)
-    Domain(flip_normal.(entities(Γ)))
+    return Domain(flip_normal.(entities(Γ)))
 end

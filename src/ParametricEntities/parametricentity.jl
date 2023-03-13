@@ -33,7 +33,7 @@ function flip_normal(ent::ParametricEntity)
     msg = "flip_normal only works for entities of co-dimension one."
     @assert ambient_dimension(ent) == geometric_dimension(ent) + 1 msg
     f = _flip_parametrization(parametrization(ent))
-    ParametricEntity(geometric_dimension(ent),-tag(ent),f,domain(ent))
+    return ParametricEntity(geometric_dimension(ent), -tag(ent), f, domain(ent))
 end
 @noinline function _flip_parametrization(f)
     g = (s) -> f(1 .- s)

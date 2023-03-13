@@ -102,30 +102,30 @@ function near_interaction_list(X, Y::AbstractMesh{N}; tol) where {N}
     # any target point
     @assert tol > 0
     bbox = HyperRectangle(X)
-    bbox = HyperRectangle(low_corner(bbox).-tol, high_corner(bbox).+tol)
+    bbox = HyperRectangle(low_corner(bbox) .- tol, high_corner(bbox) .+ tol)
     # a cartesian mesh to sort the points
-    msh  = UniformCartesianMesh(bbox;step=tol)
-    sz   = size(msh)
-    targets_in_element = sort_in_cartesian_mesh(X,msh)
+    msh = UniformCartesianMesh(bbox; step=tol)
+    sz = size(msh)
+    targets_in_element = sort_in_cartesian_mesh(X, msh)
     # for each element type, build the list of targets close to a given element
     dict = Dict{DataType,Vector{Vector{Int}}}()
     for E in keys(Y)
         nel = length(Y[E])
         dict[E] = idxs = [Int[] for _ in 1:nel]
         # TODO: function barrier needed
-        for (n,el) in enumerate(Y[E])
+        for (n, el) in enumerate(Y[E])
             y = center(el)
-            I = element_index_for_point(y,msh)
+            I = element_index_for_point(y, msh)
             isnothing(I) && continue
             It = Tuple(I)
             # index of neighboring boxes
-            neighbors = ntuple(N) do d
-                max(It[d]-1,1):min(It[d]+1,sz[d])
-            end |> CartesianIndices
+            neighbors = CartesianIndices(ntuple(N) do d
+                                             return max(It[d] - 1, 1):min(It[d] + 1, sz[d])
+                                         end)
             # append targets to idxs of current element
             for J in neighbors
-                haskey(targets_in_element,J) || continue
-                append!(idxs[n],targets_in_element[J])
+                haskey(targets_in_element, J) || continue
+                append!(idxs[n], targets_in_element[J])
             end
         end
     end

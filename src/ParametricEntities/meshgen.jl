@@ -115,7 +115,7 @@ function _integration_measure(jac::AbstractMatrix)
     else
         g = det(transpose(jac) * jac)
         g < -sqrt(eps()) && (@warn "negative integration measure g=$g")
-        g = max(g,0)
+        g = max(g, 0)
         sqrt(g)
     end
 end
