@@ -95,15 +95,7 @@ end
     end
 end
 
-@recipe function f(msh::GenericMesh)
-    return msh, domain(msh)
-end
-
-@recipe function f(mesh::GenericMesh, Ω::Domain)
-    return view(mesh, Ω)
-end
-
-@recipe function f(mesh::SubMesh)
+@recipe function f(mesh::AbstractMesh)
     label --> ""
     grid --> false
     aspect_ratio --> :equal

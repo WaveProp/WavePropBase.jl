@@ -32,6 +32,7 @@ using StaticArrays
         M = WPB.gmsh_import_mesh(Ω; dim=2)
         return Ω, M
     end
+
     Ω, M = WPB.@gmsh begin
         WPB.clear_entities!()
         gmsh.model.occ.addRectangle(0, 0, 0, 1, 1)
