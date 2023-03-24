@@ -1,5 +1,13 @@
 using WavePropBase
 using Documenter
+using Weave
+
+# write .md files from .jmd files
+weave_files = ["index.jmd","utils.jmd"]
+for fname in weave_files
+    dir  = joinpath(WavePropBase.PROJECT_ROOT,"docs","src")
+    weave(joinpath(dir, fname), doctype="github")
+end
 
 DocMeta.setdocmeta!(WavePropBase,
                     :DocTestSetup,
@@ -15,13 +23,14 @@ makedocs(;
                                 canonical="https://WaveProp.github.io/WavePropBase.jl",
                                 assets=String[]),
          pages=["WavePropBase" => "index.md",
-                "Utils" => "utils.md",
-                "Geometry" => "geometry.md",
-                "Interpolation" => "interpolation.md",
-                "Integration" => "integration.md",
-                "Meshes" => "mesh.md",
-                "Trees" => "trees.md",
-                "IO" => "io.md",
-                "References" => "references.md"])
+                # "Utils" => "utils.md",
+                # "Geometry" => "geometry.md",
+                # "Interpolation" => "interpolation.md",
+                # "Integration" => "integration.md",
+                # "Meshes" => "mesh.md",
+                # "Trees" => "trees.md",
+                # "IO" => "io.md",
+                # "References" => "references.md"
+                ])
 
 deploydocs(; repo="github.com/WaveProp/WavePropBase.jl", devbranch="main")
