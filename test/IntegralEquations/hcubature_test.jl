@@ -9,14 +9,14 @@ rtol = 5e-2
 # for t in (:interior,:exterior)
 for t in (:interior, :exterior)
     σ = t == :interior ? 1 / 2 : -1 / 2
-    for N in (2,) # 3d not implemented yet
+    for N in (2,3) # 3d not implemented yet
         ops = (WPB.Laplace(; dim=N), WPB.Helmholtz(; k=1.2, dim=N))
         for pde in ops
             @testset "Greens identity ($t) $(N)d $pde" begin
                 WPB.clear_entities!()
                 ent = N == 2 ? WPB.Disk() : WPB.Ball()
                 Ω = WPB.Domain(ent)
-                Γ = WPB.boundary(Ω)
+                Γ = WPB.external_boundary(Ω)
                 meshsize = 0.2
                 M = WPB.meshgen(Γ; meshsize)
                 mesh = WPB.NystromMesh(view(M, Γ); qorder=3)
