@@ -13,6 +13,18 @@ The specialized integration is precomputed on the reference element for each
 quadrature node of the standard quadrature.
 =#
 
+"""
+    hcubature_correction(iop::IntegralOperator; max_dist, kwargs...)
+
+Given an integral operator `iop`, this function provides a sparse correction to
+`iop` for the entries `i,j` such that the distance between the `i`-th target and
+the `j`-th source is less than `max_dist`.
+
+The correction is computed by using an adaptive quadrature based on the
+`hcubature` routine from `HCubature.jl`; the `kwargs` are passed to `hcubature`,
+and (see [its documentation](https://github.com/JuliaMath/HCubature.jl) for more
+details).
+"""
 function hcubature_correction(iop::IntegralOperator; max_dist, kwargs...)
     # unpack type-unstable fields in iop, allocate output, and dispatch
     X, Y, K = target_mesh(iop), source_mesh(iop), kernel(iop)
@@ -31,6 +43,7 @@ function hcubature_correction(iop::IntegralOperator; max_dist, kwargs...)
 end
 
 @noinline function _hcubature_correction_etype!(out,iter,qreg,L,nearlist,X,Y,K,max_dist,kwargs)
+    atol = haskey(kwargs,:atol) ? kwargs[:atol] : Inf
     E = eltype(iter)
     Xqnodes = qnodes(X)
     Yqnodes = qnodes(Y)
@@ -40,7 +53,6 @@ end
     x̂, ŵ = collect.(qreg())
     el2qtags = etype2qtags(Y, E)
     buffer = hcubature_buffer(x -> one(eltype(out.V)) * L(a) * first(ŵ), a, b)
-    # TODO: add function barrier to make the loop below type-stable
     for (n, el) in enumerate(iter)
         jglob = view(el2qtags, :, n)
         inear = nearlist[n]
@@ -53,9 +65,10 @@ end
             # FIXME: better estimate the distance above using a bounding sphere on
             # `el` instead of the smallest distance to the quadrature nodes
             μ = N == 1 ? Kress{2}() : N == 2 ? Duffy() : nothing
+            # μ = identity
             ll = decompose(τ̂, x̂nearest)
             W = sum(ll) do l
-                I, _ = hcubature(a, b; buffer, kwargs...) do ŷs
+                val, er = hcubature(a, b; buffer, kwargs...) do ŷs
                     ŷ = l(μ(ŷs))
                     l′ = integration_measure(l, μ(ŷs))
                     μ′ = integration_measure(μ,ŷs)
@@ -65,7 +78,8 @@ end
                     τ′ = _integration_measure(jac)
                     return K(xnode, (coords=y, normal=ν)) * L(ŷ) * τ′ * l′ * μ′
                 end
-                return I
+                er ≤ max(atol) || @warn "hcubature failed to converge: (I,E) = $val, $er"
+                return val
             end
             for (k, j) in enumerate(jglob)
                 qx,qy = Xqnodes[i], Yqnodes[j]
