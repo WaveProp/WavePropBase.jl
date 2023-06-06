@@ -25,7 +25,7 @@ The correction is computed by using an adaptive quadrature based on the
 and (see [its documentation](https://github.com/JuliaMath/HCubature.jl) for more
 details).
 """
-function hcubature_correction(iop::IntegralOperator; max_dist, kwargs...)
+function hcubature_correction(iop::IntegralOperator; max_dist, atol = 1e-8, maxevals = 1000)
     # unpack type-unstable fields in iop, allocate output, and dispatch
     X, Y, K = target_mesh(iop), source_mesh(iop), kernel(iop)
     dict_near = near_interaction_list(X, Y; tol=max_dist)
@@ -37,22 +37,24 @@ function hcubature_correction(iop::IntegralOperator; max_dist, kwargs...)
         qreg = etype2qrule(Y, E)
         L = lagrange_basis(qreg)
         iter = Y[E]
-        _hcubature_correction_etype!(out, iter, qreg, L, nearlist, X, Y, K, max_dist, kwargs)
+        _hcubature_correction_etype!(out, iter, qreg, L, nearlist, X, Y, K, max_dist, atol, maxevals)
     end
     return sparse(out...)
 end
 
-@noinline function _hcubature_correction_etype!(out,iter,qreg,L,nearlist,X,Y,K,max_dist,kwargs)
-    atol = haskey(kwargs,:atol) ? kwargs[:atol] : Inf
+@noinline function _hcubature_correction_etype!(out,iter,qreg,L,nearlist,X,Y,K,max_dist, atol, maxevals)
     E = eltype(iter)
     Xqnodes = qnodes(X)
     Yqnodes = qnodes(Y)
     N = geometric_dimension(E)
     a, b = ntuple(i -> 0, N), ntuple(i -> 1, N)
     τ̂ = domain(E)
+    τ̂ === ReferenceLine() || notimplemented()
     x̂, ŵ = collect.(qreg())
     el2qtags = etype2qtags(Y, E)
     buffer = hcubature_buffer(x -> one(eltype(out.V)) * L(a) * first(ŵ), a, b)
+    success = true
+    maxer   = 0
     for (n, el) in enumerate(iter)
         jglob = view(el2qtags, :, n)
         inear = nearlist[n]
@@ -62,25 +64,38 @@ end
             dmin, j = findmin(n -> norm(coords(xnode) - coords(Yqnodes[jglob[n]])),1:length(jglob))
             x̂nearest = x̂[j]
             dmin > max_dist && continue
-            # FIXME: better estimate the distance above using a bounding sphere on
-            # `el` instead of the smallest distance to the quadrature nodes
-            μ = N == 1 ? Kress{2}() : N == 2 ? Duffy() : nothing
-            # μ = identity
-            ll = decompose(τ̂, x̂nearest)
-            W = sum(ll) do l
-                val, er = hcubature(a, b; buffer, kwargs...) do ŷs
-                    ŷ = l(μ(ŷs))
-                    l′ = integration_measure(l, μ(ŷs))
-                    μ′ = integration_measure(μ,ŷs)
+            issingular = iszero(dmin)
+            if issingular
+                W1, er1 = hcubature(a, Tuple(x̂nearest); buffer, atol = atol/2, maxevals) do ŷ
                     y  = el(ŷ)
+                    y == coords(xnode) && error("singular point detected")
                     jac = jacobian(el, ŷ)
                     ν = _normal(jac)
                     τ′ = _integration_measure(jac)
-                    return K(xnode, (coords=y, normal=ν)) * L(ŷ) * τ′ * l′ * μ′
+                    return K(xnode, (coords=y, normal=ν)) * L(ŷ) * τ′
                 end
-                er ≤ max(atol) || @warn "hcubature failed to converge: (I,E) = $val, $er"
-                return val
+                W2, er2 = hcubature(Tuple(x̂nearest),b; buffer, atol = atol/2, maxevals) do ŷ
+                    y  = el(ŷ)
+                    y == coords(xnode) && error("singular point detected")
+                    jac = jacobian(el, ŷ)
+                    ν = _normal(jac)
+                    τ′ = _integration_measure(jac)
+                    return K(xnode, (coords=y, normal=ν)) * L(ŷ) * τ′
+                end
+                W  = W1 + W2
+                er = er1 + er2
+            else
+                W, er = hcubature(a, b; buffer, atol, maxevals) do ŷ
+                    y  = el(ŷ)
+                    y == coords(xnode) && error("singular point detected")
+                    jac = jacobian(el, ŷ)
+                    ν = _normal(jac)
+                    τ′ = _integration_measure(jac)
+                    return K(xnode, (coords=y, normal=ν)) * L(ŷ) * τ′
+                end
             end
+            er ≤ max(atol) || (success = false)
+            maxer = max(maxer, er)
             for (k, j) in enumerate(jglob)
                 qx,qy = Xqnodes[i], Yqnodes[j]
                 push!(out.I, i)
@@ -89,5 +104,9 @@ end
             end
         end
     end
+    msg = """hcubature failed to converge to tolerance $atol within $maxevals
+    function evaluations: maximum error was $maxer. Consider increasing the
+    `atol` and/or `maxevals`"""
+    success || @warn msg
     return out
 end
