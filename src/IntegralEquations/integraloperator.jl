@@ -46,8 +46,8 @@ function Base.Matrix(iop::IntegralOperator{T}) where {T}
     return out
 end
 @noinline function _iop_to_matrix!(out, K, X, Y)
-    for i in 1:length(X)
-        for j in 1:length(Y)
+    Threads.@threads for j in 1:length(Y)
+        for i in 1:length(X)
             out[i, j] = K(X[i], Y[j]) * weight(Y[j])
         end
     end

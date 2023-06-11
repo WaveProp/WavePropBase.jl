@@ -2,14 +2,15 @@ using Test
 import WavePropBase as WPB
 using ForwardDiff
 
-@testset "Disk" begin
-    disk = WPB.Disk() # abstract entity
-    Γ = WPB.Domain(WPB.boundary(disk))
+@testset "Circle" begin
+    circ = WPB.ParametricEntity(s->(cos(s[1]), sin(s[1])), 0, 2π)
+    Γ = WPB.Domain(circ)
     M = WPB.meshgen(Γ, (10,))
     M = WPB.meshgen(Γ; meshsize=0.1)
     # plot(M,Γ)
-    @test WPB.entities(Γ) == WPB.boundary(disk)
-    @test WPB.geometric_dimension(disk) == 2
+    @test issetequal(WPB.entities(Γ), [circ])
+    @test WPB.geometric_dimension(Γ) == 1
+    @test WPB.ambient_dimension(Γ) == 2
 end
 
 @testset "Box" begin

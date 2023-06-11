@@ -8,14 +8,9 @@ See also: [`AbstractElement`](@ref)
 """
 struct ParametricElement{F,D,T} <: AbstractElement{D,T}
     parametrization::F
-    function ParametricElement{D,T}(f::F) where {F,D,T}
-        return new{F,D,T}(f)
-    end
 end
 
 parametrization(el::ParametricElement) = el.parametrization
-domain(::ParametricElement{F,D,T}) where {F,D,T} = D()
-return_type(::ParametricElement{F,D,T}) where {F,D,T} = T
 
 geometric_dimension(p::ParametricElement) = geometric_dimension(domain(p))
 ambient_dimension(p::ParametricElement) = length(return_type(p))
@@ -26,15 +21,32 @@ end
 
 # constructor which infers the return type of f. Warn if inferred type is not
 # bitstype
-function ParametricElement(f, d)
+function ParametricElement(f, d::CartesianElement{N}) where {N}
     x = center(d)
     T = Base.promote_op(f, typeof(x))
     isbitstype(T) || (@warn "non bitstype detected for ParametricElement")
-    D = typeof(domain(d))
-    return ParametricElement{D,T}((x) -> f(d(x)))
+    D = ReferenceHyperCube{N}
+    g = (x) -> f(d(x))
+    return ParametricElement{typeof(g),D,T}(g)
 end
 
 function (el::ParametricElement)(u)
     f = parametrization(el)
     return f(u)
+end
+
+# by default use ForwardDiff for jacobian
+function jacobian(el::ParametricElement, s::SVector)
+    f = parametrization(el)
+    return ForwardDiff.jacobian(f, s)
+end
+jacobian(el::ParametricElement, s) = jacobian(el, SVector(s))
+
+# convert to a LagrangeElement by computing the linear approximation of the
+# parametric element
+function LagrangeElement(el::ParametricElement{F,D,T}) where {F,D,T}
+    f    = parametrization(el)
+    d    = D()
+    vals = map(f, vertices(d))
+    return LagrangeElement{D}(vals)
 end

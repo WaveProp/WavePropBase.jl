@@ -212,7 +212,8 @@ function Ellipsoid(; center=zeros(3), paxis=ones(3))
         param = (x) -> _ellipsoid_parametrization(x[1], x[2], id, paxis, center)
         parts[id] = ParametricEntity(param, domain, [domain])
     end
-    return Ellipsoid(center, paxis, parts)
+    tag = new_tag(3)
+    return Ellipsoid(tag, center, paxis, parts)
 end
 geometric_dimension(ent::Ellipsoid) = 3
 ambient_dimension(ent::Ellipsoid) = 3

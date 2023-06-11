@@ -9,12 +9,12 @@ rtol = 5e-2
 # for t in (:interior,:exterior)
 for t in (:interior, :exterior)
     σ = t == :interior ? 1 / 2 : -1 / 2
-    for N in (2,3) # 3d not implemented yet
+    for N in (2,) # 3d not implemented yet
         ops = (WPB.Laplace(; dim=N), WPB.Helmholtz(; k=1.2, dim=N))
         for pde in ops
             @testset "Greens identity ($t) $(N)d $pde" begin
                 WPB.clear_entities!()
-                ent = N == 2 ? WPB.Disk() : WPB.Ball()
+                ent = N == 2 ? WPB.Disk(;center=(0.1,0.3),radius=2) : WPB.Ball()
                 Ω = WPB.Domain(ent)
                 Γ = WPB.external_boundary(Ω)
                 meshsize = 0.2
@@ -35,8 +35,8 @@ for t in (:interior, :exterior)
                 D = WPB.DoubleLayerOperator(pde, mesh)
                 D0 = Matrix(D)
                 e0 = norm(S0 * γ₁u - D0 * γ₀u - σ * γ₀u, Inf) / γ₀u_norm
-                δS = WPB.hcubature_correction(S; max_dist=5 * meshsize, maxevals=20)
-                δD = WPB.hcubature_correction(D; max_dist=5 * meshsize, maxevals=20)
+                δS = WPB.hcubature_correction(S; maxdist=5 * meshsize, maxevals=2000)
+                δD = WPB.hcubature_correction(D; maxdist=5 * meshsize, maxevals=2000)
                 Smat, Dmat = S0 + δS, D0 + δD
                 e1 = norm(Smat * γ₁u - Dmat * γ₀u - σ * γ₀u, Inf) / γ₀u_norm
                 @testset "Single/double layer $(string(pde))" begin

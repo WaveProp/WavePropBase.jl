@@ -4,10 +4,10 @@ Definition of basic geometrical concepts.
 
 =#
 
-# import Base: ==, length, in, iterate, getindex, lastindex, isempty, eltype, keys
-# import Base: union, setdiff, intersect, issubset
-
-include("point.jl")
 include("referenceshapes.jl")
+include("point.jl")
+include("hyperrectangle.jl")
+include("hypersphere.jl")
 include("entities.jl")
 include("domain.jl")
+include("simpleshapes.jl")

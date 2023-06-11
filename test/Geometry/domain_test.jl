@@ -32,18 +32,16 @@ end
 # Domains
 Ω1 = WPB.Domain(s1)
 Ω2 = WPB.Domain(s2)
-Ω = WPB.Domain(surfaces)
+Ω  = WPB.Domain(surfaces)
 
 @testset "Domain" begin
-    @test WPB.entities(Ω) == surfaces
+    @test WPB.entities(Ω) == Set(surfaces)
     @test length(Ω) == 2
     @test !isempty(Ω)
     @test Ω2 == setdiff(Ω, Ω1)
     @test Ω == union(Ω1, Ω2)
     @test s1 in Ω
     @test l1 in Ω
-    @test Ω[1] == s1
-    @test Ω[end] == s2
     for ω in Ω
         for Γ in WPB.boundary(ω)
             @test WPB.geometric_dimension(ω) - 1 == WPB.geometric_dimension(Γ)

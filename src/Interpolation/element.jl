@@ -1,7 +1,7 @@
 """
     abstract type AbstractElement{D,T}
 
-Elements given by a fixed interpolation schemes mapping points on the the domain
+Elements given by a fixed interpolation schemes mapping points on the domain
 `D<:AbstractReferenceShape` (of singleton type) to a value of type `T`.
 
 Instances `el` of `AbstractElement` are expected to implement:
@@ -14,7 +14,7 @@ Instances `el` of `AbstractElement` are expected to implement:
     For performance reasons, both `el(x̂)` and `jacobian(el,x̂)` should
     take as input a `StaticVector` and output a static vector or static array.
 """
-abstract type AbstractElement{D,T} end
+abstract type AbstractElement{D<:AbstractReferenceShape,T} end
 
 function (el::AbstractElement)(x)
     return abstractmethod(el)
@@ -24,23 +24,19 @@ end
     jacobian(f,x)
 
 Given a (possibly vector-valued) functor `f : 𝐑ᵐ → 𝐅ⁿ`, return the `n × m`
-matrix `Aᵢⱼ = ∂fᵢ/∂xⱼ`. By default a finite-difference approximation is
-performed, but you should overload this method for specific `f` if better
+matrix `Aᵢⱼ = ∂fᵢ/∂xⱼ`. By default `ForwardDiff` is used to comptue the
+jacobian, but you should overload this method for specific `f` if better
 performance and/or precision is required.
 
 Note: both `x` and `f(x)` are expected to be of `SVector` type.
 """
 function jacobian(f, x)
     return abstractmethod(f)
-    # N = length(x)
-    # h = (eps())^(1 / 3)
-    # partials = svector(N) do d
-    #     xp = svector(i -> i == d ? x[i] + h : x[i], N)
-    #     xm = svector(i -> i == d ? x[i] - h : x[i], N)
-    #     return (f(xp) - f(xm)) / (2h)
-    # end
-    # return hcat(partials...)
 end
+function jacobian(f::Function, s::SVector)
+    return ForwardDiff.jacobian(f, s)
+end
+jacobian(el::Function, s) = jacobian(el, SVector(s))
 
 function derivative(f, x)
     jac = jacobian(f, x)
@@ -69,18 +65,13 @@ end
 @doc raw"""
     curvature(el, x̂)
 
-The curvature of `el` at the parametric coordinate `x̂`, given by the following
-formula
-
-```math
-\kappa = \nabla\cdot\frac{\nabla p}{|\nabla p|} = \frac{\Delta p}{|\nabla p|} + \frac{\nabla^\perp p\nabla^2 p\nabla p}{|\nabla p|^3}
-```
+The total curvature of `el` at the parametric coordinate `x̂`
 """
 function curvature(el::AbstractElement, u)
     return abstractmethod(el)
 end
 
-domain(::SType{<:AbstractElement{D}}) where {D<:AbstractReferenceShape} = D()
+domain(::SType{<:AbstractElement{D,T}}) where {D,T} = D() # note that we return an instance of the type
 
 return_type(el::AbstractElement{D,T}) where {D,T} = T
 
@@ -208,6 +199,11 @@ const LagrangeTetrahedron = LagrangeElement{ReferenceTetrahedron}
     const LagrangeSquare = LagrangeElement{ReferenceSquare}
 """
 const LagrangeSquare = LagrangeElement{ReferenceSquare}
+
+const Quadrangle2D{T} = LagrangeElement{ReferenceSquare,4,SVector{2,T}}
+const Quadrangle3D{T} = LagrangeElement{ReferenceSquare,4,SVector{3,T}}
+Quadrangle2D(args...) = Quadrangle2D{Float64}(args...)
+Quadrangle3D(args...) = Quadrangle3D{Float64}(args...)
 
 #=
 Hardcode some basic elements.
@@ -462,4 +458,44 @@ end
 @fastmath function jacobian(el::LagrangeElement{ReferenceTetrahedron,4}, u)
     v = vals(el)
     return hcat((v[2] - v[1]), (v[3] - v[1]), (v[4] - v[1]))
+end
+
+"""
+    struct CartesianElement{N,T} <: AbstractElement{ReferecenHyperCube{N},SVector{N,T}}
+
+An affine map from the reference domain [`ReferenceHyperCube{N}`](@ref) to a
+[`HyperRectangle{N,T}`](@ref).
+
+For axis-aligned elements, this is more efficient than using a `LagrangeElement`
+since it requires only the storage of the corners of the element (instead of
+e.g. the `2^N` nodes of a rectangular `LagrangeElement`).
+
+This structure is used extensively for representing the elements in a cartesian
+meshes.
+"""
+struct CartesianElement{N,T} <: AbstractElement{ReferenceHyperCube{N},SVector{N,T}}
+    rec::HyperRectangle{N,T}
+end
+
+"""
+    CartesianElement(lc,uc)
+
+Create a `CartesianElement` with lower corner `lc` and upper corner `uc`.
+"""
+function CartesianElement(lc,uc)
+    return CartesianElement(HyperRectangle(lc,uc))
+end
+
+function (el::CartesianElement)(u)
+    lc = low_corner(el.rec)
+    hc = high_corner(el.rec)
+    # map from reference domain to element
+    v = @. lc + (hc - lc) * u
+    return v
+end
+
+function jacobian(el::CartesianElement, u)
+    lc = low_corner(el.rec)
+    hc = high_corner(el.rec)
+    return SDiagonal(hc - lc)
 end

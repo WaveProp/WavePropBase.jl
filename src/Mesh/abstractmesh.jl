@@ -23,7 +23,7 @@ primitive_type(M::AbstractMesh{N,T}) where {N,T} = T
 function Base.show(io::IO, msh::AbstractMesh)
     print(io, "$(typeof(msh)) containing:")
     for E in keys(msh)
-        iter = ElementIterator(msh, E)
+        iter = msh[E]
         print(io, "\n\t $(length(iter)) elements of type ", E)
     end
     return io
@@ -101,10 +101,10 @@ function near_interaction_list(X, Y::AbstractMesh{N}; tol) where {N}
     # points which are not in the bounding box but are farther than `tol` from
     # any target point
     @assert tol > 0
-    bbox = HyperRectangle(X)
+    bbox = bounding_box(X)
     bbox = HyperRectangle(low_corner(bbox) .- tol, high_corner(bbox) .+ tol)
     # a cartesian mesh to sort the points
-    msh = UniformCartesianMesh(bbox; step=tol)
+    msh = UniformCartesianMesh(bbox; meshsize=tol)
     sz = size(msh)
     targets_in_element = sort_in_cartesian_mesh(X, msh)
     # for each element type, build the list of targets close to a given element

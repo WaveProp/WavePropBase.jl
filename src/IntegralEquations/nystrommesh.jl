@@ -4,7 +4,8 @@
 A point in `ℝᴺ` with a `weight` for performing numerical integration.
 
 A `QuadratureNode` can optionally store a `normal` vector and a `curvature`
-scalar, given by the divergence of the normal vector.
+scalar for representing the (total) curvature (i.e. sum of principal
+curvatures).
 """
 struct QuadratureNode{N,T<:Real}
     coords::SVector{N,T}
@@ -53,6 +54,7 @@ etype2qrule(m::NystromMesh, E) = m.etype2qrule[E]
 etype2qtags(m::NystromMesh, E::DataType) = m.etype2qtags[E]
 Base.keys(m::NystromMesh) = keys(m.etype2qtags)
 Base.getindex(m::NystromMesh, E::DataType) = mesh(m)[E]
+ElementIterator(m::NystromMesh,E::DataType) = ElementIterator(mesh(m),E)
 
 Base.isempty(m::NystromMesh) = isempty(qnodes(m))
 
@@ -147,3 +149,33 @@ function NystromMesh(Ω::Domain; meshsize, qorder, curvature=false)
     return NystromMesh(msh; qorder, curvature)
 end
 NystromMesh(ent::AbstractEntity; kwargs...) = NystromMesh(Domain(ent); kwargs...)
+
+"""
+    dom2qtags(Q::NystromMesh, dom::Domain)
+
+Given a domain `dom`, return the indices of the quadratures nodes in `Q`
+associated to its quadrature.
+"""
+function dom2qtags(Q::NystromMesh, dom::Domain)
+    msh = mesh(Q)
+    tags = Int[]
+    for (E,idxs) in dom2elt_dict(msh,dom)
+        qtags = Q.etype2qtags[E][:,idxs]
+        append!(tags,qtags)
+    end
+    return tags
+end
+dom2qtags(Q::NystromMesh, ent::AbstractEntity) = dom2qtags(Q, Domain(ent))
+
+"""
+    bounding_box(Q::NystromMesh)
+
+Create a bounding box for the quadrature nodes of `Q`.
+"""
+function bounding_box(Q::NystromMesh)
+    return bounding_box(qcoords(Q))
+end
+
+function near_interaction_list(X::NystromMesh,Y::NystromMesh; kwargs...)
+    near_interaction_list(qnodes(X),Y;kwargs...)
+end

@@ -1,5 +1,51 @@
 # Basic utilities for meshing parametric entities and generate a `GenericMesh`
 
+"""
+    meshgen(Ω::Domain,num_elements)
+    meshgen(Ω::Domain;meshsize)
+
+Generate a `GenericMesh` for the domain `Ω` with `num_elements` per entity. To
+specify a different number of elements per entity, `num_elements` should be a
+vector with as many elements as there are entities in `Ω`. Alternatively, a
+`meshsize` can be passed.
+
+Requires the entities forming `Ω` to be `ParametricEntity`.
+
+!!! warning
+    The quality of the generated mesh created usign `meshgen` depends on the
+    quality of the underlying parametrization. For complex surfaces, you are
+    better off using a proper mesher such as `gmsh`.
+"""
+function meshgen(Ω::Domain, num_elements::Vector)
+    # extract the ambient dimension for these entities (i.e. are we in 2d or
+    # 3d). Only makes sense if all entities have the same ambient dimension.
+    @assert all(e->e isa ParametricEntity, entities(Ω)) "all entities must be parametric entities"
+    N = ambient_dimension(first(Ω))
+    @assert all(p -> ambient_dimension(p) == N, entities(Ω))
+    mesh = GenericMesh{N,Float64}()
+    meshgen!(mesh, Ω, num_elements) # fill in
+    return mesh
+end
+function meshgen(Ω::Domain, num_elements::Union{Int,Tuple{Int},Tuple{Int,Int}})
+    n = length(entities(Ω))
+    return meshgen(Ω, [num_elements for _ in 1:n])
+end
+
+# helper function to compute numbef of elements given a desired meshsize
+function meshgen(Ω::Domain; meshsize)
+    num_elements = []
+    for ent in Ω
+        l = _length_per_dimension(ent)
+        n = map(i -> ceil(Int, i / meshsize), l)
+        push!(num_elements, n)
+    end
+    return meshgen(Ω, num_elements)
+end
+
+
+meshgen(ent::ParametricEntity,args...;kwargs...) = meshgen(Domain(ent),args...;kwargs...)
+
+
 function meshgen!(mesh::GenericMesh, ent::ParametricEntity, sz)
     @assert ambient_dimension(ent) == ambient_dimension(mesh)
     N = geometric_dimension(ent)
@@ -10,12 +56,12 @@ function meshgen!(mesh::GenericMesh, ent::ParametricEntity, sz)
     els = _meshgen(f, d, sz)
     # push related information to mesh
     E = eltype(els)
-    vals = get!(mesh.elements, E, Vector{E}())
+    vals = get!(mesh.etype2data, E, Vector{E}())
     istart = length(vals) + 1
     append!(vals, els)
     iend = length(vals)
-    haskey(mesh.ent2tags, ent) && @warn "entity $(key(ent)) already present in mesh"
-    mesh.ent2tags[ent] = Dict(E => collect(istart:iend)) # add key
+    haskey(mesh.ent2tagsdict, ent) && @warn "entity $(key(ent)) already present in mesh"
+    mesh.ent2tagsdict[ent] = Dict(E => collect(istart:iend)) # add key
     return mesh
 end
 
@@ -45,47 +91,6 @@ function meshgen!(mesh::GenericMesh, Ω::Domain, num_elements)
         meshgen!(mesh, ent, sz)
     end
     return mesh
-end
-
-"""
-    meshgen(Ω::Domain,num_elements)
-    meshgen(Ω::Domain;meshsize)
-
-Generate a `GenericMesh` for the domain `Ω` with `num_elements` per entity. To
-specify a different number of elements per entity, `num_elements` should be a
-vector with as many elements as there are entities in `Ω`. Alternatively, a
-`meshsize` can be passed.
-
-Requires the entities forming `Ω` to be `ParametricEntity`.
-
-!!! warning
-    The quality of the generated mesh created usign `meshgen` depends on the
-    quality of the underlying parametrization. For complex surfaces, you are
-    better off using a proper mesher such as `gmsh`.
-"""
-function meshgen(Ω::Domain, num_elements::Vector)
-    # extract the ambient dimension for these entities (i.e. are we in 2d or
-    # 3d). Only makes sense if all entities have the same ambient dimension.
-    N = ambient_dimension(first(Ω))
-    @assert all(p -> ambient_dimension(p) == N, entities(Ω))
-    mesh = GenericMesh{N,Float64}()
-    meshgen!(mesh, Ω, num_elements) # fill in
-    return mesh
-end
-function meshgen(Ω::Domain, num_elements::Union{Int,Tuple{Int},Tuple{Int,Int}})
-    n = length(entities(Ω))
-    return meshgen(Ω, [num_elements for _ in 1:n])
-end
-
-# helper function to compute numbef of elements given a desired meshsize
-function meshgen(Ω::Domain; meshsize)
-    num_elements = []
-    for ent in Ω
-        l = _length_per_dimension(ent)
-        n = map(i -> ceil(Int, i / meshsize), l)
-        push!(num_elements, n)
-    end
-    return meshgen(Ω, num_elements)
 end
 
 # typical length of the ent across each dimension, obtained by measuring the

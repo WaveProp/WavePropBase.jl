@@ -40,13 +40,13 @@ function dim_correction(pde, X, Y, S, D; location=:onsurface, p=DimParameters(),
     # find first an appropriate set of source points to center the monopoles
     qmax = sum(size(etype2qtags(Y, E), 1) for E in keys(Y))
     ns = ceil(Int, p.sources_oversample_factor * qmax)
-    pts = qcoords(Y)
-    bbox = HyperRectangle(pts)
+    bbox = bounding_box(Y)
     xc = center(bbox)
     r = p.sources_radius_multiplier * radius(bbox)
     if ambient_dimension(Y) == 2
         xs = uniform_points_circle(ns, r, xc)
     elseif ambient_dimension(Y) == 3
+        # xs = lebedev_points_sphere(ns, r, xc)
         xs = fibonnaci_points_sphere(ns, r, xc)
     else
         notimplemented()
@@ -78,7 +78,6 @@ function dim_correction(pde, X, Y, S, D; location=:onsurface, p=DimParameters(),
     # finally compute the corrected weights as sparse matrices
     @debug "precomputation finished"
     Is, Js, Ss, Ds = Int[], Int[], T[], T[]
-    dict_near = nearest_point_to_element(X, Y)
     for E in keys(Y)
         qtags = etype2qtags(Y, E)
         near_list = dict_near[E]

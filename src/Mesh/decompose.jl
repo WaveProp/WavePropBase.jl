@@ -2,12 +2,22 @@
     decompose(s::AbstractReferenceShape,x,[target_shape])
 
 Decompose an [`AbstractReferenceShape`](@ref) into [`LagrangeElement`](@ref)s so
-that `x` is a vertex of the children elements.
+that `x` is a fixed vertex of the children elements.
 
-# Examples
-s = ReferenceLine()
-el1, el2 = decompose(s,0.3)
-el1(1) == el2(0) == 0.3 # true
+The decomposed elements may be oriented differently than the parent, and thus
+care has to be taken regaring e.g. normal vectors.
+
+```jldoctest
+import WavePropBase as WPB
+s = WPB.ReferenceLine()
+el1, el2 = WPB.decompose(s,0.3)
+el1(0) ≈ el2(0) ≈ WPB.Point1D(0.3)
+
+# output
+
+true
+
+```
 """
 function decompose(ln::ReferenceLine, x::Float64)
     @assert x ∈ ln
@@ -33,7 +43,6 @@ end
 
 function decompose(sq::ReferenceSquare, x, ::ReferenceSquare)
     @assert x ∈ sq
-    a, b, c, d = vertices(sq)
     return LagrangeSquare(x, (0, x[2]), (0, 0), (x[1], 0)),
            LagrangeSquare(x, (x[1], 0), (1, 0), (1, x[2])),
            LagrangeSquare(x, (1, x[2]), (1, 1), (x[1], 1)),

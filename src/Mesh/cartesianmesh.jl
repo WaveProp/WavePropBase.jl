@@ -9,7 +9,7 @@ i.e. the `HyperRectangle` cells.
 """
 struct UniformCartesianMesh{N,T} <: AbstractMesh{N,T}
     domain::HyperRectangle{N,T}  # stores the `low_corner` and the `high_corner` of the `UniformCartesianMesh`
-    sz::NTuple{N,Int}            # number of `HyperRectangle` cells per dimension
+    sz::NTuple{N,Int}            # number of `CartesianElement` cells per dimension
 end
 
 low_corner(g::UniformCartesianMesh) = low_corner(g.domain)
@@ -34,9 +34,7 @@ function grids(g::UniformCartesianMesh, dim)
     return LinRange(start, stop, len)
 end
 
-Base.keys(::UniformCartesianMesh{N,T}) where {N,T} = (HyperRectangle{N,T},)
-
-function Base.step(m::UniformCartesianMesh{N}) where {N}
+function meshsize(m::UniformCartesianMesh{N}) where {N}
     lc = low_corner(m)
     hc = high_corner(m)
     sz = size(m)
@@ -44,15 +42,15 @@ function Base.step(m::UniformCartesianMesh{N}) where {N}
         return (hc[i] - lc[i]) / sz[i]
     end
 end
-Base.step(m::UniformCartesianMesh, i) = step(m)[i]
+meshsize(m::UniformCartesianMesh, i) = meshsize(m)[i]
 
 """
     UniformCartesianMesh(domain::HyperRectangle,sz::NTuple)
-    UniformCartesianMesh(domain::HyperRectangle;step::NTuple)
+    UniformCartesianMesh(domain::HyperRectangle;meshsize::NTuple)
 
 Construct a uniform `UniformCartesianMesh` with `sz[d]` elements along dimension
-`d`. If the kwarg `step` is passed, construct a `UniformCartesianMesh` with
-elements of approximate size `step`.
+`d`. If the kwarg `meshsize` is passed, construct a `UniformCartesianMesh` with
+elements of approximate size `meshsize`.
 """
 function UniformCartesianMesh(domain::HyperRectangle{N,T}, sz::Int) where {N,T}
     return UniformCartesianMesh(domain, ntuple(i -> sz, N))
@@ -72,14 +70,16 @@ function UniformCartesianMesh(grids::Vararg{LinRange{T}}) where {T}
     return UniformCartesianMesh(Tuple(grids))
 end
 
-function UniformCartesianMesh(domain::HyperRectangle{N}; step) where {N}
-    msg = "`step` argument must be either a `Number` or an `NTuple{$N,<:Number}`"
-    step = step isa Number ? ntuple(i -> step, N) : step isa NTuple{N} ? step : error(msg)
+function UniformCartesianMesh(domain::HyperRectangle{N}; meshsize) where {N}
+    # convert meshsize to a tuple if needed
+    msg = "`meshsize` argument must be either a `Number` or an `NTuple{$N,<:Number}`"
+    meshsize = meshsize isa Number ? ntuple(i -> meshsize, N) :
+                meshsize isa NTuple{N} ? meshsize : error(msg)
     lc = low_corner(domain)
     hc = high_corner(domain)
     sz = ntuple(N) do i
-        # take the max with 1 in case step = Inf
-        return max(Int(ceil((hc[i] - lc[i]) / step[i])), 1)
+        # take the max with 1 in case meshsize = Inf
+        return max(Int(ceil((hc[i] - lc[i]) / meshsize[i])), 1)
     end
     return UniformCartesianMesh(domain, sz)
 end
@@ -90,23 +90,26 @@ xgrid(g::UniformCartesianMesh) = grids(g, 1)
 ygrid(g::UniformCartesianMesh) = grids(g, 2)
 zgrid(g::UniformCartesianMesh) = grids(g, 3)
 
+
 # implement ElementIterator interface to UniformCartesianMesh
 
-function Base.size(iter::ElementIterator{<:HyperRectangle,<:UniformCartesianMesh})
+Base.keys(::UniformCartesianMesh{N,T}) where {N,T} = (CartesianElement{N,T},)
+
+function Base.size(iter::ElementIterator{<:CartesianElement,<:UniformCartesianMesh})
     g = mesh(iter)
     return size(g)
 end
 
-function Base.length(iter::ElementIterator{<:HyperRectangle,<:UniformCartesianMesh})
+function Base.length(iter::ElementIterator{<:CartesianElement,<:UniformCartesianMesh})
     return prod(size(iter))
 end
 
-function Base.CartesianIndices(iter::ElementIterator{<:HyperRectangle,
+function Base.CartesianIndices(iter::ElementIterator{<:CartesianElement,
                                                      <:UniformCartesianMesh})
     return CartesianIndices(size(iter))
 end
 
-function Base.getindex(iter::ElementIterator{<:HyperRectangle,<:UniformCartesianMesh},
+function Base.getindex(iter::ElementIterator{<:CartesianElement,<:UniformCartesianMesh},
                        I::CartesianIndex)
     m = mesh(iter)
     N = ambient_dimension(m)
@@ -120,18 +123,18 @@ function Base.getindex(iter::ElementIterator{<:HyperRectangle,<:UniformCartesian
         i = I[dim] + 1
         return _grids[dim][i]
     end
-    return HyperRectangle(lc, hc)
+    return CartesianElement(lc, hc)
 end
-function Base.getindex(iter::ElementIterator{<:HyperRectangle,<:UniformCartesianMesh}, I...)
+function Base.getindex(iter::ElementIterator{<:CartesianElement,<:UniformCartesianMesh}, I...)
     return iter[CartesianIndex(I)]
 end
-function Base.getindex(iter::ElementIterator{<:HyperRectangle,<:UniformCartesianMesh},
+function Base.getindex(iter::ElementIterator{<:CartesianElement,<:UniformCartesianMesh},
                        i::Int)
     I = CartesianIndices(iter)
     return iter[I[i]]
 end
 
-function Base.iterate(iter::ElementIterator{<:HyperRectangle,<:UniformCartesianMesh},
+function Base.iterate(iter::ElementIterator{<:CartesianElement,<:UniformCartesianMesh},
                       state=1)
     state > length(iter) && (return nothing)
     return iter[state], state + 1
@@ -195,7 +198,7 @@ Given a point `p`, return the index `I` of the element in `m` containing
 function element_index_for_point(s::SVector{N}, m::UniformCartesianMesh{N}) where {N}
     els = ElementIterator(m)
     sz = size(els)
-    Δs = step(m)
+    Δs = meshsize(m)
     lc = low_corner(m)
     uc = high_corner(m)
     all(lc .<= s .<= uc) || (return nothing) # point not in mesh

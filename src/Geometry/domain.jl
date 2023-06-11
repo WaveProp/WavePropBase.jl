@@ -1,13 +1,15 @@
 """
     struct Domain
 
-Represent a physical domain as a union of entities.
-
-# See also: [`AbstractEntity`](@ref), [`ElementaryEntity`](@ref).
+Represents a physical domain as a union of [`AbstractEntity`](@ref) objects.
 """
 struct Domain
-    entities::Vector{AbstractEntity}
+    entities::Set{AbstractEntity}
 end
+
+Domain(args...) = Domain(Set(args)) # allow for Domain(ω₁,ω₂,...) syntax
+Domain(ω::AbstractEntity) = Domain([ω])
+Domain(v::Vector) = Domain(Set(v))
 
 function ambient_dimension(Ω::Domain)
     l, u = extrema(ambient_dimension(ent) for ent in entities(Ω))
@@ -21,9 +23,6 @@ end
 Return a vector of all elementary entities making up a domain.
 """
 entities(Ω::Domain) = Ω.entities
-
-Domain(ω::AbstractEntity) = Domain([ω])
-Domain() = Domain(AbstractEntity[])
 
 function Base.show(io::IO, d::Domain)
     ents = entities(d)
@@ -42,12 +41,13 @@ function geometric_dimension(Ω::Domain)
 end
 
 """
-    length(Ω:::Domain)
+    iterate(Ω::Domain)
 
-The length of a domain corresponds to the number of elementary entities that
-make it.
+Iterating over a domain means iterating over its entities.
 """
-Base.length(Ω::Domain) = length(entities(Ω))
+Base.iterate(Ω::Domain, state=1) = iterate(entities(Ω), state)
+
+Base.isempty(Ω::Domain) = isempty(entities(Ω))
 
 """
     skeleton(Ω::Domain)
@@ -55,11 +55,11 @@ Base.length(Ω::Domain) = length(entities(Ω))
 Return all the boundaries of the domain, i.e. the domain's skeleton.
 """
 function skeleton(Ω::Domain)
-    ents = AbstractEntity[]
+    ents = Set{AbstractEntity}()
     for ent in entities(Ω)
-        append!(ents, boundary(ent))
+        union!(ents, boundary(ent))
     end
-    return Domain(unique!(ents))
+    return Domain(ents)
 end
 
 """
@@ -74,54 +74,33 @@ end
 """
     in(ω::ElementaryEntity,Ω::Domain)
 
-Check whether an `ElementaryEntity` belongs to a `Domain` by recursively
-checking whether it belongs to its boundary.
+Check whether an `ElementaryEntity` belongs to a `Domain`. This will first check
+if the entity is in the domain's list of entities. If not, it will check if the
+entity is in the boundary of any of the entities in the domain.
 """
 function Base.in(ω::ElementaryEntity, Ω::Domain)
     ents = entities(Ω)
-    in(ω, ents) && return true
-    # TODO: should we really recurse on the boundary of the entities composing
-    # the domain for determining if an entity is in a domain.
-    for ent in ents
-        in(ω, Domain(boundary(ent))) && (return true)
+    Γ = skeleton(Ω)
+    if in(ω, ents) || in(ω,Γ) # recurse on boundary
+        return true
+    else
+        return false
     end
-    return false
 end
-
-Base.getindex(Ω::Domain, i) = entities(Ω)[i]
-
-Base.lastindex(Ω::Domain) = length(Ω)
-
-"""
-    iterate(Ω::Domain)
-
-Iterating over a domain means iterating over its entities.
-"""
-function Base.iterate(Ω::Domain, state=1)
-    # Check if we are done iterating
-    if state > length(Ω)
-        return nothing
-    end
-    # Return (result, state)
-    return (Ω[state], state + 1)
-end
-
-Base.isempty(Ω::Domain) = length(entities(Ω)) == 0
 
 function Base.setdiff(Ω1::Domain, Ω2::Domain)
     return Domain(setdiff(entities(Ω1), entities(Ω2)))
 end
 
-function Base.union(Ω1::Domain, Ωs::Domain...)
-    ents = vcat(entities(Ω1), entities.(Ωs)...)
-    return Domain(unique!(ents))
+function Base.union(Ω1::Domain, Ω2::Domain)
+    ents = union(entities(Ω1), entities(Ω2))
+    return Domain(ents)
 end
-Base.union(Ω::Domain) = Domain(unique(entities(Ω)))
+function Base.union!(Ω1::Domain, Ω2::Domain)
+    union!(entities(Ω1), entities(Ω2))
+    return Ω1
+end
 
-Base.append!(Ω1::Domain, Ω2::Domain) = (append!(entities(Ω1), entities(Ω2));
-                                        Ω1)
-Base.append!(Ω1::Domain, ent::AbstractEntity) = (push!(entities(Ω1), ent); Ω1)
-Base.append!(Ω1::Domain, ents::Vector{<:AbstractEntity}) = (append!(entities(Ω1), ents); Ω1)
 
 """
     assertequaldim(Ω1::Domain,Ω2::Domain)
@@ -164,61 +143,38 @@ function Base.issubset(Ω1::Domain, Ω2::Domain)
 end
 
 """
-    boundary(Ω::Domain)
+    internal_boundary(Ω::Domain)
 
-Return a domain comprising the external boundary of Ω.
-
-# See also: [`external_boundary`](@ref)
+Return the internal boundaries of a `Domain`. These are entities in
+`skeleton(Ω)` which appear at least twice as a boundary of entities in `Ω`.
 """
-boundary(Ω::Domain) = external_boundary(Ω::Domain)
-
-"""Return the internal boundaries inside a domain."""
 function internal_boundary(Ω::Domain)
-    Ω1 = Domain(Ω[1])
-    γ = Domain()
-    for ω2 in Ω[2:end]
-        Ω2 = Domain(ω2)
-        γ1 = Domain(vcat(boundary.(entities(Ω1))...))
-        γ2 = Domain(vcat(boundary.(entities(Ω2))...))
-        γ = union(γ, intersect(γ1, γ2))
-        Ω1 = union(Ω1, Ω2)
+    seen     = Set{AbstractEntity}()
+    repeated = Set{AbstractEntity}()
+    for ω in entities(Ω)
+        for γ in boundary(ω)
+            in(γ, seen) ? push!(repeated, γ) : push!(seen, γ)
+        end
     end
-    return γ
+    return Domain(repeated)
 end
 
-"""Return the external boundaries inside a domain."""
+"""
+    external_boundary(Ω::Domain)
+
+Return the external boundaries inside a domain. These are entities in the
+skeleton of Ω which are not in the internal boundaries of Ω.
+"""
 function external_boundary(Ω::Domain)
     return setdiff(skeleton(Ω), internal_boundary(Ω))
 end
 
 """
-Return all tags of the elementary entities in the domain `Ω` corresponding to the dimension `d`.
-"""
-function Base.keys(Ω::Domain, d::Integer)
-    if isempty(Ω)
-        return Tuple{Int64,Int64}[]
-    elseif d == geometric_dimension(Ω)
-        return Vector{Tuple{Int64,Int64}}(vcat(key.(entities(Ω))))
-    elseif d < geometric_dimension(Ω)
-        return unique(keys(skeleton(Ω), d))
-    else
-        error("Asking for tags with dimension > dimension of domain")
-    end
-end
-function Base.keys(Ω::Domain)
-    return isempty(Ω) ? Tuple{Int64,Int64}[] : keys(Ω, geometric_dimension(Ω))
-end
+    boundary(Ω::Domain)
 
+Return the [`external_boundary`](@ref) of a domain.
 """
-Return all tags of the elementary entities in the domain `Ω` corresponding to the dimensions contained in `dims`.
-"""
-function Base.keys(Ω::Domain, dims::Vector{T}) where {T<:Integer}
-    tgs = Vector{Tuple{Int64,Int64}}(undef, 0)
-    for d in dims
-        push!(tgs, keys(Ω, d)...)
-    end
-    return tgs
-end
+boundary(Ω::Domain) = external_boundary(Ω)
 
 """
     flip_normal(Γ::Domain)

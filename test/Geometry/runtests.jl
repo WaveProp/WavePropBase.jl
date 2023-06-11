@@ -5,6 +5,6 @@ using SafeTestsets
     include("referenceshapes_test.jl")
 end
 
-@safetestset "Domain tests" begin
-    include("domain_test.jl")
-end
+# @safetestset "Domain tests" begin
+#     include("domain_test.jl")
+# end

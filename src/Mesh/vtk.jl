@@ -44,11 +44,12 @@ function vtk_mesh_file(mesh::GenericMesh, name::String)
 end
 function vtk_mesh_file(mesh::GenericMesh, Ω::Domain, name::String)
     points = _vtk_points(mesh)
-    cells = _vtk_cells(mesh, Ω)
+    cells  = _vtk_cells(mesh, Ω)
     return vtk_grid(name * ".vtu", points, cells)
 end
 
 """
+
     _vtk_points(mesh::GenericMesh)
 
 Creates the matrix of nodes in the format required by `WriteVTK`.
@@ -69,8 +70,6 @@ Creates the vector of all elements contained in the mesh in the format
 required by `WriteVTK` for a particular element type `E<:AbstractElement`
 or a `Domain` instance.
 """
-function _vtk_cells end
-
 function _vtk_cells(tags, E::Union{Type{<:LagrangeElement},Type{<:SVector}})
     vtk_cell_type, ind = etype_to_vtk_cell_type(E)
     return [MeshCell(vtk_cell_type, tags[ind, i]) for i in axes(tags, 2)]
@@ -92,9 +91,13 @@ function _vtk_cells(mesh::GenericMesh)
     cells = MeshCell[]
     # Loop on `AbstractElement`
     for (E, tags) in etype2data(mesh)
+        if E isa LagrangeElement
         # Export only the cells of the largest geometrical dimension
-        if domain_dimension(E) == ambient_dimension(mesh)
+        # if domain_dimension(E) == ambient_dimension(mesh)
             append!(cells, _vtk_cells(tags, E))
+        # end
+        else
+            @warn "Element type $E not supported for VTK export."
         end
     end
     return cells

@@ -100,7 +100,7 @@ end
     E = first(keys(M))
     iter = WPB.ElementIterator{E}(M)
     @test eltype(iter) == E
-    @test length(iter) == size(M.elements[E], 2)
+    @test length(iter) == size(M.etype2data[E], 2)
 end
 
 @testset "Sub mesh" begin
@@ -113,7 +113,7 @@ end
     E = first(keys(subM))
     iter = WPB.ElementIterator(subM, E)
     @test eltype(iter) == E
-    @test length(iter) == size(M.elements[E], 2)
+    @test length(iter) == size(M.etype2data[E], 2)
 end
 
 @testset "Mix ParametricEntities and GmshEntity" begin

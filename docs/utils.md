@@ -7,3 +7,8 @@ CurrentModule = WavePropBase
 The `Utils` module provides a place to define auxiliary/convenience functions
 and structures that do not naturally fit into the other modules. Below are the
 methods and types defined in this module:
+
+```@autodocs
+Modules = [WavePropBase]
+Pages   = ["Utils/Utils.jl"]
+```

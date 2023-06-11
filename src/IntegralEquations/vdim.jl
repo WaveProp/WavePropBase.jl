@@ -37,62 +37,6 @@ function vdim_correction(pde, X, Y, Γ, S, D, V; location, order)
     return δV
 end
 
-function singlelayer_vdim(pde::AbstractPDE, X, Y, Γ, location=:inside, order=2)
-    N = ambient_dimension(pde)
-    msg = "unrecognized value for kw `location`: received $location.
-    Valid options are `:onsurface`, `:inside` and `:outside`."
-    σ = location === :onsurface ? -0.5 :
-        location === :inside ? -1.0 : location === :outside ? 0.0 : error(msg)
-    Vop = SingleLayerOperator(pde, X, Y)
-    V = Matrix(Vop)
-    S, D = single_doublelayer_dim(pde, X, Γ; location=:inside)
-    # compute basis and preintegrate the monomials
-    basis = _basis_vdim(pde, order)
-    B, R = _vdim_auxiliary_quantities(basis, X, Y, Γ, σ, S, D, V)
-    # compute sparse correction
-    Is = Int[]
-    Js = Int[]
-    Vs = Float64[]
-    for (_, e2dofs) in elt2dof(Y)
-        # function barrier to avoid type instability
-        # _vdim_singular_weights!(Is,Js,Vs)
-        nq, nel = size(e2dofs)
-        T = Float64
-        for n in 1:nel
-            # indices of nodes in element `n`
-            j_idxs = e2dofs[:, n]
-            i_idxs = j_idxs
-            L = B[j_idxs, :] # vandermond matrix
-            for i in i_idxs
-                wei = R[i:i, :] / L
-                append!(Js, j_idxs)
-                append!(Is, fill(i, length(j_idxs)))
-                append!(Vs, wei)
-            end
-        end
-    end
-    δV = sparse(Is, Js, Vs)
-    return V + δV
-end
-
-function _vdim_singular_weights!(Is, Js, Vs, Y, E)
-    e2dofs = elt2dof(Y, E)
-    nq, nel = size(e2dofs)
-    for n in 1:nel
-        # indices of nodes in element `n`
-        j_idxs = e2dofs[:, n]
-        i_idxs = j_idxs
-        pts = [coords(dof) for dof in dofs(Y)[j_idxs]]
-        L = vandermond_matrix(basis[1], pts)
-        for i in i_idxs
-            wei = R[i:i, :] / L
-            append!(Js, j_idxs)
-            append!(Is, fill(i, length(j_idxs)))
-            append!(Vs, wei)
-        end
-    end
-end
-
 function _vdim_auxiliary_quantities(basis, X, Y, Γ, σ, S, D, V)
     num_basis = length(basis[1])
     num_targets = length(qnodes(X))

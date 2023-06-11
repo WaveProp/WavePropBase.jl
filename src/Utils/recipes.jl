@@ -40,7 +40,7 @@ end
 end
 
 # plot a hyperrectangle
-@recipe function f(rec::AbstractHyperRectangle{N}) where {N}
+@recipe function f(rec::HyperRectangle{N}) where {N}
     seriestype := :path
     linecolor --> :black
     linestyle --> :solid
@@ -138,45 +138,7 @@ end
     return PlotPoints(), [vtx[1], vtx[2]]
 end
 
-"""
-    struct PlotTree
-
-Used to plot entire tree associated with a tree node, instead of just the node.
-"""
-struct PlotTree end
-
-@recipe function f(::PlotTree, tree::ClusterTree; predicate=(x) -> isleaf(x))
-    legend := false
-    grid --> false
-    aspect_ratio --> :equal
-    # plot nodes
-    blocks = filter_tree(predicate, tree)
-    for block in blocks
-        @series begin
-            block
-        end
-    end
-end
-
-@recipe function f(tree::ClusterTree)
-    legend := false
-    grid --> false
-    aspect_ratio --> :equal
-    # plot points
-    @series begin
-        seriestype := :scatter
-        markersize --> 2
-        PlotPoints(), elements(tree)
-    end
-    # plot bounding box
-    @series begin
-        linestyle --> :solid
-        seriescolor --> :black
-        container(tree)
-    end
-end
-
-@recipe function f(el::AbstractElement; npts=10)
+@recipe function f(el::AbstractElement; npts=2)
     D = domain(el)
     grid --> false
     aspect_ratio --> :equal
@@ -202,13 +164,13 @@ end
 end
 
 # Plot recipes
-@recipe function f(ent::ParametricEntity; step=0.1)
+@recipe function f(ent::ParametricEntity; meshsize=0.1)
     D = domain(ent)
     grid --> false
     aspect_ratio --> :equal
     label --> ""
     if D isa HyperRectangle{1}
-        msh = UniformCartesianMesh(D; step)
+        msh = UniformCartesianMesh(D; meshsize)
         iter = NodeIterator(msh)
         pts = [ent(v) for v in iter]
         x = [pt[1] for pt in pts]
@@ -216,7 +178,7 @@ end
         x, y
     elseif D isa HyperRectangle{2}
         seriestype := :surface
-        msh = UniformCartesianMesh(D; step)
+        msh = UniformCartesianMesh(D; meshsize)
         iter = NodeIterator(msh)
         pts = [ent(v) for v in iter]
         x = [pt[1] for pt in pts]

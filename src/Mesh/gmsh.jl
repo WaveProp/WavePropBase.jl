@@ -1,7 +1,3 @@
-@info "including gmshIO.jl from WavePropBase/IO"
-
-using .Gmsh
-
 """
 macro gmsh(ex)
 
@@ -12,7 +8,6 @@ macro gmsh(ex)
     return quote
         gmsh.initialize()
         try
-            set_verbosity(0)
             $(esc(ex))
         finally
             # make sure we finalize gmsh if something goes wrong
@@ -20,29 +15,6 @@ macro gmsh(ex)
         end
     end
 end
-
-struct GmshEntity <: AbstractEntity
-    dim::UInt8
-    gmshtag::Int64
-    tag::Int64
-    boundary::Vector{GmshEntity}
-    model::String
-    function GmshEntity(d::Integer, gmshtag::Integer, model, boundary=GmshEntity[])
-        msg = "an elementary entities in the boundary has the wrong dimension"
-        for b in boundary
-            @assert geometric_dimension(b) == d - 1 msg
-        end
-        tag = new_tag(d)
-        ent = new(d, gmshtag, tag, boundary, model)
-        # every entity gets added to a global variable ENTITIES so that we can
-        # ensure the (d,t) pair is a UUID for an entity, and to easily retrieve
-        # different entities.
-        global_add_entity!(ent)
-        return ent
-    end
-end
-
-gmshtag(e::GmshEntity) = e.gmshtag
 
 """
     import_domain([model;dim=3])
@@ -120,10 +92,10 @@ function gmsh_import_mesh!(msh::GenericMesh, Ω::Domain)
     nodes = collect(reinterpret(SVector{3,Float64}, coord))
     shift = length(msh.nodes) # gmsh node tags need to be shifted
     append!(msh.nodes, nodes)
-    els = elements(msh)
-    e2t = ent2tags(msh)
+    data = etype2data(msh)
+    e2t = ent2tagsdict(msh)
     # Recursively populate the dictionaries
-    _domain_to_mesh!(els, e2t, Ω, shift)
+    _domain_to_mesh!(data, e2t, Ω, shift)
     return msh
 end
 
@@ -242,19 +214,6 @@ function _ent_to_mesh!(elements, ent2tag, ω::GmshEntity, shift)
     end
     push!(ent2tag, ω => etypes_to_etags)
     return elements, ent2tag
-end
-
-function set_meshsize(hmax, hmin=hmax)
-    gmsh.option.setNumber("Mesh.CharacteristicLengthMin", hmin)
-    return gmsh.option.setNumber("Mesh.CharacteristicLengthMax", hmax)
-end
-
-function set_meshorder(order)
-    return gmsh.option.setNumber("Mesh.ElementOrder", order)
-end
-
-function set_verbosity(i)
-    return gmsh.option.setNumber("General.Verbosity", i)
 end
 
 function summary(model)

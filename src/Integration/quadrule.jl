@@ -44,6 +44,8 @@ function (q::AbstractQuadratureRule)()
     return abstractmethod(q)
 end
 
+Base.length(q::AbstractQuadratureRule) = length(qweights(q))
+
 function (q::AbstractQuadratureRule)(el::AbstractElement)
     msg = "reference domain of quadrature rule and element must match"
     @assert domain(q) == domain(el) msg
@@ -220,7 +222,7 @@ struct GaussLegendre{N} <: AbstractQuadratureRule{ReferenceLine} end
 
 Construct a `GaussLegendre` of the desired order over the `[0,1]` interval.
 """
-function GaussLegendre(; order=p)
+function GaussLegendre(; order)
     N = ceil(Int, (order + 1) / 2)
     return GaussLegendre{N}()
 end
@@ -346,20 +348,20 @@ Given a `ref`erence shape and a desired quadrature `order`, return
 an appropiate quadrature rule.
 """
 function qrule_for_reference_shape(ref, order)
-    if ref isa ReferenceLine
+    if ref === ReferenceLine() || ref === :line
         return GaussLegendre(; order)
         # return Fejer(; order)
-    elseif ref isa ReferenceSquare
+    elseif ref === ReferenceSquare() || ref === :square
         qx = qrule_for_reference_shape(ReferenceLine(), order)
         qy = qx
         return TensorProductQuadrature(qx, qy)
-    elseif ref isa ReferenceCube
+    elseif ref === ReferenceCube() || ref === :cube
         qx = qrule_for_reference_shape(ReferenceLine(), order)
         qy = qz = qx
         return TensorProductQuadrature(qx, qy, qz)
-    elseif ref isa ReferenceTriangle
+    elseif ref isa ReferenceTriangle || ref === :triangle
         return Gauss(; domain=ref, order=order)
-    elseif ref isa ReferenceTetrahedron
+    elseif ref isa ReferenceTetrahedron || ref === :tetrahedron
         return Gauss(; domain=ref, order=order)
     else
         error("no appropriate quadrature rule found.")

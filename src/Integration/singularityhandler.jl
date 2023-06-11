@@ -163,6 +163,10 @@ function jacobian(::Duffy, u)
     return SMatrix{2,2,Float64}(1, 0, -u[2][1], (1 - u[1][1]))
 end
 
+function integration_measure(::Duffy,u)
+    return 1-u[1][1]
+end
+
 # TODO: generalize to `N` dimensions
 """
     struct TensorProductSingularityHandler{S} <: AbstractSingularityHandler{ReferenceSquare}

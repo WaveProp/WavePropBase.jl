@@ -23,11 +23,14 @@ nn = []
 ee0 = []
 ee1 = []
 
+h = hh[end]
+h = 0.25
 for h in hh
     Ω, M = WPB.@gmsh begin
         WPB.clear_entities!()
-        WPB.set_meshsize(h)
-        WPB.set_meshorder(order)
+        gmsh.option.setNumber("Mesh.CharacteristicLengthMin", h)
+        gmsh.option.setNumber("Mesh.CharacteristicLengthMax", h)
+        gmsh.option.setNumber("Mesh.ElementOrder", order)
         gmsh.model.occ.addDisk(0, 0, 0, 2, 1)
         gmsh.model.occ.synchronize()
         gmsh.model.mesh.generate(2)
@@ -35,12 +38,15 @@ for h in hh
         M = WPB.gmsh_import_mesh(Ω; dim=2)
         Ω, M
     end
-    Γ = WPB.boundary(Ω)
+    Γ = WPB.external_boundary(Ω)
     Γₕ = view(M, Γ)
     Ωₕ = view(M, Ω)
 
-    Ωₕ_quad = WPB.NystromMesh(Ωₕ; qorder=6)
+    Ωₕ_quad = WPB.NystromMesh(Ωₕ; qorder=1)
     Γₕ_quad = WPB.NystromMesh(Γₕ; qorder=8)
+
+    bnd_nodes = [q.coords for q in Γₕ_quad.qnodes]
+    vol_nodes = [q.coords for q in Ωₕ_quad.qnodes]
 
     f = WPB.NystromDensity(dof -> f_func(dof.coords), Ωₕ_quad) # f on the volume
     Ψ = WPB.NystromDensity(dof -> Ψ_func(dof.coords), Ωₕ_quad) #

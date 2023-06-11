@@ -144,7 +144,7 @@ function cheb1nodes(n::NTuple{N}, lc, uc) where {N}
     iter = cheb1nodes_iter(n, lc, uc)
     return map(x -> SVector{N,Float64}(x), iter)
 end
-function cheb1nodes(n::NTuple{N}, rec::AbstractHyperRectangle{N}) where {N}
+function cheb1nodes(n::NTuple{N}, rec::HyperRectangle{N}) where {N}
     return cheb1nodes(n, low_corner(rec), high_corner(rec))
 end
 function cheb1nodes(n::Integer, a::Number, b::Number)
@@ -161,7 +161,7 @@ function cheb1nodes_iter(n::NTuple{N}, lc, uc) where {N}
     nodes1d = ntuple(d -> cheb1nodes(n[d], lc[d], uc[d]), N)
     return iter = Iterators.product(nodes1d...)
 end
-function cheb1nodes_iter(n::NTuple{N}, rec::AbstractHyperRectangle{N}) where {N}
+function cheb1nodes_iter(n::NTuple{N}, rec::HyperRectangle{N}) where {N}
     return cheb1nodes_iter(n, low_corner(rec), high_corner(rec))
 end
 
@@ -190,7 +190,7 @@ function cheb2nodes(n::NTuple{N}, lc, uc) where {N}
     iter = cheb2nodes_iter(n, lc, uc)
     return map(x -> SVector{N,Float64}(x), iter)
 end
-function cheb2nodes(n::NTuple{N}, rec::AbstractHyperRectangle{N}) where {N}
+function cheb2nodes(n::NTuple{N}, rec::HyperRectangle{N}) where {N}
     return cheb2nodes(n, low_corner(rec), high_corner(rec))
 end
 function cheb2nodes(n::Integer, a::Number, b::Number)
@@ -208,7 +208,7 @@ function cheb2nodes_iter(n::NTuple{N}, lc, uc) where {N}
     iter = Iterators.product(nodes1d...)
     return iter
 end
-function cheb2nodes_iter(n::NTuple{N}, rec::AbstractHyperRectangle{N}) where {N}
+function cheb2nodes_iter(n::NTuple{N}, rec::HyperRectangle{N}) where {N}
     return cheb2nodes_iter(n, low_corner(rec), high_corner(rec))
 end
 

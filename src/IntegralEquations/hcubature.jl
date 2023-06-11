@@ -14,21 +14,21 @@ quadrature node of the standard quadrature.
 =#
 
 """
-    hcubature_correction(iop::IntegralOperator; max_dist, kwargs...)
+    hcubature_correction(iop::IntegralOperator; maxdist, kwargs...)
 
 Given an integral operator `iop`, this function provides a sparse correction to
 `iop` for the entries `i,j` such that the distance between the `i`-th target and
-the `j`-th source is less than `max_dist`.
+the `j`-th source is less than `maxdist`.
 
 The correction is computed by using an adaptive quadrature based on the
 `hcubature` routine from `HCubature.jl`; the `kwargs` are passed to `hcubature`,
 and (see [its documentation](https://github.com/JuliaMath/HCubature.jl) for more
 details).
 """
-function hcubature_correction(iop::IntegralOperator; max_dist, atol = 1e-8, maxevals = 1000)
+function hcubature_correction(iop::IntegralOperator; maxdist, atol = 1e-8, maxevals = 1000, initdiv = 1)
     # unpack type-unstable fields in iop, allocate output, and dispatch
     X, Y, K = target_mesh(iop), source_mesh(iop), kernel(iop)
-    dict_near = near_interaction_list(X, Y; tol=max_dist)
+    dict_near = near_interaction_list(X, Y; tol=maxdist)
     T  = eltype(iop)
     out = (I=Int[], J=Int[], V=T[])
     for E in keys(Y)
@@ -37,24 +37,25 @@ function hcubature_correction(iop::IntegralOperator; max_dist, atol = 1e-8, maxe
         qreg = etype2qrule(Y, E)
         L = lagrange_basis(qreg)
         iter = Y[E]
-        _hcubature_correction_etype!(out, iter, qreg, L, nearlist, X, Y, K, max_dist, atol, maxevals)
+        _hcubature_correction_etype!(out, iter, qreg, L, nearlist, X, Y, K, maxdist, atol, maxevals, initdiv)
     end
-    return sparse(out...)
+    m,n = size(iop)
+    return sparse(out.I,out.J,out.V, m, n)
 end
 
-@noinline function _hcubature_correction_etype!(out,iter,qreg,L,nearlist,X,Y,K,max_dist, atol, maxevals)
+@noinline function _hcubature_correction_etype!(out,iter,qreg,L,nearlist,X,Y,K,maxdist, atol, maxevals, initdiv)
     E = eltype(iter)
     Xqnodes = qnodes(X)
     Yqnodes = qnodes(Y)
-    N = geometric_dimension(E)
-    a, b = ntuple(i -> 0, N), ntuple(i -> 1, N)
     τ̂ = domain(E)
+    N = geometric_dimension(τ̂)
+    a, b = ntuple(i -> 0, N), ntuple(i -> 1, N)
     τ̂ === ReferenceLine() || notimplemented()
     x̂, ŵ = collect.(qreg())
     el2qtags = etype2qtags(Y, E)
     buffer = hcubature_buffer(x -> one(eltype(out.V)) * L(a) * first(ŵ), a, b)
     success = true
-    maxer   = 0
+    maxer   = 0.0
     for (n, el) in enumerate(iter)
         jglob = view(el2qtags, :, n)
         inear = nearlist[n]
@@ -63,20 +64,19 @@ end
             # closest quadrature node
             dmin, j = findmin(n -> norm(coords(xnode) - coords(Yqnodes[jglob[n]])),1:length(jglob))
             x̂nearest = x̂[j]
-            dmin > max_dist && continue
+            dmin > maxdist && continue
             issingular = iszero(dmin)
+            # use hcubature for singular integration of lagrange basis
             if issingular
-                W1, er1 = hcubature(a, Tuple(x̂nearest); buffer, atol = atol/2, maxevals) do ŷ
+                W1, er1 = hcubature(a, Tuple(x̂nearest); buffer, atol = atol/2, maxevals, initdiv) do ŷ
                     y  = el(ŷ)
-                    y == coords(xnode) && error("singular point detected")
                     jac = jacobian(el, ŷ)
                     ν = _normal(jac)
                     τ′ = _integration_measure(jac)
                     return K(xnode, (coords=y, normal=ν)) * L(ŷ) * τ′
                 end
-                W2, er2 = hcubature(Tuple(x̂nearest),b; buffer, atol = atol/2, maxevals) do ŷ
+                W2, er2 = hcubature(Tuple(x̂nearest),b; buffer, atol = atol/2, maxevals, initdiv) do ŷ
                     y  = el(ŷ)
-                    y == coords(xnode) && error("singular point detected")
                     jac = jacobian(el, ŷ)
                     ν = _normal(jac)
                     τ′ = _integration_measure(jac)
@@ -85,9 +85,9 @@ end
                 W  = W1 + W2
                 er = er1 + er2
             else
-                W, er = hcubature(a, b; buffer, atol, maxevals) do ŷ
+                W, er = hcubature(a, b; buffer, atol, maxevals, initdiv) do ŷ
                     y  = el(ŷ)
-                    y == coords(xnode) && error("singular point detected")
+                    y == coords(xnode) && (@warn "possibly singular point")
                     jac = jacobian(el, ŷ)
                     ν = _normal(jac)
                     τ′ = _integration_measure(jac)
