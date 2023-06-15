@@ -26,6 +26,7 @@ include("Integration/Integration.jl")
 include("Mesh/Mesh.jl")
 include("IntegralEquations/IntegralEquations.jl")
 include("Utils/recipes.jl")
+include("Utils/makierecipes.jl")
 
 function __init__()
     # handling of optional dependencies

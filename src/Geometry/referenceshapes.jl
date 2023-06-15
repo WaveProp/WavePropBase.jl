@@ -97,5 +97,7 @@ end
 number_of_nodes(::Type{ReferenceTetrahedron}) = 4
 number_of_nodes(::ReferenceTetrahedron) = 4
 
+vertices(::ReferenceTetrahedron) = SVector(0, 0, 0), SVector(1, 0, 0), SVector(0, 1, 0), SVector(0, 0, 1)
+
 # TODO: generalize structs above to `ReferenceSimplex{N}` and
 # `ReferenceCuboid{N}`

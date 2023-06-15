@@ -16,7 +16,13 @@ ambient_dimension(M::AbstractMesh{N}) where {N} = N
 
 # we define the geometric dimension of the parent to be the largest of the geometric
 # dimension of its entities.
-geometric_dimension(M::AbstractMesh) = maximum(x -> geometric_dimension(x), entities(M))
+function geometric_dimension(M::AbstractMesh)
+    dmin, dmax = extrema(geometric_dimension,entities(M))
+    dmin == dmax || error("Entities of mesh have different geometric dimensions. Consider creating a `view` of the mesh instead.")
+    return dmin
+end
+
+entities(M::AbstractMesh) = entities(domain(M))
 
 primitive_type(M::AbstractMesh{N,T}) where {N,T} = T
 
