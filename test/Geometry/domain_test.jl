@@ -35,7 +35,7 @@ end
 Ω  = WPB.Domain(surfaces)
 
 @testset "Domain" begin
-    @test WPB.entities(Ω) == Set(surfaces)
+    @test WPB.entities(Ω) == OrderedSet(surfaces)
     @test length(Ω) == 2
     @test !isempty(Ω)
     @test Ω2 == setdiff(Ω, Ω1)

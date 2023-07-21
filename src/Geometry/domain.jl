@@ -4,12 +4,12 @@
 Represents a physical domain as a union of [`AbstractEntity`](@ref) objects.
 """
 struct Domain
-    entities::Set{AbstractEntity}
+    entities::OrderedSet{AbstractEntity}
 end
 
-Domain(args...) = Domain(Set(args)) # allow for Domain(ω₁,ω₂,...) syntax
+Domain(args...) = Domain(OrderedSet(args)) # allow for Domain(ω₁,ω₂,...) syntax
 Domain(ω::AbstractEntity) = Domain([ω])
-Domain(v::Vector) = Domain(Set(v))
+Domain(v::Vector) = Domain(OrderedSet(v))
 
 function ambient_dimension(Ω::Domain)
     l, u = extrema(ambient_dimension(ent) for ent in entities(Ω))
@@ -55,7 +55,7 @@ Base.isempty(Ω::Domain) = isempty(entities(Ω))
 Return all the boundaries of the domain, i.e. the domain's skeleton.
 """
 function skeleton(Ω::Domain)
-    ents = Set{AbstractEntity}()
+    ents = OrderedSet{AbstractEntity}()
     for ent in entities(Ω)
         union!(ents, boundary(ent))
     end
@@ -149,8 +149,8 @@ Return the internal boundaries of a `Domain`. These are entities in
 `skeleton(Ω)` which appear at least twice as a boundary of entities in `Ω`.
 """
 function internal_boundary(Ω::Domain)
-    seen     = Set{AbstractEntity}()
-    repeated = Set{AbstractEntity}()
+    seen     = OrderedSet{AbstractEntity}()
+    repeated = OrderedSet{AbstractEntity}()
     for ω in entities(Ω)
         for γ in boundary(ω)
             in(γ, seen) ? push!(repeated, γ) : push!(seen, γ)
