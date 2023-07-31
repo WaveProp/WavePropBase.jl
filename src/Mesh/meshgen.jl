@@ -36,7 +36,8 @@ function meshgen(Ω::Domain; meshsize)
     num_elements = []
     for ent in Ω
         l = _length_per_dimension(ent)
-        n = map(i -> ceil(Int, i / meshsize), l)
+        h = isa(meshsize, Number) ? meshsize : meshsize[ent]
+        n = map(i -> ceil(Int, i / h), l)
         push!(num_elements, n)
     end
     return meshgen(Ω, num_elements)
