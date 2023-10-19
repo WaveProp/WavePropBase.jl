@@ -210,7 +210,7 @@ function Ellipsoid(; center=zeros(3), paxis=ones(3))
     parts = Vector{ParametricEntity}(undef, nparts)
     for id in 1:nparts
         param = (x) -> _ellipsoid_parametrization(x[1], x[2], id, paxis, center)
-        parts[id] = ParametricEntity(param, domain, [domain])
+        parts[id] = ParametricEntity(param, domain)
     end
     tag = new_tag(3)
     return Ellipsoid(tag, center, paxis, parts)
